@@ -1,0 +1,795 @@
+{
+  "app": "current",
+  "description": "Registration manifest for Current (incident-tracker): everything the app installs into the odo platform. Applied by odo-register (scripts/odo-register.sh) with the odo-registration account; upsert-only.",
+  "permissions": [
+    {
+      "code": "odo.asset.current.read",
+      "description": "Read files under the current asset directory"
+    },
+    {
+      "code": "odo.asset.current.write",
+      "description": "Upload and delete files under the current asset directory"
+    },
+    {
+      "code": "odo.asset.current.patron.read",
+      "description": "Read files under the current patron asset directory"
+    },
+    {
+      "code": "odo.asset.current.patron.write",
+      "description": "Upload and delete files under the current patron asset directory"
+    },
+    {
+      "code": "current.ban.read",
+      "description": "View and list bans and trespasses"
+    },
+    {
+      "code": "current.ban.write",
+      "description": "Create, update, and delete bans and trespasses"
+    },
+    {
+      "code": "current.ban.archive",
+      "description": "Archive bans"
+    },
+    {
+      "code": "current.trespass.archive",
+      "description": "Archive trespasses"
+    },
+    {
+      "code": "current.patron.read",
+      "description": "View and search patrons"
+    },
+    {
+      "code": "current.patron.write",
+      "description": "Create, update, and manage patron records and photos"
+    },
+    {
+      "code": "current.incident.read",
+      "description": "View, search, and see statistics for incidents"
+    },
+    {
+      "code": "current.incident.write",
+      "description": "Create and update incidents"
+    },
+    {
+      "code": "current.review.read",
+      "description": "View and list incident reviews, including pending reviews"
+    },
+    {
+      "code": "current.review.write",
+      "description": "Create incident reviews"
+    },
+    {
+      "code": "current.review.group.read",
+      "description": "View and list review groups"
+    },
+    {
+      "code": "current.review.group.write",
+      "description": "Create, update, delete review groups and manage members"
+    },
+    {
+      "code": "current.review.chain.read",
+      "description": "View review chains and check if org unit has chain"
+    },
+    {
+      "code": "current.review.chain.write",
+      "description": "Create and update review chains"
+    }
+  ],
+  "roles": [
+    {
+      "code": "incident-admin",
+      "label": "Incident Admin",
+      "description": "Incident Tracker System Administrator"
+    },
+    {
+      "code": "incident-coordinator",
+      "label": "Incident Coordinator",
+      "description": "Incident Tracker Community Conduct Coordinator"
+    },
+    {
+      "code": "incident-manager",
+      "label": "Incident Manager",
+      "description": "Can manage incidents and related data"
+    },
+    {
+      "code": "incident-staff",
+      "label": "Incident Staff",
+      "description": "Can perform staff duties for incidents"
+    },
+    {
+      "code": "incident-data",
+      "label": "Incident Data Analyst",
+      "description": "Incident Tracker Data Analyst"
+    }
+  ],
+  "role_permissions": [
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.ban.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.trespass.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.ban.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.group.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.group.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.chain.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.ban.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.ban.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.trespass.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.review.group.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.review.group.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.review.chain.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.auth.user.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "odo.auth.user.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.auth.user.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.auth.user.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.auth.user.read",
+      "min_depth": 0
+    }
+  ],
+  "notification_templates": [
+    {
+      "code": "incident-draft-reminder",
+      "name": "Incident Draft Reminder",
+      "description": "Reminder to the author that an incident report is still a draft and has not been submitted for review",
+      "subject_template": "Reminder: Incident #{{incident_id}} hasn't been submitted for review yet",
+      "body_template": "You saved incident report #{{incident_id}} at {{incident_location}} but haven't submitted it for review yet. Please submit it to start the review.",
+      "body_template_html": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <title>Report not yet submitted</title>\n  <!--[if mso]>\n  <noscript>\n    <xml>\n      <o:OfficeDocumentSettings>\n        <o:PixelsPerInch>96</o:PixelsPerInch>\n      </o:OfficeDocumentSettings>\n    </xml>\n  </noscript>\n  <![endif]-->\n</head>\n<body style=\"margin:0; padding:0; background-color:#f5f5f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding:24px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:520px; background-color:#ffffff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);\">\n          <!-- Header -->\n          <tr>\n            <td style=\"padding:24px 32px 16px 32px; border-bottom:1px solid #e5e7eb;\">\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                <tr>\n                  <td>\n                    <span style=\"font-size:20px; font-weight:600; color:#1e3a5f; letter-spacing:-0.3px;\">Current</span>\n                    <span style=\"font-size:12px; color:#6b7280; margin-left:8px;\">by Odo Library System</span>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Content -->\n          <tr>\n            <td style=\"padding:24px 32px;\">\n              <h1 style=\"margin:0 0 20px 0; font-size:18px; font-weight:600; color:#111827; line-height:1.4;\">\n                Your incident report hasn't been submitted for review\n              </h1>\n              <p style=\"margin:0 0 20px 0; font-size:14px; color:#4b5563; line-height:1.5;\">\n                You saved incident <strong style=\"color:#111827;\">#{{incident_id}}</strong> but haven't submitted it for review yet &mdash; it has been on record for <strong style=\"color:#111827;\">{{days_pending}}</strong> days. Submitting it routes the report through your location's review chain and notifies reviewers.\n              </p>\n              <!-- Info Card -->\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f9fafb; border-radius:6px; margin-bottom:24px;\">\n                <tr>\n                  <td style=\"padding:16px;\">\n                    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px;\">\n                          <span style=\"color:#6b7280;\">Type</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right;\">\n                          {{incident_type}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Location</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{incident_location}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Created</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{date incident_created_at \"%b %d, %Y\" incident_timezone}}\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n              <!-- CTA Button -->\n              <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\">\n                <tr>\n                  <td style=\"border-radius:6px; background-color:#1e3a5f;\">\n                    <a href=\"{{incident_url}}\" target=\"_blank\" style=\"display:inline-block; padding:12px 24px; font-size:14px; font-weight:500; color:#ffffff; text-decoration:none;\">\n                      Submit for Review\n                    </a>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Footer -->\n          <tr>\n            <td style=\"padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb;\">\n              <p style=\"margin:0; font-size:12px; color:#9ca3af; line-height:1.5;\">\n                This is an automated message from Current. Please do not reply.\n              </p>\n              <p style=\"margin:8px 0 0 0; font-size:11px; color:#9ca3af;\">\n                King County Library System\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+      "sample_data": {
+        "incident_id": "12345",
+        "days_pending": "3",
+        "incident_url": "https://example.com/incidents/12345",
+        "incident_type": "Disruptive Behavior",
+        "incident_location": "Main Street Branch",
+        "incident_timezone": "America/Los_Angeles",
+        "incident_created_at": "2026-01-20T09:15:00+00:00"
+      },
+      "is_active": true
+    },
+    {
+      "code": "incident-review-pending",
+      "name": "Incident Review Pending",
+      "description": "Notification when an incident needs review (submitted or forwarded)",
+      "subject_template": "Incident #{{incident_id}} needs your review",
+      "body_template": "Submitted by {{source_user_name}} at {{incident_location}}. Type: {{incident_type}}",
+      "body_template_html": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <title>Incident #{{incident_id}} needs your review</title>\n  <!--[if mso]>\n  <noscript>\n    <xml>\n      <o:OfficeDocumentSettings>\n        <o:PixelsPerInch>96</o:PixelsPerInch>\n      </o:OfficeDocumentSettings>\n    </xml>\n  </noscript>\n  <![endif]-->\n</head>\n<body style=\"margin:0; padding:0; background-color:#f5f5f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding:24px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:520px; background-color:#ffffff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);\">\n          <!-- Header -->\n          <tr>\n            <td style=\"padding:24px 32px 16px 32px; border-bottom:1px solid #e5e7eb;\">\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                <tr>\n                  <td>\n                    <span style=\"font-size:20px; font-weight:600; color:#1e3a5f; letter-spacing:-0.3px;\">Current</span>\n                    <span style=\"font-size:12px; color:#6b7280; margin-left:8px;\">by Odo Library System</span>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Content -->\n          <tr>\n            <td style=\"padding:24px 32px;\">\n              <h1 style=\"margin:0 0 20px 0; font-size:18px; font-weight:600; color:#111827; line-height:1.4;\">\n                Incident #{{incident_id}} needs your review\n              </h1>\n              <p style=\"margin:0 0 20px 0; font-size:14px; color:#4b5563; line-height:1.5;\">\n                Submitted by <strong style=\"color:#111827;\">{{source_user_name}}</strong>\n              </p>\n              <!-- Info Card -->\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f9fafb; border-radius:6px; margin-bottom:24px;\">\n                <tr>\n                  <td style=\"padding:16px;\">\n                    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px;\">\n                          <span style=\"color:#6b7280;\">Type</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right;\">\n                          {{incident_type}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Location</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{incident_location}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Occurred</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{date incident_occurred_at \"%m/%d/%y %I:%M %p\" incident_timezone}}\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n              <!-- CTA Button -->\n              <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\">\n                <tr>\n                  <td style=\"border-radius:6px; background-color:#1e3a5f;\">\n                    <a href=\"{{incident_url}}\" target=\"_blank\" style=\"display:inline-block; padding:12px 24px; font-size:14px; font-weight:500; color:#ffffff; text-decoration:none;\">\n                      Review Incident\n                    </a>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Footer -->\n          <tr>\n            <td style=\"padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb;\">\n              <p style=\"margin:0; font-size:12px; color:#9ca3af; line-height:1.5;\">\n                This is an automated message from Current. Please do not reply.\n              </p>\n              <p style=\"margin:8px 0 0 0; font-size:11px; color:#9ca3af;\">\n                King County Library System\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+      "sample_data": {
+        "incident_id": "13579",
+        "incident_url": "https://current.example.org/incident-tracker/incidents/13579",
+        "incident_type": "Patron Behavior",
+        "source_user_name": "Jane Smith",
+        "incident_location": "Main Street Branch",
+        "incident_timezone": "America/Los_Angeles",
+        "incident_occurred_at": "2026-01-23T14:45:00-0800"
+      },
+      "is_active": true
+    },
+    {
+      "code": "incident-review-reopened",
+      "name": "Incident Review Reopened",
+      "description": "Notification when an incident has been reopened",
+      "subject_template": "Incident #{{incident_id}} has been reopened",
+      "body_template": "Reopened by {{source_user_name}}. Review required.",
+      "body_template_html": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <title>Incident #{{incident_id}} has been reopened</title>\n  <!--[if mso]>\n  <noscript>\n    <xml>\n      <o:OfficeDocumentSettings>\n        <o:PixelsPerInch>96</o:PixelsPerInch>\n      </o:OfficeDocumentSettings>\n    </xml>\n  </noscript>\n  <![endif]-->\n</head>\n<body style=\"margin:0; padding:0; background-color:#f5f5f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding:24px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:520px; background-color:#ffffff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);\">\n          <!-- Header -->\n          <tr>\n            <td style=\"padding:24px 32px 16px 32px; border-bottom:1px solid #e5e7eb;\">\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                <tr>\n                  <td>\n                    <span style=\"font-size:20px; font-weight:600; color:#1e3a5f; letter-spacing:-0.3px;\">Current</span>\n                    <span style=\"font-size:12px; color:#6b7280; margin-left:8px;\">by Odo Library System</span>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Content -->\n          <tr>\n            <td style=\"padding:24px 32px;\">\n              <h1 style=\"margin:0 0 20px 0; font-size:18px; font-weight:600; color:#111827; line-height:1.4;\">\n                Incident #{{incident_id}} has been reopened\n              </h1>\n              <p style=\"margin:0 0 20px 0; font-size:14px; color:#4b5563; line-height:1.5;\">\n                Reopened by <strong style=\"color:#111827;\">{{source_user_name}}</strong>. This incident requires review.\n              </p>\n              <!-- Info Card -->\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f9fafb; border-radius:6px; margin-bottom:24px;\">\n                <tr>\n                  <td style=\"padding:16px;\">\n                    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px;\">\n                          <span style=\"color:#6b7280;\">Type</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right;\">\n                          {{incident_type}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Location</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{incident_location}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Occurred</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{date incident_occurred_at \"%m/%d/%y %I:%M %p\" incident_timezone}}\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n              <!-- CTA Button -->\n              <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\">\n                <tr>\n                  <td style=\"border-radius:6px; background-color:#1e3a5f;\">\n                    <a href=\"{{incident_url}}\" target=\"_blank\" style=\"display:inline-block; padding:12px 24px; font-size:14px; font-weight:500; color:#ffffff; text-decoration:none;\">\n                      Review Incident\n                    </a>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Footer -->\n          <tr>\n            <td style=\"padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb;\">\n              <p style=\"margin:0; font-size:12px; color:#9ca3af; line-height:1.5;\">\n                This is an automated message from Current. Please do not reply.\n              </p>\n              <p style=\"margin:8px 0 0 0; font-size:11px; color:#9ca3af;\">\n                King County Library System\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+      "sample_data": {
+        "incident_id": "13579",
+        "incident_url": "https://current.example.org/incident-tracker/incidents/13579",
+        "incident_type": "Patron Behavior",
+        "source_user_name": "Jane Smith",
+        "incident_location": "Main Street Branch",
+        "incident_timezone": "America/Los_Angeles",
+        "incident_occurred_at": "2026-01-23T14:45:00-0800"
+      },
+      "is_active": true
+    },
+    {
+      "code": "incident-review-returned",
+      "name": "Incident Review Returned",
+      "description": "Notification when an incident has been returned for edits",
+      "subject_template": "Incident #{{incident_id}} has been returned",
+      "body_template": "Returned by {{source_user_name}}. Please review and resubmit.",
+      "body_template_html": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <title>Incident #{{incident_id}} has been returned</title>\n  <!--[if mso]>\n  <noscript>\n    <xml>\n      <o:OfficeDocumentSettings>\n        <o:PixelsPerInch>96</o:PixelsPerInch>\n      </o:OfficeDocumentSettings>\n    </xml>\n  </noscript>\n  <![endif]-->\n</head>\n<body style=\"margin:0; padding:0; background-color:#f5f5f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding:24px 16px;\">\n        <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:520px; background-color:#ffffff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);\">\n          <!-- Header -->\n          <tr>\n            <td style=\"padding:24px 32px 16px 32px; border-bottom:1px solid #e5e7eb;\">\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                <tr>\n                  <td>\n                    <span style=\"font-size:20px; font-weight:600; color:#1e3a5f; letter-spacing:-0.3px;\">Current</span>\n                    <span style=\"font-size:12px; color:#6b7280; margin-left:8px;\">by Odo Library System</span>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Content -->\n          <tr>\n            <td style=\"padding:24px 32px;\">\n              <h1 style=\"margin:0 0 20px 0; font-size:18px; font-weight:600; color:#111827; line-height:1.4;\">\n                Incident #{{incident_id}} has been returned\n              </h1>\n              <p style=\"margin:0 0 20px 0; font-size:14px; color:#4b5563; line-height:1.5;\">\n                Returned by <strong style=\"color:#111827;\">{{source_user_name}}</strong>. Please review the feedback and resubmit.\n              </p>\n              <!-- Info Card -->\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f9fafb; border-radius:6px; margin-bottom:24px;\">\n                <tr>\n                  <td style=\"padding:16px;\">\n                    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px;\">\n                          <span style=\"color:#6b7280;\">Type</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right;\">\n                          {{incident_type}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Location</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{incident_location}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Occurred</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{date incident_occurred_at \"%m/%d/%y %I:%M %p\" incident_timezone}}\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n              <!-- CTA Button -->\n              <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\">\n                <tr>\n                  <td style=\"border-radius:6px; background-color:#1e3a5f;\">\n                    <a href=\"{{incident_url}}\" target=\"_blank\" style=\"display:inline-block; padding:12px 24px; font-size:14px; font-weight:500; color:#ffffff; text-decoration:none;\">\n                      View Incident\n                    </a>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <!-- Footer -->\n          <tr>\n            <td style=\"padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb;\">\n              <p style=\"margin:0; font-size:12px; color:#9ca3af; line-height:1.5;\">\n                This is an automated message from Current. Please do not reply.\n              </p>\n              <p style=\"margin:8px 0 0 0; font-size:11px; color:#9ca3af;\">\n                King County Library System\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+      "sample_data": {
+        "incident_id": "13579",
+        "incident_url": "https://current.example.org/incident-tracker/incidents/13579",
+        "incident_type": "Patron Behavior",
+        "source_user_name": "Jane Smith",
+        "incident_location": "Main Street Branch",
+        "incident_timezone": "America/Los_Angeles",
+        "incident_occurred_at": "2026-01-23T14:45:00-0800"
+      },
+      "is_active": true
+    },
+    {
+      "code": "patron-ban-created",
+      "name": "Patron Ban Created",
+      "description": "Notification sent to region staff when a patron ban is created",
+      "subject_template": "New ban created at {{location_name}}",
+      "body_template": "A ban has been created at {{location_name}}.",
+      "body_template_html": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <title>New Patron Ban</title>\n  <!--[if mso]>\n  <noscript>\n    <xml>\n      <o:OfficeDocumentSettings>\n        <o:PixelsPerInch>96</o:PixelsPerInch>\n      </o:OfficeDocumentSettings>\n    </xml>\n  </noscript>\n  <![endif]-->\n</head>\n<body style=\"margin:0; padding:0; background-color:#f5f5f5; font-family:Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding:24px 16px;\">\n        <table role=\"presentation\" width=\"520\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:520px; background-color:#ffffff;\">\n          <tr>\n            <td style=\"padding:24px 32px 16px 32px; border-bottom:1px solid #e5e7eb;\">\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                <tr>\n                  <td>\n                    <span style=\"font-family:Segoe UI, Arial, sans-serif; font-size:20px; font-weight:600; color:#1e3a5f;\">Current</span>\n                    <span style=\"font-family:Segoe UI, Arial, sans-serif; font-size:12px; color:#6b7280; margin-left:8px;\">by Odo Library System</span>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:24px 32px;\">\n              <h1 style=\"margin:0 0 20px 0; font-family:Segoe UI, Arial, sans-serif; font-size:18px; font-weight:600; color:#111827; line-height:1.4;\">\n                New Patron Ban\n              </h1>\n              <p style=\"margin:0 0 20px 0; font-family:Segoe UI, Arial, sans-serif; font-size:14px; color:#4b5563; line-height:1.5;\">\n                A ban has been created at <strong style=\"color:#111827;\">{{location_name}}</strong>.\n              </p>\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f9fafb; margin-bottom:24px;\">\n                <tr>\n                  <td style=\"padding:16px;\">\n                    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px;\">\n                          <span style=\"color:#6b7280;\">Location</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right;\">\n                          {{location_name}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Duration</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{duration}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Start Date</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{date start_date \"%b %d, %Y\" timezone}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Lift Date</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{#if lift_date}}{{date lift_date \"%b %d, %Y\" timezone}}{{else}}Indefinite{{/if}}\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n              <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" style=\"margin:0 auto;\">\n                <tr>\n                  <td align=\"center\" bgcolor=\"#1e3a5f\" style=\"background-color:#1e3a5f; padding:12px 24px; border-radius:6px; -webkit-border-radius:6px; -moz-border-radius:6px;\">\n                    <a href=\"{{incident_url}}\" target=\"_blank\" style=\"font-family:Segoe UI, Arial, sans-serif; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none; display:inline-block; mso-line-height-rule:exactly; line-height:20px;\">\n                      <span style=\"color:#ffffff;\">View Incident</span>\n                    </a>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb;\">\n              <p style=\"margin:0; font-family:Segoe UI, Arial, sans-serif; font-size:12px; color:#9ca3af; line-height:1.5;\">\n                This is an automated message from Current. Please do not reply.\n              </p>\n              <p style=\"margin:8px 0 0 0; font-family:Segoe UI, Arial, sans-serif; font-size:11px; color:#9ca3af;\">\n                King County Library System\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+      "sample_data": {
+        "duration": "30 days",
+        "timezone": "America/Los_Angeles",
+        "lift_date": "2026-02-14T00:00:00-08:00",
+        "start_date": "2026-01-15T00:00:00-08:00",
+        "incident_url": "https://current.example.org/incident-tracker/incidents/456",
+        "location_name": "Main Street Branch"
+      },
+      "is_active": true
+    },
+    {
+      "code": "patron-trespass-created",
+      "name": "Patron Trespass Created",
+      "description": "Notification sent to region staff when a patron trespass is created",
+      "subject_template": "New trespass created at {{location_name}}",
+      "body_template": "A trespass has been created at {{location_name}}.",
+      "body_template_html": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <title>New Patron Trespass</title>\n  <!--[if mso]>\n  <noscript>\n    <xml>\n      <o:OfficeDocumentSettings>\n        <o:PixelsPerInch>96</o:PixelsPerInch>\n      </o:OfficeDocumentSettings>\n    </xml>\n  </noscript>\n  <![endif]-->\n</head>\n<body style=\"margin:0; padding:0; background-color:#f5f5f5; font-family:Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif;\">\n  <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding:24px 16px;\">\n        <table role=\"presentation\" width=\"520\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"max-width:520px; background-color:#ffffff;\">\n          <tr>\n            <td style=\"padding:24px 32px 16px 32px; border-bottom:1px solid #e5e7eb;\">\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                <tr>\n                  <td>\n                    <span style=\"font-family:Segoe UI, Arial, sans-serif; font-size:20px; font-weight:600; color:#1e3a5f;\">Current</span>\n                    <span style=\"font-family:Segoe UI, Arial, sans-serif; font-size:12px; color:#6b7280; margin-left:8px;\">by Odo Library System</span>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:24px 32px;\">\n              <h1 style=\"margin:0 0 20px 0; font-family:Segoe UI, Arial, sans-serif; font-size:18px; font-weight:600; color:#111827; line-height:1.4;\">\n                New Patron Trespass\n              </h1>\n              <p style=\"margin:0 0 20px 0; font-family:Segoe UI, Arial, sans-serif; font-size:14px; color:#4b5563; line-height:1.5;\">\n                A trespass has been created at <strong style=\"color:#111827;\">{{location_name}}</strong>.\n              </p>\n              <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"background-color:#f9fafb; margin-bottom:24px;\">\n                <tr>\n                  <td style=\"padding:16px;\">\n                    <table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px;\">\n                          <span style=\"color:#6b7280;\">Location</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right;\">\n                          {{location_name}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Duration</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{duration}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Start Date</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{date start_date \"%b %d, %Y\" timezone}}\n                        </td>\n                      </tr>\n                      <tr>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; border-top:1px solid #e5e7eb;\">\n                          <span style=\"color:#6b7280;\">Lift Date</span>\n                        </td>\n                        <td style=\"padding:6px 0; font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#111827; text-align:right; border-top:1px solid #e5e7eb;\">\n                          {{#if lift_date}}{{date lift_date \"%b %d, %Y\" timezone}}{{else}}Indefinite{{/if}}\n                        </td>\n                      </tr>\n                    </table>\n                  </td>\n                </tr>\n              </table>\n              <table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" align=\"center\" style=\"margin:0 auto;\">\n                <tr>\n                  <td align=\"center\" bgcolor=\"#1e3a5f\" style=\"background-color:#1e3a5f; padding:12px 24px; border-radius:6px; -webkit-border-radius:6px; -moz-border-radius:6px;\">\n                    <a href=\"{{incident_url}}\" target=\"_blank\" style=\"font-family:Segoe UI, Arial, sans-serif; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none; display:inline-block; mso-line-height-rule:exactly; line-height:20px;\">\n                      <span style=\"color:#ffffff;\">View Incident</span>\n                    </a>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:16px 32px 24px 32px; border-top:1px solid #e5e7eb;\">\n              <p style=\"margin:0; font-family:Segoe UI, Arial, sans-serif; font-size:12px; color:#9ca3af; line-height:1.5;\">\n                This is an automated message from Current. Please do not reply.\n              </p>\n              <p style=\"margin:8px 0 0 0; font-family:Segoe UI, Arial, sans-serif; font-size:11px; color:#9ca3af;\">\n                King County Library System\n              </p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>",
+      "sample_data": {
+        "duration": "30 days",
+        "timezone": "America/Los_Angeles",
+        "lift_date": null,
+        "start_date": "2026-01-15T00:00:00-08:00",
+        "incident_url": "https://current.example.org/incident-tracker/incidents/456",
+        "location_name": "Main Street Branch"
+      },
+      "is_active": true
+    }
+  ],
+  "asset_directories": [
+    {
+      "path": "current",
+      "read_perm": "odo.asset.current.read",
+      "write_perm": "odo.asset.current.write",
+      "description": "Active service assets (incident photos, videos, documents)"
+    },
+    {
+      "path": "current/patron",
+      "read_perm": "odo.asset.current.patron.read",
+      "write_perm": "odo.asset.current.patron.write",
+      "description": "Active patron photos"
+    },
+    {
+      "path": "current/photos",
+      "read_perm": "odo.asset.current.read",
+      "write_perm": "odo.asset.current.write",
+      "entity_type": "incident",
+      "category": "photo",
+      "description": "Incident photo uploads"
+    },
+    {
+      "path": "current/videos",
+      "read_perm": "odo.asset.current.read",
+      "write_perm": "odo.asset.current.write",
+      "entity_type": "incident",
+      "category": "video",
+      "description": "Incident video uploads"
+    },
+    {
+      "path": "current/documents",
+      "read_perm": "odo.asset.current.read",
+      "write_perm": "odo.asset.current.write",
+      "entity_type": "incident",
+      "description": "Incident uploads (catch-all category)"
+    },
+    {
+      "path": "current/patron/photos",
+      "read_perm": "odo.asset.current.patron.read",
+      "write_perm": "odo.asset.current.patron.write",
+      "entity_type": "patron",
+      "description": "Patron photo uploads"
+    }
+  ],
+  "saml_attr_role_maps": {
+    "_comment": "Applied to every active IdP that defines attr_key; installs without SSO (or without the attribute) skip these with a notice.",
+    "attr_key": "Title",
+    "maps": [
+      {
+        "role": "incident-staff",
+        "attr_value": "Assistant Operations Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Business Applications Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Community Conduct Coordinator",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Emerging Technology Administrator",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Librarian & Information Services Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Librarian - Public Services",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Library Page",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Library Regional Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Library Technical Assistant",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Operations Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Public Services Assistant",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Senior Organizational Project Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Software Development Engineer",
+        "is_active": true
+      },
+      {
+        "role": "incident-staff",
+        "attr_value": "Quality Assurance Analyst",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Assistant Operations Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Business Applications Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Community Conduct Coordinator",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Emerging Technology Administrator",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Librarian & Information Services Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Library Regional Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Operations Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Senior Organizational Project Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Software Development Engineer",
+        "is_active": true
+      },
+      {
+        "role": "incident-manager",
+        "attr_value": "Quality Assurance Analyst",
+        "is_active": true
+      },
+      {
+        "role": "incident-coordinator",
+        "attr_value": "Business Applications Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-coordinator",
+        "attr_value": "Community Conduct Coordinator",
+        "is_active": true
+      },
+      {
+        "role": "incident-coordinator",
+        "attr_value": "Emerging Technology Administrator",
+        "is_active": true
+      },
+      {
+        "role": "incident-coordinator",
+        "attr_value": "Senior Organizational Project Manager",
+        "is_active": true
+      },
+      {
+        "role": "incident-coordinator",
+        "attr_value": "Quality Assurance Analyst",
+        "is_active": true
+      }
+    ]
+  }
+}

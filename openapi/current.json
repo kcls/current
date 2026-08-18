@@ -1,0 +1,6343 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Current",
+    "description": "Incident tracking and management service",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/current/ban/activity": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "get_ban_activity",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBanActivityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Activity log for a ban (with attachments, links, and letter refs)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBanActivityResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/add-to": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "add_to_ban",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToBanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The activity_log row id; attachments and links are linked to it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddToBanResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/archive": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "archive_ban",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveBanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Archived ban row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveBanResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/create": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "create_ban",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Newly created ban; ban_letter_id set when caller passed letter content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBanResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/details": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "get_ban_details",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBanDetailsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ban with patron, org, creator, and generated letters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanDetailsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/edit": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "edit_ban",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditBanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated ban; ban_letter_id set when caller regenerated the letter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditBanResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/extend": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "extend_ban",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendBanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Extended ban + activity log id + optional letter id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtendBanResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/letter/create": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "create_ban_letter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBanLetterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created letter id + linked activity_log row id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBanLetterResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/letter/get": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "get_ban_letter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBanLetterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Letter content, or {letter: null} if no such letter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBanLetterResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/letter/template/list": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "list_ban_letter_templates",
+        "responses": {
+          "200": {
+            "description": "Ban letter templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBanLetterTemplatesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/list": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "list_bans",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListBansRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Bans matching the filters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBansResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/activity": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "get_activity",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetActivityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Activity log for an incident",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetActivityResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_incident",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Newly created incident's identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateIncidentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/get": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "get_incident",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incident detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/pending-reviews": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "get_pending_reviews",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPendingReviewsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incidents pending review for the current user (paged)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingReviewsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/review/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_incident_review",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded review with computed level and any auto-resolution side effects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/review/list": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "list_reviews",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListReviewsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Review history for an incident",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewHistoryItem"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/search": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "search_incidents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchIncidentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incident search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchIncidentsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/update": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "update_incident",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated incident row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateIncidentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/create": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "create_patron",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePatronRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Newly-created patron row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronDetailRow"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/delete": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "delete_patron",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePatronRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Patron soft-deleted; active bans lifted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePatronResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/details": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "get_patron_detail_summary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPatronDetailSummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Patron row + statistics + photos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronDetailSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/merge": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "patron_merge_execute",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatronMergeExecuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Merge result + counts of rows transferred from secondary to primary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronMergeExecuteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/merge/preview": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "patron_merge_preview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatronMergePreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Per-side counts + items + conflicts the UI uses to populate the merge wizard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronMergePreviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/photo/create": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "create_patron_photo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePatronPhotoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Newly-created patron_photo row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronPhotoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/photo/delete": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "delete_patron_photo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePatronPhotoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Deletes the patron_photo row and the underlying file_upload via odo-asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePatronPhotoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/photo/set-primary": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "set_primary_patron_photo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPrimaryPatronPhotoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The newly-primary photo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronPhotoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/search": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "patron_search",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatronSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Filtered + paginated patron rows with per-patron aggregates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronSearchResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/patron/update": {
+      "post": {
+        "tags": [
+          "patrons"
+        ],
+        "operationId": "update_patron",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePatronRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated patron row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatronDetailRow"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/bans-over-time": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "bans_over_time",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeSeriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Bans and trespasses issued (by created_at) per time bucket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BansOverTimeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/by-category": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "incidents_by_category",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFilter"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incidents per template category, honoring the status filter (distinct incidents; 'Uncategorized' when no template)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelCountsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/by-template": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "incidents_by_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFilter"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incidents per template, honoring the status filter; incidents with several templates count once per template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelCountsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/incidents-by-location": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "incidents_by_location",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFilter"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incidents per org unit, honoring the status filter, labeled via odo-org",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationCountsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/incidents-over-time": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "incidents_over_time",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeSeriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incidents opened (by occurred_at) and resolved (by resolved_at) per time bucket, zero-filled through the current bucket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentsOverTimeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/occurrence-heatmap": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "occurrence_heatmap",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFilter"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incident counts by day-of-week and hour-of-day of occurrence, computed in the org unit's local timezone; honors the status filter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OccurrenceHeatmapResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/open-by-review-status": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "open_by_review_status",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFilter"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Open incidents grouped by latest review result ('unsubmitted' when none yet); always open-only regardless of the status filter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelCountsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/resolution-time": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "resolution_time",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeSeriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Median days from occurrence to resolution per time bucket (bucketed by resolved_at); resolved-only by definition, so the status filter does not apply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolutionTimeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/summary": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "summary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Headline KPI counts for the dashboard stat tiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/reports/top-patrons": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "operationId": "top_patrons",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportFilter"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The five patrons involved in the most incidents, honoring the status filter (distinct incidents per patron)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopPatronsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/review-chain/has": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Check if a review chain exists",
+        "operationId": "has_review_chain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HasReviewChainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "True if a matching review chain exists",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/review-chain/list": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "List review chains",
+        "operationId": "list_review_chains",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListReviewChainsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Review chains with members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewChainResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/review-chain/save": {
+      "post": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Save a review chain",
+        "operationId": "save_review_chain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveReviewChainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Saved review chain",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveReviewChainResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/review-group/{id}": {
+      "get": {
+        "tags": [
+          "review"
+        ],
+        "summary": "Fetch a review group with members",
+        "operationId": "get_review_group",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Review Group ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review group with members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewGroupResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/sub-location/list": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "list_sub_locations",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListSubLocationsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Sub-locations for the org unit and its ancestors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubLocationResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/template/list": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "list_templates",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListTemplatesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incident templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActivityAttachment": {
+        "type": "object",
+        "description": "Attachment metadata as the UI consumes it (`@odo/core` FileUploadResponse\nshape: numeric file_upload id, original/relative path, derived category).",
+        "required": [
+          "id",
+          "original_name",
+          "relative_path",
+          "mime_type",
+          "category"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "\"photo\" | \"video\" | \"document\" — derived from mime_type."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The file's stable odo-asset uuid."
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "original_name": {
+            "type": "string"
+          },
+          "relative_path": {
+            "type": "string"
+          },
+          "size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ActivityExternalLink": {
+        "type": "object",
+        "required": [
+          "url",
+          "title"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ActivityLetter": {
+        "type": "object",
+        "required": [
+          "id",
+          "generated_at"
+        ],
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generated_by_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ActivityLogEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "event_type",
+          "actor_id",
+          "event_data",
+          "created_at"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event_data": {},
+          "event_type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "incident_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "AddToBanExternalLink": {
+        "type": "object",
+        "required": [
+          "url",
+          "title"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "AddToBanRequest": {
+        "type": "object",
+        "required": [
+          "ban_id"
+        ],
+        "properties": {
+          "attachment_file_upload_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Each id refers to a row already in `asset.file_upload` (the UI\nuploads through odo-asset first). Mirrors the contract on\n`patron.photo.create`."
+          },
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "At least one of comments / attachments / external_links must be\nprovided; a no-op note isn't useful and would just add audit noise."
+          },
+          "external_links": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AddToBanExternalLink"
+            }
+          }
+        }
+      },
+      "AddToBanResponse": {
+        "type": "object",
+        "required": [
+          "activity_log_id"
+        ],
+        "properties": {
+          "activity_log_id": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ArchiveBanRequest": {
+        "type": "object",
+        "required": [
+          "ban_id"
+        ],
+        "properties": {
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ArchiveBanResponse": {
+        "type": "object",
+        "required": [
+          "patron_ban"
+        ],
+        "properties": {
+          "patron_ban": {
+            "$ref": "#/components/schemas/PatronBanResponse"
+          }
+        }
+      },
+      "AttachmentResponse": {
+        "type": "object",
+        "description": "Shape the UI renders for an attachment (form-side AND incident-detail).\nPulled from `asset.file_upload` via `state.asset_client.get_files` on\nread; never written by `current` directly (the UI uploads through\nodo-asset before calling create / update).",
+        "required": [
+          "id",
+          "original_name",
+          "relative_path",
+          "category"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Echoed back to keep the UI's existing\n`attachments.filter(a => a.category === 'photo')` rendering paths\nunchanged. Derived from `mime_type`."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The file's stable odo-asset uuid (matches the ids the client sends\nin `attachment_file_upload_ids` / `remove_attachment_ids`)."
+          },
+          "mime_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "MIME type echoed back so the UI can pick the right renderer.\nThe category is derived from this prefix (image/* → photo, etc.)."
+          },
+          "original_name": {
+            "type": "string",
+            "description": "Original filename the user picked, suitable for display."
+          },
+          "relative_path": {
+            "type": "string"
+          },
+          "size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "BanActivityLogEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "event_type",
+          "actor_id",
+          "event_data",
+          "created_at",
+          "attachments",
+          "external_links"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityAttachment"
+            }
+          },
+          "ban_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event_data": {},
+          "event_type": {
+            "type": "string"
+          },
+          "external_links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityExternalLink"
+            }
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "incident_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "letter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ActivityLetter"
+              }
+            ]
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BanDetailRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "patron",
+          "incident",
+          "org_unit",
+          "is_trespass",
+          "starts_at",
+          "lifts_at",
+          "created_at",
+          "created_by",
+          "updated_at"
+        ],
+        "properties": {
+          "archived_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "archives_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_by_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "lifted_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "lifts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "patron_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BanDetailsResponse": {
+        "type": "object",
+        "required": [
+          "ban",
+          "letters"
+        ],
+        "properties": {
+          "ban": {
+            "$ref": "#/components/schemas/BanDetailRow"
+          },
+          "letters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BanLetterDetailRow"
+            }
+          }
+        }
+      },
+      "BanLetterContent": {
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "org_unit"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Org unit of the parent ban (handy for clients that want to scope\nfurther actions against the letter without a second round-trip)."
+          }
+        }
+      },
+      "BanLetterDetailRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "ban",
+          "generated_by",
+          "generated_at"
+        ],
+        "properties": {
+          "activity_log_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "ban": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generated_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generated_by_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generated_by_org": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "generated_by_org_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "template": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "template_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "BanLetterTemplateResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "body",
+          "is_default",
+          "is_trespass",
+          "operation_type",
+          "created_by",
+          "created_at",
+          "updated_by",
+          "updated_at"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "operation_type": {
+            "type": "string"
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "BanListRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "patron",
+          "incident",
+          "org_unit",
+          "is_trespass",
+          "starts_at",
+          "lifts_at",
+          "created_at",
+          "updated_at",
+          "created_by",
+          "updated_by",
+          "patron_id",
+          "has_ban_letter"
+        ],
+        "properties": {
+          "archived_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "archives_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "has_ban_letter": {
+            "type": "boolean",
+            "description": "True if at least one row exists in `generated_ban_letter` for\nthis ban — UI uses this to toggle \"view letter\" affordances."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "lifts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "patron_id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Alias of `patron` (the UI's `getPatronBans` consumers read this)."
+          },
+          "patron_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "BansOverTimeResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BansOverTimeRow"
+            }
+          }
+        }
+      },
+      "BansOverTimeRow": {
+        "type": "object",
+        "required": [
+          "bucket",
+          "bans",
+          "trespasses"
+        ],
+        "properties": {
+          "bans": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "bucket": {
+            "type": "string",
+            "description": "Bucket start date (YYYY-MM-DD)."
+          },
+          "trespasses": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CreateBanLetterRequest": {
+        "type": "object",
+        "required": [
+          "ban_id",
+          "content"
+        ],
+        "properties": {
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "generated_by_org": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "incident": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "law_enforcement_agency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "template": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "CreateBanLetterResponse": {
+        "type": "object",
+        "required": [
+          "letter_id",
+          "activity_log_id"
+        ],
+        "properties": {
+          "activity_log_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "letter_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CreateBanRequest": {
+        "type": "object",
+        "required": [
+          "patron",
+          "incident",
+          "org_unit"
+        ],
+        "properties": {
+          "archives_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ban_letter_content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ban_letter_template": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "If both `ban_letter_template` and `ban_letter_content` are set,\na `generated_ban_letter` row is created in the same transaction\nand surfaced via the response's `ban_letter_id`."
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stored in the `ban.created` activity_log event_data, not on the\npatron_ban row. Read back via the activity feed."
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_trespass": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "law_enforcement_agency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lifts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "starts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "All ISO-8601 timestamps with offset. Omitted dates default per\nthe constants above (lifts_at = now + 30d; archives_at = lifts_at\n+ 30d for bans, never auto-archives for trespasses)."
+          }
+        }
+      },
+      "CreateBanResponse": {
+        "type": "object",
+        "required": [
+          "patron_ban"
+        ],
+        "properties": {
+          "ban_letter_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "id of the `generated_ban_letter` row that was created alongside\nthe ban, if the caller passed `ban_letter_content`. None otherwise."
+          },
+          "patron_ban": {
+            "$ref": "#/components/schemas/PatronBanResponse"
+          }
+        }
+      },
+      "CreateExternalLink": {
+        "type": "object",
+        "required": [
+          "url",
+          "title"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link_type": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateIncidentRequest": {
+        "type": "object",
+        "required": [
+          "org_unit",
+          "title",
+          "description"
+        ],
+        "properties": {
+          "attachment_file_upload_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "File-upload row ids the UI has already created via\n`POST /api/v1/odo/asset/upload`. Each id becomes one\n`incidents.attachments` join row pointing back at the file.\nEmpty / omitted = no attachments. The legacy contract embedded\nfull file metadata under `metadata.attachments`; that path\ndouble-wrote the file row and is gone."
+          },
+          "called_emergency": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "involved_parties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateInvolvedParty"
+            }
+          },
+          "metadata": {
+            "description": "Free-form metadata. One nested key is extracted out and handled\nspecially:\n  - `external_links`: Vec<CreateExternalLink> — written to\n    incidents.external_link (and removed from the metadata that's\n    persisted on the incident row itself).\n\n`pending_bans` / `pending_extends` are also read from metadata\nand handled by `bans::apply_pending_bans` — they're not stripped\n(so the original intent survives in the persisted blob for\naudit) but they do not affect the row otherwise.\n\nThe UI sometimes double-stringifies this (sends `metadata: \"{...}\"`\ninstead of `metadata: {...}`). We try the object form first and fall\nback to parsing a JSON string."
+          },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sub_location": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "template_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateIncidentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "occurred_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_ban_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "ids of bans created via `metadata.pending_bans[]`. Empty when\nthe form didn't toggle any inline bans. Best-effort: bad\nentries are skipped with a warn-log, not surfaced as errors."
+          },
+          "extended_ban_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "ids of bans extended via `metadata.pending_extends[]`. Same\nbest-effort semantics as `created_ban_ids`."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateInvolvedParty": {
+        "type": "object",
+        "required": [
+          "party_type"
+        ],
+        "properties": {
+          "external_contact": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "external_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_unknown_patron": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "party_type": {
+            "type": "string"
+          },
+          "patron_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "staff_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "CreatePatronPhotoRequest": {
+        "type": "object",
+        "required": [
+          "patron_id",
+          "file_upload_id"
+        ],
+        "properties": {
+          "file_upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "id of the row in `asset.file_upload` that the UI already\nuploaded via odo-asset's `/upload` endpoint. We trust the id\nexists; bad ids fail the FK constraint with a 4xx."
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "patron_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CreatePatronRequest": {
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name"
+        ],
+        "properties": {
+          "age_range": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": "string",
+            "description": "Patrons created on the fly may carry minimal info (e.g. just a\nfirst name during incident capture), so most fields are optional."
+          },
+          "is_unknown": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateReviewRequest": {
+        "type": "object",
+        "required": [
+          "incident",
+          "result"
+        ],
+        "properties": {
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "result": {
+            "type": "string",
+            "description": "Wire-format string: \"submitted\" | \"approved\" | \"approved-with-edits\"\n| \"returned\" | \"deleted\" | \"resolved\" | \"reopened\"."
+          }
+        }
+      },
+      "CreateReviewResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "incident",
+          "reviewed_by",
+          "reviewed_at",
+          "result",
+          "min_review_level",
+          "was_auto_resolved"
+        ],
+        "properties": {
+          "auto_resolved_review_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "ID of the synthetic `resolved` review row written by the\nauto-resolution path, if any."
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "ID of the primary review row that was just inserted. Auto-\nresolution may also have inserted a second `resolved` row; its ID\nis in `auto_resolved_review_id` when present."
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "min_review_level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "result": {
+            "type": "string",
+            "description": "Wire-format string of the recorded review result."
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewed_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "was_auto_resolved": {
+            "type": "boolean",
+            "description": "True when this action implicitly resolved the incident because\nthe actor was the final reviewer and the action was a progressing\none (submit/approve/approve-with-edits)."
+          }
+        }
+      },
+      "DeletePatronPhotoRequest": {
+        "type": "object",
+        "required": [
+          "photo_id"
+        ],
+        "properties": {
+          "photo_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeletePatronPhotoResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "photo_id",
+          "file_upload_id",
+          "file_removed"
+        ],
+        "properties": {
+          "file_removed": {
+            "type": "boolean",
+            "description": "True when the on-disk file was actually unlinked. The DB row\nfor the upload is marked deleted either way."
+          },
+          "file_upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "id of the underlying `asset.file_upload` row that was\nsoft-deleted via odo-asset. Returned so the UI can correlate."
+          },
+          "photo_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DeletePatronRequest": {
+        "type": "object",
+        "required": [
+          "patron_id"
+        ],
+        "properties": {
+          "patron_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeletePatronResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "patron_id",
+          "bans_lifted"
+        ],
+        "properties": {
+          "bans_lifted": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Count of active bans that were lifted as part of the deletion."
+          },
+          "patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EditBanRequest": {
+        "type": "object",
+        "required": [
+          "ban_id"
+        ],
+        "properties": {
+          "archived_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Allows manually marking a ban archived via this endpoint.\n`archive_ban` is the preferred path; this exists for the rare\nedit-and-archive-in-one-call flow."
+          },
+          "archives_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ban_letter_content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ban_letter_template": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Same letter-attach flow as create. Triggers\n`ban.letter_regenerated` rather than `ban.letter_generated`."
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stored in the `ban.updated` event_data when changed. We compare\nagainst the most recent value of the same key in the ban's\nactivity feed (case_number / law_enforcement_agency don't live\non the patron_ban row)."
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_trespass": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "law_enforcement_agency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lifts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "starts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "EditBanResponse": {
+        "type": "object",
+        "required": [
+          "patron_ban"
+        ],
+        "properties": {
+          "ban_letter_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "patron_ban": {
+            "$ref": "#/components/schemas/PatronBanResponse"
+          }
+        }
+      },
+      "ExtendBanRequest": {
+        "type": "object",
+        "required": [
+          "ban_id",
+          "lifts_at"
+        ],
+        "properties": {
+          "archives_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ban_letter_content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ban_letter_template": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generated_by_org": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Org that issued the letter; usually equals the ban's org_unit\nbut the legacy lets the caller distinguish so we do too."
+          },
+          "incident": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Optionally associates the extension with an incident — usually\nthe incident that prompted the extension. Persisted in the\nactivity log row and on any generated letter."
+          },
+          "law_enforcement_agency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lifts_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "New end date. Required — extend without a target is meaningless."
+          },
+          "starts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ExtendBanResponse": {
+        "type": "object",
+        "required": [
+          "patron_ban",
+          "activity_log_id"
+        ],
+        "properties": {
+          "activity_log_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "letter_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "patron_ban": {
+            "$ref": "#/components/schemas/PatronBanResponse"
+          }
+        }
+      },
+      "ExternalLinkResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "title",
+          "restricted_access",
+          "added_at"
+        ],
+        "properties": {
+          "added_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "added_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "link_type": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "link_type_description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link_type_display_order": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "link_type_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "restricted_access": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "GetActivityRequest": {
+        "type": "object",
+        "required": [
+          "incident_id"
+        ],
+        "properties": {
+          "incident_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GetActivityResponse": {
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityLogEntry"
+            }
+          }
+        }
+      },
+      "GetBanActivityRequest": {
+        "type": "object",
+        "required": [
+          "ban_id"
+        ],
+        "properties": {
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GetBanActivityResponse": {
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BanActivityLogEntry"
+            }
+          }
+        }
+      },
+      "GetBanDetailsRequest": {
+        "type": "object",
+        "required": [
+          "ban_id"
+        ],
+        "properties": {
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GetBanLetterRequest": {
+        "type": "object",
+        "required": [
+          "letter_id"
+        ],
+        "properties": {
+          "letter_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GetBanLetterResponse": {
+        "type": "object",
+        "properties": {
+          "letter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BanLetterContent",
+                "description": "Null when no letter with the given id exists."
+              }
+            ]
+          }
+        }
+      },
+      "GetIncidentRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "options": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IncidentGetOptions"
+              }
+            ]
+          }
+        }
+      },
+      "GetPatronDetailSummaryRequest": {
+        "type": "object",
+        "required": [
+          "patron_id"
+        ],
+        "properties": {
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Optional org_unit to scope statistics to that org unit and its\ndescendants. When None, stats span the entire tree."
+          },
+          "patron_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "GetPendingReviewsRequest": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingReviewsCursor",
+                "description": "Cursor from a prior call's response (`next_cursor`). Resumes\nthe keyset-paged scan right after the last incident examined\n(not the last incident *returned*). Omit to start from the\noldest open incident."
+              }
+            ]
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Cap on the number of visible rows returned in this page.\nDefaults to `DEFAULT_PAGE_LIMIT` and is clamped to `MAX_PAGE_LIMIT`.\nThe inner DB scan may examine more rows than this — the cap\nonly controls the visible-row count in the response.",
+            "minimum": 0
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Org unit to scope the search (descendants included). Defaults to\nthe root org unit when omitted (resolved via odo-org)."
+          }
+        }
+      },
+      "HasReviewChainRequest": {
+        "type": "object",
+        "properties": {
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "HeatmapCell": {
+        "type": "object",
+        "required": [
+          "day",
+          "hour",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "day": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Day of week, 0 = Sunday … 6 = Saturday, in the report timezone.",
+            "minimum": 0
+          },
+          "hour": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hour of day, 0-23, in the report timezone.",
+            "minimum": 0
+          }
+        }
+      },
+      "IncidentGetOptions": {
+        "type": "object",
+        "properties": {
+          "with_attachments": {
+            "type": "boolean"
+          },
+          "with_external_links": {
+            "type": "boolean"
+          },
+          "with_involved_parties": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IncidentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_unit",
+          "title",
+          "created_by",
+          "occurred_at",
+          "template_ids",
+          "creator_level",
+          "user_review_level",
+          "is_final_review",
+          "can_review"
+        ],
+        "properties": {
+          "ai_analysis": {},
+          "attachments": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AttachmentResponse"
+            },
+            "description": "Attachments bound to this incident, decorated with file\nmetadata fetched from odo-asset. Returned when\n`options.with_attachments = true`. None means the caller didn't\nask, not that there are no attachments."
+          },
+          "called_emergency": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "can_review": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_by_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creator_level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "custom_fields": {},
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "emergency_capture": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "external_links": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ExternalLinkResponse"
+            }
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "involved_parties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/InvolvedPartyResponse"
+            }
+          },
+          "is_final_review": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {},
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_address_line1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "org_address_line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "org_city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "org_postal_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "org_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "resolved_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "sub_location": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "sub_location_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "template_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "user_review_level": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "IncidentSearchOptions": {
+        "type": "object",
+        "properties": {
+          "with_involved_parties": {
+            "type": "boolean"
+          }
+        }
+      },
+      "IncidentSearchRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "org_unit",
+          "occurred_at",
+          "created_by"
+        ],
+        "properties": {
+          "called_emergency": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_by_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "involved_parties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/InvolvedPartyResponse"
+            }
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "IncidentsOverTimeResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncidentsOverTimeRow"
+            }
+          }
+        }
+      },
+      "IncidentsOverTimeRow": {
+        "type": "object",
+        "required": [
+          "bucket",
+          "opened",
+          "resolved"
+        ],
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "Bucket start date (YYYY-MM-DD)."
+          },
+          "opened": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resolved": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "InvolvedPartyResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "party_type"
+        ],
+        "properties": {
+          "external_contact": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "external_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Populated for `party_type = \"external\"` rows (the schema's check\nconstraint requires it). The legacy read path silently dropped this\n— the UI's external-party display logic was relying on a field\nthe server never sent."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_unknown_patron": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "party_type": {
+            "type": "string"
+          },
+          "patron_display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "staff_display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "staff_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "LabelCountRow": {
+        "type": "object",
+        "required": [
+          "label",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "LabelCountsResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LabelCountRow"
+            }
+          }
+        }
+      },
+      "ListBanLetterTemplatesResponse": {
+        "type": "object",
+        "required": [
+          "templates"
+        ],
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BanLetterTemplateResponse"
+            }
+          }
+        }
+      },
+      "ListBansRequest": {
+        "type": "object",
+        "properties": {
+          "incident_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "include_archived": {
+            "type": "boolean",
+            "description": "When false (default), filter out archived bans. Trespasses are\nconsidered archived once `archived_by` is set; non-trespass bans\nare considered archived once their `archives_at` is reached."
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Scope bans to this org unit and its descendants. Trespasses are\nalways visible regardless of org_unit (cross-location semantics)."
+          },
+          "patron_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ListBansResponse": {
+        "type": "object",
+        "required": [
+          "bans"
+        ],
+        "properties": {
+          "bans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BanListRow"
+            }
+          }
+        }
+      },
+      "ListReviewChainsRequest": {
+        "type": "object",
+        "required": [
+          "org_unit"
+        ],
+        "properties": {
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ListReviewsRequest": {
+        "type": "object",
+        "required": [
+          "incident"
+        ],
+        "properties": {
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ListSubLocationsRequest": {
+        "type": "object",
+        "properties": {
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ListTemplatesRequest": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "is_active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "LocationCountRow": {
+        "type": "object",
+        "required": [
+          "org_unit",
+          "label",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "label": {
+            "type": "string"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "LocationCountsResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocationCountRow"
+            }
+          }
+        }
+      },
+      "MergeBanResolution": {
+        "type": "object",
+        "required": [
+          "primary_ban_id",
+          "secondary_ban_id",
+          "resolution"
+        ],
+        "properties": {
+          "primary_ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "\"primary\" keeps the primary's ban and lifts the secondary's;\n\"secondary\" the reverse. Anything else is ignored."
+          },
+          "secondary_ban_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MergeDataSummary": {
+        "type": "object",
+        "required": [
+          "incidents",
+          "photos",
+          "bans",
+          "trespasses",
+          "notes",
+          "timeline_events"
+        ],
+        "properties": {
+          "bans": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "incidents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "notes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "photos": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timeline_events": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "trespasses": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "MergeDataTransferred": {
+        "type": "object",
+        "required": [
+          "incidents",
+          "photos",
+          "bans",
+          "notes"
+        ],
+        "properties": {
+          "bans": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "incidents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "notes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "photos": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "MergeFieldResolution": {
+        "type": "object",
+        "required": [
+          "resolution"
+        ],
+        "properties": {
+          "custom_value": {
+            "description": "Only used when `resolution = \"custom\"`. Free-form JSON to\nmatch the legacy contract."
+          },
+          "field": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Which patron field this resolution applies to. Empty for\nnon-field conflict kinds (e.g. photo)."
+          },
+          "resolution": {
+            "type": "string",
+            "description": "\"primary\" (keep the primary patron's value), \"secondary\" (copy\nfrom secondary), or \"custom\" (use `custom_value`)."
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Conflict kind, e.g. \"field_conflict\" / \"primary_photo\". The\nhandler dispatches on `field` for field_conflict resolutions;\n`type` is kept for forward-compatibility with future\nconflict kinds and matches the UI's wire shape."
+          }
+        }
+      },
+      "MergePreviewBan": {
+        "type": "object",
+        "required": [
+          "id",
+          "is_trespass",
+          "starts_at",
+          "org_unit"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "incident_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "lifts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MergePreviewIncident": {
+        "type": "object",
+        "required": [
+          "incident_id",
+          "title",
+          "occurred_at",
+          "org_unit"
+        ],
+        "properties": {
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "incident_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "MergePreviewItems": {
+        "type": "object",
+        "required": [
+          "incidents",
+          "photos",
+          "bans"
+        ],
+        "properties": {
+          "bans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergePreviewBan"
+            }
+          },
+          "incidents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergePreviewIncident"
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergePreviewPhoto"
+            }
+          }
+        }
+      },
+      "MergePreviewPhoto": {
+        "type": "object",
+        "required": [
+          "id",
+          "is_primary"
+        ],
+        "properties": {
+          "file_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_primary": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MergeTrespassResolution": {
+        "type": "object",
+        "required": [
+          "resolution"
+        ],
+        "properties": {
+          "lift_ban_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "IDs of trespass ban rows to lift as part of the merge."
+          },
+          "resolution": {
+            "type": "string",
+            "description": "\"primary\" or \"secondary\"; informational only — the actual\ntrespasses to lift are listed in `lift_ban_ids`."
+          }
+        }
+      },
+      "OccurrenceHeatmapResponse": {
+        "type": "object",
+        "required": [
+          "timezone",
+          "cells"
+        ],
+        "properties": {
+          "cells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeatmapCell"
+            },
+            "description": "Sparse: only cells with a non-zero count."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "IANA timezone the day/hour cells were computed in — the selected\norg unit's timezone (or the root's when unscoped)."
+          }
+        }
+      },
+      "PatronBanResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "patron",
+          "incident",
+          "org_unit",
+          "is_trespass",
+          "starts_at",
+          "lifts_at",
+          "created_by",
+          "created_at",
+          "updated_by",
+          "updated_at"
+        ],
+        "properties": {
+          "archived_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "archives_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "lifted_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "lifts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "PatronCountRow": {
+        "type": "object",
+        "required": [
+          "patron",
+          "label",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "label": {
+            "type": "string"
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PatronDetailRow": {
+        "type": "object",
+        "description": "Wire shape mirrors the patrons table row plus a derived `age_range_label`.\nWe don't pin every field to a typed struct because the UI's\n`transformToPatronDetails` reads a wide set of columns and treats the\n`patron` field as opaque; passing the row through preserves forward-\ncompatibility with schema additions.",
+        "required": [
+          "id",
+          "first_name",
+          "last_name",
+          "display_name",
+          "is_unknown",
+          "age_range"
+        ],
+        "properties": {
+          "address_line1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address_line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "age_range": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "age_range_label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Resolved label for `age_range` (from `incidents.patron_age_range`)."
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "identification_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "identification_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_unknown": {
+            "type": "boolean"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "library_card": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {},
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postal_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "preferred_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "risk_level": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state_province": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "PatronDetailSummaryResponse": {
+        "type": "object",
+        "required": [
+          "patron",
+          "statistics",
+          "photos"
+        ],
+        "properties": {
+          "patron": {
+            "$ref": "#/components/schemas/PatronDetailRow"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PatronPhotoEntry"
+            }
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/PatronStatistics"
+          }
+        }
+      },
+      "PatronMergeExecuteRequest": {
+        "type": "object",
+        "required": [
+          "primary_patron_id",
+          "secondary_patron_id"
+        ],
+        "properties": {
+          "ban_resolutions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergeBanResolution"
+            }
+          },
+          "conflict_resolutions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergeFieldResolution"
+            }
+          },
+          "primary_patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "secondary_patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trespass_resolutions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergeTrespassResolution"
+            }
+          }
+        }
+      },
+      "PatronMergeExecuteResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "merged_patron_id",
+          "deleted_patron_id",
+          "data_transferred"
+        ],
+        "properties": {
+          "data_transferred": {
+            "$ref": "#/components/schemas/MergeDataTransferred"
+          },
+          "deleted_patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "merged_patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PatronMergePreviewRequest": {
+        "type": "object",
+        "required": [
+          "primary_patron_id",
+          "secondary_patron_id"
+        ],
+        "properties": {
+          "primary_patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "secondary_patron_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PatronMergePreviewResponse": {
+        "type": "object",
+        "required": [
+          "primary_patron",
+          "secondary_patron",
+          "primary_data_summary",
+          "secondary_data_summary",
+          "merged_data_summary",
+          "primary_items",
+          "secondary_items",
+          "conflicts",
+          "same_incident_conflicts",
+          "ban_conflicts",
+          "trespass_conflicts",
+          "can_resolve_ban_conflicts",
+          "can_resolve_trespass_conflicts",
+          "warnings"
+        ],
+        "properties": {
+          "ban_conflicts": {
+            "type": "array",
+            "items": {}
+          },
+          "can_resolve_ban_conflicts": {
+            "type": "boolean"
+          },
+          "can_resolve_trespass_conflicts": {
+            "type": "boolean"
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {}
+          },
+          "merged_data_summary": {
+            "$ref": "#/components/schemas/MergeDataSummary"
+          },
+          "photo_conflict": {},
+          "primary_data_summary": {
+            "$ref": "#/components/schemas/MergeDataSummary"
+          },
+          "primary_items": {
+            "$ref": "#/components/schemas/MergePreviewItems"
+          },
+          "primary_patron": {},
+          "same_incident_conflicts": {
+            "type": "array",
+            "items": {}
+          },
+          "secondary_data_summary": {
+            "$ref": "#/components/schemas/MergeDataSummary"
+          },
+          "secondary_items": {
+            "$ref": "#/components/schemas/MergePreviewItems"
+          },
+          "secondary_patron": {},
+          "trespass_conflicts": {
+            "type": "array",
+            "items": {}
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PatronPhotoEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "patron",
+          "file_upload",
+          "is_primary"
+        ],
+        "properties": {
+          "file_upload": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "file_upload_data": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PatronPhotoFileUpload"
+              }
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PatronPhotoFileUpload": {
+        "type": "object",
+        "required": [
+          "id",
+          "file_name",
+          "relative_path"
+        ],
+        "properties": {
+          "file_name": {
+            "type": "string"
+          },
+          "file_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "file_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The file's stable odo-asset uuid."
+          },
+          "relative_path": {
+            "type": "string"
+          }
+        }
+      },
+      "PatronPhotoResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "patron",
+          "file_upload",
+          "is_primary"
+        ],
+        "properties": {
+          "file_upload": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PatronSearchRequest": {
+        "type": "object",
+        "properties": {
+          "has_active_bans": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Only return patrons with at least one active non-trespass ban\n(in scope, when `org_unit` is set; anywhere otherwise)."
+          },
+          "has_visible_trespass": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Only return patrons with at least one visible trespass.\nTrespasses are cross-location, so this gate ignores `org_unit`."
+          },
+          "is_unknown": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Exact-match on the patron's is_unknown flag. Omit for both."
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Org unit to scope incident / ban joins to. Expanded to\ndescendants via `OrgServiceClient`. Omit to search across all\norgs."
+          },
+          "query": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Free-text search across first/last/alias/library_card/email.\nWhitespace-split into terms; per-term hits are OR'd across\nthe fields, and terms are AND'd together."
+          },
+          "sort_dir": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "\"asc\" (default) or \"desc\". Drives the MIN/MAX choice on the\nsort aggregate and the ORDER BY direction."
+          },
+          "sort_incident_date": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Sort by aggregated incident date (MIN/MAX(occurred_at)).\nMutually exclusive with `sort_lift_date`; lift_date wins."
+          },
+          "sort_lift_date": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Sort by ban / trespass lift date. Ascending picks the soonest\nto expire; descending picks the furthest out."
+          }
+        }
+      },
+      "PatronSearchResponse": {
+        "type": "object",
+        "required": [
+          "patrons",
+          "total_count"
+        ],
+        "properties": {
+          "patrons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PatronSearchRow"
+            }
+          },
+          "total_count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PatronSearchRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "first_name",
+          "last_name",
+          "display_name",
+          "is_unknown",
+          "incident_count",
+          "active_ban_count",
+          "active_trespass_count"
+        ],
+        "properties": {
+          "active_ban_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Same shape for active non-trespass bans."
+          },
+          "active_trespass_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cross-location trespass count. Not org-scoped."
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ban_location_names": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Comma-separated distinct org labels for active-ban orgs."
+          },
+          "ban_max_lifts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Sort-aware MIN/MAX of visible non-trespass ban `lifts_at`."
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SUM of per-(patron, org) incident counts (scoped to descendants\nwhen `org_unit` is set; over all orgs otherwise)."
+          },
+          "incident_org_unit_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Org of the \"representative\" incident for display. Picked as the\n(patron, org_unit) row with the latest incident date — same\napproximation the legacy made."
+          },
+          "incident_org_unit_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_unknown": {
+            "type": "boolean"
+          },
+          "last_incident_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "MAX(occurred_at) over scoped incidents in default sort mode.\nSwapped for the sort-aware aggregate when `sort_incident_date`."
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "library_card": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "primary_photo_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Primary photo's `relative_path` — null when the patron has no\nprimary photo. Sourced from the view's join through\n`asset.file_upload`."
+          },
+          "risk_level": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_incident_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Sort-aware MIN/MAX of scoped incident dates when\n`sort_incident_date = true`."
+          },
+          "trespass_max_lifts_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Sort-aware MIN/MAX of visible trespass `lifts_at`."
+          }
+        }
+      },
+      "PatronStatistics": {
+        "type": "object",
+        "required": [
+          "active_bans_count",
+          "active_ban_only_count",
+          "active_trespass_count",
+          "visible_bans_count",
+          "total_incidents_count"
+        ],
+        "properties": {
+          "active_ban_only_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Only non-trespass active bans."
+          },
+          "active_bans_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "All active bans + trespasses combined."
+          },
+          "active_trespass_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Only active trespasses."
+          },
+          "total_incidents_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Distinct incidents this patron is involved in."
+          },
+          "visible_bans_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Visible (unarchived) bans — includes future-archived rows."
+          }
+        }
+      },
+      "PendingReviewRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "org_unit",
+          "created_by",
+          "occurred_at",
+          "current_review_level",
+          "creator_level",
+          "user_review_level",
+          "is_creator",
+          "can_review",
+          "can_resubmit"
+        ],
+        "properties": {
+          "can_resubmit": {
+            "type": "boolean"
+          },
+          "can_review": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_by_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_by_username": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creator_level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "current_review_level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_creator": {
+            "type": "boolean"
+          },
+          "latest_review_result": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "user_review_level": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PendingReviewsCursor": {
+        "type": "object",
+        "description": "Keyset cursor for `get_pending_reviews`. Pair `(created_at, id)`\nuniquely orders the open-incident set under\n`ORDER BY created_at ASC, id ASC` — perfect for stable pagination\nwithout offsets.",
+        "required": [
+          "created_at",
+          "id"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PendingReviewsResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "next_cursor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PendingReviewsCursor",
+                "description": "Pass back unchanged on the next request to resume. `None` when\nthe inner DB scan reached the end of the open-incident set."
+              }
+            ]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingReviewRow"
+            }
+          }
+        }
+      },
+      "ReportBucket": {
+        "type": "string",
+        "description": "Time-bucket size for the over-time reports. The UI picks day for short\nranges and month for long ones. Buckets are UTC calendar units.",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ]
+      },
+      "ReportFilter": {
+        "type": "object",
+        "properties": {
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "start": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusFilter"
+          }
+        }
+      },
+      "ResolutionTimeResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolutionTimeRow"
+            }
+          }
+        }
+      },
+      "ResolutionTimeRow": {
+        "type": "object",
+        "required": [
+          "bucket",
+          "resolved"
+        ],
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "Bucket start date (YYYY-MM-DD), bucketed by resolved_at."
+          },
+          "median_days": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Median days from occurred_at to resolved_at across them; None for\nbuckets where nothing was resolved."
+          },
+          "resolved": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Incidents resolved in this bucket."
+          }
+        }
+      },
+      "ReviewChainResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_unit",
+          "review_level",
+          "reviewer_group",
+          "is_final",
+          "require_peer_review",
+          "created_at",
+          "updated_at",
+          "reviewer_ids",
+          "reviewer_names"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_final": {
+            "type": "boolean"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "require_peer_review": {
+            "type": "boolean"
+          },
+          "review_level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reviewer_group": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reviewer_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "reviewer_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReviewGroupMemberResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "review_group",
+          "usr",
+          "created_at",
+          "usr_display_name"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "review_group": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usr": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usr_display_name": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewGroupResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_unit",
+          "created_at",
+          "updated_at",
+          "members"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewGroupMemberResponse"
+            }
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReviewHistoryItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "incident",
+          "reviewed_by",
+          "reviewer_name",
+          "result",
+          "min_review_level",
+          "reviewed_at"
+        ],
+        "properties": {
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incident": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "min_review_level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "result": {
+            "type": "string",
+            "description": "Wire string matching the DB enum value (e.g. \"submitted\", \"approved-with-edits\")."
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewed_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewer_name": {
+            "type": "string"
+          }
+        }
+      },
+      "SaveReviewChainLevel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "members": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SaveReviewChainMember"
+            }
+          },
+          "require_peer_review": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "reviewer_group": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "SaveReviewChainMember": {
+        "type": "object",
+        "required": [
+          "usr"
+        ],
+        "properties": {
+          "usr": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SaveReviewChainRequest": {
+        "type": "object",
+        "required": [
+          "org_unit",
+          "levels"
+        ],
+        "properties": {
+          "levels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SaveReviewChainLevel"
+            }
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SaveReviewChainResponse": {
+        "type": "object",
+        "required": [
+          "saved",
+          "level_count"
+        ],
+        "properties": {
+          "level_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "saved": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SearchIncidentsRequest": {
+        "type": "object",
+        "properties": {
+          "has_active_bans": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "has_active_trespass": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "is_resolved": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "occurred_after": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "occurred_before": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "options": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IncidentSearchOptions"
+              }
+            ]
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "patron": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "query": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_dir": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sort_incident_date": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "SearchIncidentsResponse": {
+        "type": "object",
+        "required": [
+          "incidents",
+          "total_count"
+        ],
+        "properties": {
+          "incidents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IncidentSearchRow"
+            }
+          },
+          "total_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "SetPrimaryPatronPhotoRequest": {
+        "type": "object",
+        "required": [
+          "patron_id",
+          "photo_id"
+        ],
+        "properties": {
+          "patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "photo_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "StatusFilter": {
+        "type": "string",
+        "description": "Incident-status filter for the count-by reports. The over-time series\nare exempt (their series already encode status), and the review-status\nreport is pinned to open incidents (every closed incident's latest\nresult is \"resolved\", so the breakdown degenerates).",
+        "enum": [
+          "all",
+          "open",
+          "closed"
+        ]
+      },
+      "SubLocationResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_unit",
+          "label"
+        ],
+        "properties": {
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "label": {
+            "type": "string"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SummaryRequest": {
+        "type": "object",
+        "description": "Filters for the KPI summary. Deliberately has no status field: the\ntiles themselves break the counts down by status.",
+        "properties": {
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "start": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "SummaryResponse": {
+        "type": "object",
+        "required": [
+          "total_incidents",
+          "open_incidents",
+          "resolved_incidents"
+        ],
+        "properties": {
+          "median_days_to_resolve": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Median days from occurred_at to resolved_at across the incidents\nresolved in the period; None when nothing was resolved."
+          },
+          "open_incidents": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Of those, still unresolved."
+          },
+          "resolved_incidents": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Incidents resolved during the period (by resolved_at, matching the\nover-time chart's resolved series)."
+          },
+          "total_incidents": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Incidents that occurred in the period."
+          }
+        }
+      },
+      "TemplateResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "fields",
+          "requires_patron",
+          "show_called_emergency"
+        ],
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fields": {},
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "requires_patron": {
+            "type": "boolean"
+          },
+          "show_called_emergency": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "version": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "TimeSeriesRequest": {
+        "type": "object",
+        "required": [
+          "bucket"
+        ],
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/ReportBucket"
+          },
+          "org_unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "start": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TopPatronsResponse": {
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PatronCountRow"
+            }
+          }
+        }
+      },
+      "UpdateIncidentRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "add_attachment_file_upload_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "file_upload row ids to bind to this incident, same contract as\ncreate's `attachment_file_upload_ids`: odo-asset already wrote the\n`asset.file_upload` row at upload time; we only add the\n`incidents.attachments` join row."
+          },
+          "add_external_links": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CreateExternalLink"
+            }
+          },
+          "add_involved_parties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CreateInvolvedParty"
+            }
+          },
+          "called_emergency": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_deleted": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "One-way latch: setting `true` soft-deletes the incident. `false`\ndoes nothing. Legacy did not support undelete via this endpoint\neither."
+          },
+          "is_resolved": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "One-way latch: setting `true` resolves an unresolved incident\n(sets `resolved_at` + `resolved_by`). `false` does nothing — to\nreopen, use `incident.review.create` with `result: \"reopened\"`,\nwhich goes through the review-chain permission checks."
+          },
+          "metadata": {
+            "description": "Same `JSON.stringify(...)` quirk as create: the UI sends this\npre-stringified, so we use the shared deserializer that unwraps\nthe outer string layer. Without this, the wrapping piles up on\neach save (`{}` → `\"{}\"` → `\"\\\"{}\\\"\"`) and breaks downstream\nreaders."
+          },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "remove_attachment_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "file_upload ids to unlink from this incident. These match the\n`id` field returned for each attachment by `incident/get` (which\nis the file_upload id, not the join-row id). We delete the\n`incidents.attachments` join rows pointing at these files; the\n`asset.file_upload` rows are left intact — deleting the file is\nodo-asset's `files/delete` endpoint's job."
+          },
+          "remove_external_links": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "remove_involved_parties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "sub_location": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "template_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Full-replace semantics: passing `Some([..])` clears the\nincident's existing `incident_template_map` rows and inserts a\nnew mapping for each id. Passing `Some([])` clears all\ntemplates. `None` (the field omitted from the payload) leaves\nthe existing mapping untouched — \"no change\" rather than\n\"clear\", same shape as the legacy port (CRT-88)."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "UpdateIncidentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_unit",
+          "title",
+          "occurred_at",
+          "created_by"
+        ],
+        "properties": {
+          "called_emergency": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "metadata": {},
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "resolved_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "sub_location": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdatePatronRequest": {
+        "type": "object",
+        "required": [
+          "patron_id"
+        ],
+        "properties": {
+          "address_line1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address_line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "age_range": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "alias": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_unknown": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "library_card": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {},
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postal_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "preferred_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state_province": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "incidents",
+      "description": "Incident management"
+    },
+    {
+      "name": "patrons",
+      "description": "Patron management"
+    },
+    {
+      "name": "bans",
+      "description": "Patron ban management"
+    },
+    {
+      "name": "reports",
+      "description": "Dashboard report aggregates"
+    }
+  ]
+}

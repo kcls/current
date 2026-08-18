@@ -1,0 +1,21 @@
+# Route for the Incident Tracker SPA. Served publicly (no
+# SecurityPolicy): authentication happens in-app against odo-auth. The
+# platform's allow-envoy-to-odo-pub ReferenceGrant covers the
+# cross-namespace backend.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ui-incident-tracker-routes
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /incident-tracker
+      backendRefs:
+        - name: ui-incident-tracker
+          namespace: odo-pub
+          port: 80

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ui-incident-tracker
+    part-of: odo
+    version: v1
+  name: ui-incident-tracker
+  namespace: odo-pub
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ui-incident-tracker
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: ui-incident-tracker
+        component: ui-incident-tracker
+        part-of: odo
+        version: v1
+    spec:
+      containers:
+        - env:
+            - name: NODE_ENV
+              value: production
+            - name: NEXT_PUBLIC_APP_NAME
+              value: Incident Tracker
+          image: localhost:32000/ui-incident-tracker:latest
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /incident-tracker
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          name: ui-incident-tracker
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /incident-tracker
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      imagePullSecrets:
+        - name: ghcr-secret

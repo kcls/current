@@ -1,0 +1,73 @@
+# Current's gateway routes and JWT policy — owned by Current, not the
+# platform (docs/current-split-development-plan.md). These deploy
+# into the gateway's namespace (default): Gateway API only attaches routes
+# from the Gateway's own namespace until the per-app-namespace later step.
+# Cross-namespace backendRefs into odo-pub are covered by the platform's
+# allow-envoy-to-odo-pub ReferenceGrant.
+#
+# Path prefixes claimed here are recorded in the platform README's routing
+# registry: /api/v1/current, /incident-tracker.
+
+# API docs (no auth required)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: current-api-docs
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /api/v1/current/api-doc/openapi.json
+      backendRefs:
+        - name: current
+          namespace: odo-pub
+          port: 8080
+---
+# Protected API routes (JWT required via current-jwt-auth below)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: current-protected
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/current
+      backendRefs:
+        - name: current
+          namespace: odo-pub
+          port: 8080
+---
+# JWT authentication for Current's protected routes. Same odo-auth JWKS
+# provider the platform uses (odo-security.yaml), but the policy is owned
+# and deployed by Current. Backends still carry their own require_auth
+# middleware as defense-in-depth (verified against the same JWKS).
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: current-jwt-auth
+  namespace: default
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: current-protected
+  jwt:
+    providers:
+      - name: odo-auth
+        issuer: odo-auth
+        remoteJWKS:
+          uri: http://odo-auth.odo-pub.svc.cluster.local:8080/.well-known/jwks.json
+        claimToHeaders:
+          - header: x-user-id
+            claim: sub
+          - header: x-user-email
+            claim: email

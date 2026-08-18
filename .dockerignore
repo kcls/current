@@ -1,0 +1,66 @@
+# UI build artifacts and dependencies
+**/node_modules
+ui-main/.next
+ui-main/.turbo
+ui-main/out
+ui-main/build
+ui-main/dist
+
+ui-incidents/.next
+ui-incidents/.turbo
+ui-incidents/out
+ui-incidents/build
+ui-incidents/dist
+
+# Rust build artifacts
+**/target
+
+# Python cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+**/*.egg
+**/*.egg-info
+
+# Environment files
+**/.env*
+!**/.env.example
+
+# Version control
+**/.git
+**/.gitignore
+
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# IDE files
+**/.vscode
+**/.idea
+**/**.swp
+**/**.swo
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Test coverage
+**/coverage
+**/.nyc_output
+**/.coverage
+**/htmlcov
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Temporary files
+**/tmp
+**/temp
+**/.cache

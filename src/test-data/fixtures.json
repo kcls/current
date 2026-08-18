@@ -1,0 +1,74 @@
+{
+  "description": "Current's e2e user fixtures, applied via odo-register with the odo-registration account. Users carry pinned e2e00000-...-02xx uuids and are Current's OWN accounts - no grants on the platform's e2e.* users, so the odo and current test suites never interact. Passwords are set here through user/create (8-char minimum), so Current never needs a connection to the odo database.",
+  "users": [
+    {
+      "username": "e2e.current.coord",
+      "email": "e2e.current.coord@current.example.org",
+      "first_given_name": "E2E",
+      "family_name": "Coordinator",
+      "uuid": "e2e00000-0000-4000-a000-000000000201",
+      "password": "test123!"
+    },
+    {
+      "username": "e2e.current.manager",
+      "email": "e2e.current.manager@current.example.org",
+      "first_given_name": "E2E",
+      "family_name": "Manager",
+      "uuid": "e2e00000-0000-4000-a000-000000000202",
+      "password": "test123!"
+    },
+    {
+      "username": "e2e.current.admin",
+      "email": "e2e.current.admin@current.example.org",
+      "first_given_name": "E2E",
+      "family_name": "Admin",
+      "uuid": "e2e00000-0000-4000-a000-000000000203",
+      "password": "test123!"
+    },
+    {
+      "username": "e2e.current.staff",
+      "email": "e2e.current.staff@current.example.org",
+      "first_given_name": "E2E",
+      "family_name": "Staff",
+      "uuid": "e2e00000-0000-4000-a000-000000000204",
+      "password": "test123!"
+    }
+  ],
+  "user_role_assignments": [
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000204",
+      "role": "incident-staff",
+      "org_unit_code": "OLS"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000201",
+      "role": "incident-coordinator",
+      "org_unit_code": "OLS"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000201",
+      "role": "incident-staff",
+      "org_unit_code": "OLS"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000201",
+      "role": "incident-manager",
+      "org_unit_code": "OLS"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000202",
+      "role": "incident-manager",
+      "org_unit_code": "MAIN"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000202",
+      "role": "incident-staff",
+      "org_unit_code": "OLS"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000203",
+      "role": "incident-admin",
+      "org_unit_code": "OLS"
+    }
+  ]
+}

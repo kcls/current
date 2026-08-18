@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ui-incident-tracker
+    part-of: odo
+    version: v1
+  name: ui-incident-tracker
+  namespace: odo-pub
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: ui-incident-tracker
+    version: v1
+  type: ClusterIP

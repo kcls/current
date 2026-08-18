@@ -1,0 +1,19 @@
+{
+  "short_name": "Current",
+  "name": "Library Incident Tracking System",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1976d2",
+  "background_color": "#ffffff",
+  "description": "Track and manage security incidents at library locations",
+  "categories": ["business", "productivity", "utilities"],
+  "orientation": "portrait-primary"
+}

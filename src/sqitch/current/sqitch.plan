@@ -1,0 +1,6 @@
+%syntax-version=1.0.0
+%project=current
+%uri=https://github.com/kcls/current
+
+001_incidents_baseline 2026-08-18T00:00:00Z Bill Erickson <bserickson@kcls.org> # Baseline: the incidents schema re-homed into Current's own database (squashed at the repo split)
+002_current_seed [001_incidents_baseline] 2026-08-18T00:05:00Z Bill Erickson <bserickson@kcls.org> # Reference data: incident templates, categories, link types, age ranges, sub-locations, ban letters

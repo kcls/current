@@ -1,0 +1,22 @@
+# service-map.yaml
+#
+# language:
+#   - the programming language/framework of the service (rust, node, etc.)
+#
+services:
+
+  # API service for Current
+  current:
+    language: rust
+    namespace: odo-pub
+    build:
+      dockerfile: src/rust/current/Dockerfile
+      context: .
+
+  # UI service for Current
+  ui-incident-tracker:
+    language: node
+    namespace: odo-pub
+    build:
+      dockerfile: src/ui/incident-tracker/Dockerfile
+      context: .
