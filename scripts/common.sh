@@ -34,18 +34,11 @@ init_pg_connection() {
         return 1
     fi
 
-    # The current-api secret stores connection URLs: EXTERNAL_DATABASE_URL
-    # is the host-reachable endpoint for tooling like this; DATABASE_URL
-    # is the in-cluster endpoint the service uses. Prefer the external
-    # one, fall back to the in-cluster one (overridable via PG* env).
-    # Formerly: a single DATABASE_URL
-    # (postgres://user:pass@host:port/db?params), so parse the components out
-    # of it rather than reading individual POSTGRES_* keys (which no longer
-    # exist).
-    local db_url=$(get_secret_value $namespace current-api EXTERNAL_DATABASE_URL)
-    if [ -z "$db_url" ]; then
-        db_url=$(get_secret_value $namespace current-api DATABASE_URL)
-    fi
+    # The current-api secret stores one connection URL
+    # (postgres://user:pass@host:port/db?params), shared by the service
+    # pod and by host tooling like this - PostgreSQL runs outside the
+    # cluster at an address reachable from both. PG* env vars override it.
+    local db_url=$(get_secret_value $namespace current-api DATABASE_URL)
 
     local SECRET_PGHOST="" SECRET_PGPORT="" SECRET_PGDATABASE="" \
           SECRET_PGUSER="" SECRET_PGPASSWORD=""

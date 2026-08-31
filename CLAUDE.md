@@ -49,14 +49,14 @@ is the reference implementation for Odo applications.
 - `./scripts/build-and-deploy-service.sh <name>` (`current`,
   `ui-incident-tracker`, or `--all`). Wait ~20s after a deploy.
 - `./scripts/run-tests.sh --db --integration --e2e --unit` — DB
-  connection resolves from the `current-api` secret
-  (`EXTERNAL_DATABASE_URL`); PG* env vars are overrides only.
+  connection resolves from the `current-api` secret's single
+  `DATABASE_URL`; PG* env vars are overrides only.
 - e2e locally: `cd src/e2e && BASE_URL=http://localhost:30080 npm test`.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
-- Fresh install order: `manage-database.sh setup-dev-database` (needs
-  `ADMIN_PGUSER`/`ADMIN_PGPASSWORD`, the containerized dev postgres's
-  odo account) → `manage-database.sh deploy` →
+- Fresh install order: create the `current` role and an empty database it
+  owns on the PostgreSQL server by hand (Current does not own the server
+  and no script creates them) → `manage-database.sh deploy` →
   `scripts/odo-register.sh src/odo-registration/manifest.json` →
   `scripts/deploy-test-data.sh`. All idempotent; re-running is always
   safe. (See the README for the full sequence.)

@@ -3,18 +3,13 @@
 #
 # Connection settings (in order of precedence):
 #   1. Environment variables: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
-#   2. Kubernetes secret: current-api in odo-pub namespace
+#   2. Kubernetes secret: current-api in odo-pub namespace (DATABASE_URL)
 #   3. Defaults: localhost:5432 (for host/port only)
 #
-# setup-dev-database and update-password assume the odo platform's
-# containerized dev postgres: pass its bootstrap superuser (the odo
-# database account) as ADMIN_PGUSER / ADMIN_PGPASSWORD, e.g.
-#
-#   ADMIN_PGUSER=odo ADMIN_PGPASSWORD=demo123 \
-#       ./scripts/manage-database.sh setup-dev-database
-#
-# For anything else (host-local postgres, managed servers), create the
-# role and database by hand — see the project docs.
+# This script does NOT create Current's role or database. PostgreSQL runs
+# outside the cluster and Current does not own it, so the role and an
+# empty database it owns are created on the server first — see the README.
+# Everything here runs as Current's own account against that database.
 
 set -e
 
@@ -39,8 +34,6 @@ usage() {
     echo -e "${BLUE}Usage: $0 [command] [options]${NC}"
     echo
     echo "Database Commands:"
-    echo "  setup-dev-database  Create Current's role, database, and sqitch schema"
-    echo "                      on the containerized dev postgres (needs ADMIN_PG*)"
     echo "  update-password     Update database user password only"
     echo
     echo "Schema Commands:"
@@ -64,10 +57,6 @@ usage() {
     echo "  PGDATABASE=dbname         Override database name (default: from secret)"
     echo "  PGUSER=username           Override database user (default: from secret)"
     echo "  PGPASSWORD=password       Override database password (default: from secret)"
-    echo "  ADMIN_PGUSER/ADMIN_PGPASSWORD The containerized dev postgres bootstrap"
-    echo "                            superuser (the odo database account), required by"
-    echo "                            setup-dev-database and update-password resets"
-    echo "                            (+ optional ADMIN_PGHOST/ADMIN_PGPORT overrides)"
     echo "  DRY_RUN=true              Show what would be done without making changes"
     echo "  NAMESPACE=name            Kubernetes namespace for secrets (default: odo-pub)"
     echo "  SQITCH_SCHEMA_DIR=/path   Override schema directory (default: $SQITCH_SCHEMA_DIR)"
@@ -75,48 +64,6 @@ usage() {
     echo "Note: Database credentials are retrieved from Kubernetes secret by default"
     echo "      but can be overridden with environment variables"
     exit 1
-}
-
-# The admin connection: the containerized dev postgres bootstrap
-# superuser, supplied via ADMIN_PGUSER/ADMIN_PGPASSWORD. Host/port
-# default to Current's own resolved endpoint (the same server).
-require_admin_credentials() {
-    if [ -z "${ADMIN_PGUSER:-}" ] || [ -z "${ADMIN_PGPASSWORD:-}" ]; then
-        echo -e "${RED}ADMIN_PGUSER / ADMIN_PGPASSWORD are required.${NC}"
-        echo "Pass the containerized dev postgres bootstrap superuser (the odo"
-        echo "database account), e.g.:"
-        echo "  ADMIN_PGUSER=odo ADMIN_PGPASSWORD=demo123 $0 $COMMAND"
-        echo "For other postgres setups, see the project docs."
-        return 1
-    fi
-    ADMIN_PGHOST="${ADMIN_PGHOST:-$PGHOST}"
-    ADMIN_PGPORT="${ADMIN_PGPORT:-$PGPORT}"
-    echo -e "${BLUE}Admin connection: ${ADMIN_PGUSER}@${ADMIN_PGHOST}:${ADMIN_PGPORT}${NC}"
-}
-
-# Run SQL over the admin connection (against the maintenance database
-# unless another is given).
-admin_psql() {
-    local sql="$1"
-    local db="${2:-postgres}"
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo -e "${YELLOW}[DRY RUN] Would execute (admin):${NC}"
-        echo "$sql"
-        return
-    fi
-
-    PGPASSWORD="$ADMIN_PGPASSWORD" psql -h "$ADMIN_PGHOST" -p "$ADMIN_PGPORT" \
-        -U "$ADMIN_PGUSER" -d "$db" -c "$sql"
-}
-
-# Query a scalar over the admin connection.
-admin_query() {
-    local sql="$1"
-    local db="${2:-postgres}"
-
-    PGPASSWORD="$ADMIN_PGPASSWORD" psql -h "$ADMIN_PGHOST" -p "$ADMIN_PGPORT" \
-        -U "$ADMIN_PGUSER" -d "$db" -tAc "$sql" 2>/dev/null
 }
 
 # Initialize PostgreSQL connection parameters
@@ -141,21 +88,6 @@ execute_psql() {
     fi
 
     PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$db" -c "$sql"
-}
-
-# Check if the role exists (admin connection).
-role_exists() {
-    [ "$(admin_query "SELECT 1 FROM pg_roles WHERE rolname='$1'")" == "1" ]
-}
-
-# Function to check if schema exists
-schema_exists() {
-    local schema=$1
-    local result
-
-    result=$(PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -tAc "SELECT 1 FROM pg_namespace WHERE nspname='$schema'" 2>/dev/null)
-
-    [ "$result" == "1" ]
 }
 
 # Function to run sqitch command
@@ -272,87 +204,26 @@ purge_all_schemas() {
     echo -e "${GREEN}All application schemas dropped.${NC}"
 }
 
-# Create Current's role, database, and sqitch schema on the
-# containerized dev postgres.
-setup_dev_database() {
-    echo -e "\n${YELLOW}Setting up the Current dev database${NC}"
-
-    # If Current's own credentials already work, the role and database
-    # exist — nothing to bootstrap.
-    if test_connection; then
-        echo -e "${GREEN}Connected as '$PGUSER'; role and database already exist${NC}"
-    else
-        require_admin_credentials || exit 1
-
-        # The role owns its database but is deliberately NOT a
-        # superuser: it shares the containerized postgres with the odo
-        # database, and this keeps Current out of it.
-        if role_exists "$PGUSER"; then
-            echo -e "${BLUE}Role '$PGUSER' exists${NC}"
-            echo -e "${GREEN}Syncing its password with the secret${NC}"
-            admin_psql "ALTER ROLE $PGUSER WITH LOGIN PASSWORD '$PGPASSWORD';"
-        else
-            echo -e "${GREEN}Creating role '$PGUSER'${NC}"
-            admin_psql "CREATE ROLE $PGUSER WITH LOGIN PASSWORD '$PGPASSWORD';"
-        fi
-
-        if [ "$(admin_query "SELECT 1 FROM pg_database WHERE datname='$PGDATABASE'")" == "1" ]; then
-            echo -e "${BLUE}Database '$PGDATABASE' already exists${NC}"
-        else
-            echo -e "${GREEN}Creating database '$PGDATABASE' owned by '$PGUSER'${NC}"
-            admin_psql "CREATE DATABASE $PGDATABASE OWNER $PGUSER;"
-        fi
-
-        if ! test_connection; then
-            echo -e "${RED}Failed to connect as '$PGUSER' after setup${NC}"
-            exit 1
-        fi
-    fi
-
-    # Create sqitch schema (as the database owner)
-    echo -e "${GREEN}Setting up sqitch schema${NC}"
-
-    # Create sqitch schema if doesn't exist
-    if schema_exists "sqitch"; then
-        echo -e "${BLUE}Schema 'sqitch' already exists${NC}"
-        # Make sure user owns the schema
-        echo -e "${GREEN}Ensuring user owns sqitch schema${NC}"
-        execute_psql "ALTER SCHEMA sqitch OWNER TO $PGUSER;" "$PGDATABASE"
-    else
-        echo -e "${GREEN}Creating schema 'sqitch'${NC}"
-        execute_psql "CREATE SCHEMA sqitch AUTHORIZATION $PGUSER;" "$PGDATABASE"
-    fi
-
-    echo -e "\n${GREEN}Database setup completed successfully!${NC}"
-    echo -e "${YELLOW}Summary:${NC}"
-    echo "  Database: $PGDATABASE"
-    echo "  User: $PGUSER (owner)"
-    echo "  Sqitch schema: created and configured"
-    echo
-    echo -e "${BLUE}Next steps:${NC}"
-    echo "1. Run '$0 deploy' to apply database schema migrations"
-}
-
 # Function to update password only
 update_password() {
     echo -e "\n${YELLOW}Updating password for user '$PGUSER'${NC}"
 
-    # A role can change its own password; fall back to the admin
-    # connection when the stored credentials no longer work.
-    if test_connection; then
-        echo -e "${GREEN}Successfully connected with existing credentials${NC}"
-        execute_psql "ALTER ROLE $PGUSER WITH PASSWORD '$PGPASSWORD';"
-    else
-        echo -e "${YELLOW}Cannot connect with current credentials; resetting via admin${NC}"
-        require_admin_credentials || exit 1
-
-        if ! role_exists "$PGUSER"; then
-            echo -e "${RED}Role '$PGUSER' does not exist${NC}"
-            echo "Run '$0 setup-dev-database' first to create it"
-            exit 1
-        fi
-        admin_psql "ALTER ROLE $PGUSER WITH LOGIN PASSWORD '$PGPASSWORD';"
+    # A role can change its own password, which is all Current can do:
+    # it does not own the PostgreSQL server and holds no admin account
+    # there.
+    if ! test_connection; then
+        echo -e "${RED}Cannot connect as '$PGUSER' with the credentials in the secret.${NC}"
+        echo
+        echo "Current can only change its own password, so the stored one has"
+        echo "to work first. Reset it on the database server:"
+        echo "  ALTER ROLE $PGUSER WITH PASSWORD '<the password in the secret>';"
+        echo "or point the secret at the working password:"
+        echo "  ./scripts/manage-secrets.sh update-db-url"
+        exit 1
     fi
+
+    echo -e "${GREEN}Successfully connected with existing credentials${NC}"
+    execute_psql "ALTER ROLE $PGUSER WITH PASSWORD '$PGPASSWORD';"
 
     echo -e "\n${GREEN}Password updated!${NC}"
     echo -e "${YELLOW}Note: The password was retrieved from the Kubernetes secret${NC}"
@@ -362,9 +233,6 @@ update_password() {
 case "$COMMAND" in
     connect)
         connect
-        ;;
-    setup-dev-database)
-        setup_dev_database
         ;;
     update-password)
         update_password

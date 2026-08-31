@@ -13,9 +13,9 @@
 # (scripts/odo-register.sh src/odo-registration/manifest.json).
 #
 # Connection details for Current's database resolve from the current-api
-# secret (EXTERNAL_DATABASE_URL, the host-reachable endpoint); PG*
-# environment variables act as overrides. The odo-register step honors
-# ODO_URL / REGISTRATION_USERNAME / REGISTRATION_PASSWORD.
+# secret (DATABASE_URL); PG* environment variables act as overrides.
+# The odo-register step honors ODO_URL / REGISTRATION_USERNAME /
+# REGISTRATION_PASSWORD.
 
 set -e
 
