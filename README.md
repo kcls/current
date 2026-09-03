@@ -21,6 +21,12 @@ CREATE USER current WITH PASSWORD 'demo123';
 CREATE DATABASE current OWNER current;
 ```
 
+### Add the Database URL Secret
+
+```bash
+kubectl apply -f ./k8s/services/current/secrets.yaml
+```
+
 ### Point Current At It
 
 Current reads a single `DATABASE_URL` from the `current-api` secret. Both
