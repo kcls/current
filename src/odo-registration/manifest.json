@@ -1,6 +1,6 @@
 {
   "app": "current",
-  "description": "Registration manifest for Current (incident-tracker): everything the app installs into the odo platform. Applied by odo-register (scripts/odo-register.sh) with the odo-registration account; upsert-only.",
+  "description": "Registration manifest for Current (incident-tracker): everything the app installs into the odo platform. Applied from the odo checkout with scripts/load-data-manifest.sh, which enables the odo-registration account for the length of the run; upsert-only.",
   "permissions": [
     {
       "code": "odo.asset.current.read",

@@ -1,21 +1,25 @@
 #!/bin/bash
-# Deploy Current's e2e/dev test data (src/test-data/). Two steps, in order:
+# Deploy Current's own e2e/dev test data: the SQL fixtures that live in
+# Current's database (src/test-data/[0-9]*.sql, incidents and the review
+# chain). Idempotent; re-running is always safe.
 #
-#   1. fixtures.json          - users (with passwords) + grants via the
-#                               odo APIs (applied by odo-register)
-#   2. 001_e2e_review_chain   - SQL against Current's database (incidents)
+# The other half of the test data -- the e2e user accounts and their role
+# grants in src/test-data/fixtures.json -- is platform data, so it is
+# applied from the odo checkout alongside the registration manifest:
 #
-# Everything is idempotent; re-running is always safe. Current never
-# connects to the odo database: everything platform-side goes through
-# the odo APIs.
+#   cd /path/to/odo
+#   ./scripts/load-data-manifest.sh /path/to/current/src/test-data/fixtures.json
 #
-# Prerequisites: platform seed deployed, Current registered
-# (scripts/odo-register.sh src/odo-registration/manifest.json).
+# That is not run from here on purpose. The odo-registration account
+# ships disabled with a password nobody holds, and odo's load-data-manifest.sh
+# is what enables it for the length of a run, so Current never holds
+# registration credentials.
+#
+# Prerequisites: platform seed deployed and Current registered (see the
+# README, "Register Current With Odo").
 #
 # Connection details for Current's database resolve from the current-api
 # secret (DATABASE_URL); PG* environment variables act as overrides.
-# The odo-register step honors ODO_URL / REGISTRATION_USERNAME /
-# REGISTRATION_PASSWORD.
 
 set -e
 
@@ -30,10 +34,7 @@ init_pg_connection || exit 1
 
 cd "$DATA_DIR"
 
-# 1. API-created users + grants (idempotent, DB-agnostic)
-"$SCRIPT_DIR/odo-register.sh" "$DATA_DIR/fixtures.json"
-
-# 2. Review chain fixtures - incidents schema, Current's database
+# Review chain fixtures - incidents schema, Current's database
 echo "Applying SQL fixtures to: $PGUSER@$PGHOST:$PGPORT/$PGDATABASE"
 for f in [0-9]*.sql; do
     echo "  applying $f"

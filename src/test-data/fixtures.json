@@ -1,5 +1,5 @@
 {
-  "description": "Current's e2e user fixtures, applied via odo-register with the odo-registration account. Users carry pinned e2e00000-...-02xx uuids and are Current's OWN accounts - no grants on the platform's e2e.* users, so the odo and current test suites never interact. Passwords are set here through user/create (8-char minimum), so Current never needs a connection to the odo database.",
+  "description": "Current's e2e user fixtures, applied from the odo checkout with scripts/load-data-manifest.sh. Users carry pinned e2e00000-...-02xx uuids and are Current's OWN accounts - no grants on the platform's e2e.* users, so the odo and current test suites never interact. Passwords are set here through user/create (8-char minimum), so Current never needs a connection to the odo database.",
   "users": [
     {
       "username": "e2e.current.coord",

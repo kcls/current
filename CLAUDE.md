@@ -26,11 +26,15 @@ is the reference implementation for Odo applications.
 - `src/odo-registration/` — `manifest.json`: everything Current installs
   into the odo platform (permissions, incident-* roles, grants,
   notification templates, asset directories, SAML attr→role maps).
-  Applied by `scripts/odo-register.sh` (installs the `odo-register` tool
-  from the odo git origin into gitignored `.tools/` on first use).
-- `src/test-data/` — e2e fixtures: `fixtures.json` (users with
-  passwords + role assignments, applied via odo-register) and review-chain
-  SQL against Current's database, all applied by
+  Applied from the odo checkout with
+  `odo/scripts/load-data-manifest.sh <path-or-https-url to manifest.json>` —
+  the `odo-registration` account ships disabled, and that script is what
+  enables it for the length of a run, so nothing here holds registration
+  credentials. Upsert-only; re-running is safe.
+- `src/test-data/` — e2e fixtures, split by where they land:
+  `fixtures.json` (users with passwords + role assignments) is platform
+  data applied from odo with `load-data-manifest.sh`, exactly like the
+  manifest; the review-chain SQL goes to Current's own database via
   `scripts/deploy-test-data.sh`.
 - `src/integration-tests/` (the `current_mod` suite), `src/e2e/`
   (Playwright, `current` project), `src/db-tests/` (pgTAP).
@@ -57,7 +61,8 @@ is the reference implementation for Odo applications.
 - Fresh install order: create the `current` role and an empty database it
   owns on the PostgreSQL server by hand (Current does not own the server
   and no script creates them) → `manage-database.sh deploy` →
-  `scripts/odo-register.sh src/odo-registration/manifest.json` →
+  (from the odo checkout) `load-data-manifest.sh <current>/src/odo-registration/manifest.json`
+  → (from odo) `load-data-manifest.sh <current>/src/test-data/fixtures.json` →
   `scripts/deploy-test-data.sh`. All idempotent; re-running is always
   safe. (See the README for the full sequence.)
 

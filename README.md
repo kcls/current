@@ -3,17 +3,16 @@
 `Current` is an incident tracker for community libraries, built atop the
 [Odo](https://github.com/kcls/odo) platform.
 
-## Setup
+## Quick Install Guide for Developers
 
-Requires a running Odo platform (see the Odo repo's setup docs); Current
+Requires a running [Odo platform](https://github.com/kcls/odo). Current
 deploys into the same dev cluster.
 
 ### Create The Database
 
 The simplest approach for development is to create a new database within
-the existing PostgreSQL instance used by Odo. Current does not own that
-server, so no script here creates the role or the database — log in to
-the database host and do something along the lines of:
+the existing PostgreSQL instance used by Odo. Log in to the database 
+host and do something along the lines of:
 
 ```bash
 sudo -u postgres psql
@@ -21,59 +20,65 @@ CREATE USER current WITH PASSWORD 'demo123';
 CREATE DATABASE current OWNER current;
 ```
 
-### Add the Database URL Secret
+### Setup Current
 
 ```bash
+git clone https://github.com/kcls/current
+cd current
+
+# Add the K8s secrets
 kubectl apply -f ./k8s/services/current/secrets.yaml
-```
 
-### Point Current At It
-
-Current reads a single `DATABASE_URL` from the `current-api` secret. Both
-the service pod and the host tooling (`manage-database.sh`,
-`run-tests.sh`, `run-db-tests.sh`) use it, so its host has to be reachable
-from inside the cluster *and* from this host — a LAN address or a DNS
-name. `localhost` will not do: inside a pod it points at the pod.
-
-```bash
+# Point Current at its database URL.
+# The database must reachable from the cluster and the host (for tooling).
+# A LAN IP or DNS name.  Not `localhost`.
 ./scripts/manage-secrets.sh update-db-url
-```
 
-### Create Schema, Data, and Deploy
-
-```bash
 # Deploy Current SQL schema
 ./scripts/manage-database.sh deploy
-
-# Create Odo data (roles, permissions, etc.)
-./scripts/odo-register.sh src/odo-registration/manifest.json
 
 # Build and deploy services to the cluster
 ./scripts/build-and-deploy-service.sh --all
 ```
 
-### Install Test Data
+### Bulk-Load Odo Data
 
-This will create accounts and sample data for testing.
+Developer setup assumes a Git checkout of [https://github.com/kcls/odo](Odo)
+is available on the same machine for bulk data loads (users, roles, permission,
+etc).  Set the `$ODO_HOME` variable to point to the root of the Odo checkout.
 
 ```bash
-./scripts/deploy-test-data.sh 
+# For example, if Odo is checked out in the parent directory:
+ODO_HOME="$(cd .. && pwd)/odo" 
+
+# Load the data 
+$ODO_HOME/scripts/load-data-manifest.sh ./src/odo-registration/manifest.json
+```
+### Setup Tests
+
+These steps create test accounts with well-known passwords and are meant
+for dev/demo servers only.
+
+
+```bash
+# Bulk load test data housed in Odo
+$ODO_HOME/scripts/load-data-manifest.sh src/test-data/fixtures.json
+
+# Load Current's local test data
+./scripts/deploy-test-data.sh
+
+# Optional: Install e2e dependencies
+cd src/e2e
+npm install
+npx playwright install-deps
+cd ../..
+
+# Optional: Run tests
+./scripts/run-tests.sh --all
 ```
 
 ### Access Incident Tracker UI
 
 Navigate to http://DEV-HOST:30080/incident-tracker and log in with 
 e2e.current.staff / test123!
-
-## Further Testing (Optional)
-
-Install e2e dependencies and run test suites
-
-```bash
-cd src/e2e
-npm install
-npx playwright install-deps
-cd ../..
-./scripts/run-tests.sh --db --integration --e2e --unit
-```
 
