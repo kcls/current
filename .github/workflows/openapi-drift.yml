@@ -1,0 +1,38 @@
+name: OpenAPI Spec Drift Check
+
+# openapi/current.json is the committed record of Current's HTTP API. This job
+# fails if the spec the service would emit differs from what's committed, so a
+# handler or schema change can't merge without regenerating it.
+#
+# The spec is dumped from the compiled binary and needs no database or running
+# service. (odo's counterpart workflow is manual-only at the moment; this one
+# is enabled.)
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  openapi-drift:
+    name: Check the committed OpenAPI spec is current
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/rust/current
+
+      - name: Verify the OpenAPI spec is up to date
+        run: ./scripts/generate-openapi.sh --check

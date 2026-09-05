@@ -44,8 +44,9 @@ is the reference implementation for Odo applications.
   `/api/v1/current`, `/incident-tracker` (registry lives in the odo
   repo's README). HTTPRoutes live in the gateway's namespace
   (`default`); the workloads live in `odo-pub`.
-- `openapi/current.json` — committed spec (`--dump-openapi` on the
-  service binary regenerates it).
+- `openapi/current.json` — committed spec;
+  `./scripts/generate-openapi.sh` regenerates it (`--dump-openapi` on the
+  service binary, no database needed) and `--check` is the CI drift gate.
 
 ## Build / deploy / test (dev k3s cluster)
 
@@ -58,6 +59,13 @@ is the reference implementation for Odo applications.
 - e2e locally: `cd src/e2e && BASE_URL=http://localhost:30080 npm test`.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
+- Releases: `.github/workflows/release-build.yml` publishes images to
+  `ghcr.io/<owner>/<service>` from `release/**` pushes (`:<short-sha>`) and
+  `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`). This repo publishes
+  only — it holds no credential for, and never writes to, any deployment
+  repository. Current versions independently of odo, so each release must
+  state the odo range it works against. The scheme lives in odo:
+  `docs/tech-docs/release-management.md`.
 - Fresh install order: create the `current` role and an empty database it
   owns on the PostgreSQL server by hand (Current does not own the server
   and no script creates them) → `manage-database.sh deploy` →
