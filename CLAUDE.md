@@ -60,7 +60,8 @@ is the reference implementation for Odo applications.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
 - Releases: `.github/workflows/release-build.yml` publishes images to
-  `ghcr.io/<owner>/<service>` from `release/**` pushes (`:<short-sha>`) and
+  `ghcr.io/<owner>/<repo>/<service>` from `release/**` pushes (`:<short-sha>`)
+  and
   `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`). This repo publishes
   only — it holds no credential for, and never writes to, any deployment
   repository. Current versions independently of odo, so each release must
