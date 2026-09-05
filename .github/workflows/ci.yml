@@ -1,0 +1,67 @@
+name: CI
+
+# Lint and unit tests. Everything here runs without a cluster or a database;
+# the integration, e2e and pgTAP suites in scripts/run-tests.sh need live
+# services and stay a manual/runbook step.
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rust:
+    name: Rust lint and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/rust/current
+
+      # odo-client/odo-service are git dependencies on the public odo repo,
+      # pinned by Cargo.lock; no credential is needed to fetch them.
+      - name: Clippy
+        working-directory: src/rust/current
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Unit tests
+        working-directory: src/rust/current
+        run: cargo test
+
+  ui:
+    name: UI typecheck and unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/ui/incident-tracker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/ui/incident-tracker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npx vitest run
