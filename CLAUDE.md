@@ -61,12 +61,12 @@ is the reference implementation for Odo applications.
   clean. The UIs need a recent Node (>= 20).
 - Releases: `.github/workflows/release-build.yml` publishes images to
   `ghcr.io/<owner>/<repo>/<service>` from `release/**` pushes (`:<short-sha>`)
-  and
-  `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`). This repo publishes
+  and `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`). This repo publishes
   only — it holds no credential for, and never writes to, any deployment
-  repository. Current versions independently of odo, so each release must
-  state the odo range it works against. The scheme lives in odo:
-  `docs/tech-docs/release-management.md`.
+  repository, and ships no release artifacts: deployment repos consume `k8s/`
+  as a kustomize remote base pinned to the tag. Current versions independently
+  of odo, so each release must state the odo range it works against. The
+  scheme lives in odo: `docs/tech-docs/release-management.md`.
 - Fresh install order: create the `current` role and an empty database it
   owns on the PostgreSQL server by hand (Current does not own the server
   and no script creates them) → `manage-database.sh deploy` →
