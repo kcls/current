@@ -100,9 +100,13 @@ is the reference implementation for Odo applications.
 
 ## Gotchas
 
-- **Git-dep pin dance**: `Cargo.lock` pins an exact odo rev. After odo
-  changes land on `main` at github.com/kcls/odo, run here:
-  `cargo update -p odo-client -p odo-service` and commit the lock.
+- **Git-dep pin**: `Cargo.toml` pins `odo-client`/`odo-service` to an odo
+  **release tag**, so the lock records which odo release is in the binary and
+  an incidental `cargo` run cannot drift it. To move: edit the tag in
+  `Cargo.toml`, run `cargo update -p odo-client -p odo-service`, commit both.
+  Both crates share one git source and always move together. A newer odo has
+  to be released before it can be pinned — `branch = "main"` is what this used
+  to do, and it silently shipped `v0.1.0` against a months-old odo.
 - Docker/BuildKit can serve stale cargo caches (phantom old code in
   deployed binaries): `docker builder prune --force --filter
   type=exec.cachemount`, then rebuild.

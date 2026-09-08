@@ -5,8 +5,8 @@ edition = "2024"
 description = "Current — incident tracking and management service"
 
 [dependencies]
-odo-client = { git = "https://github.com/kcls/odo", branch = "main" }
-odo-service = { git = "https://github.com/kcls/odo", branch = "main" }
+odo-client = { git = "https://github.com/kcls/odo", tag = "v0.2.1" }
+odo-service = { git = "https://github.com/kcls/odo", tag = "v0.2.1" }
 
 sea-orm = { version = "2.0", features = [
     "sqlx-postgres",
