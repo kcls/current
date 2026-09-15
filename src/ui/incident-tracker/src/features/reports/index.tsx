@@ -506,7 +506,7 @@ const ReportsDashboard: React.FC = () => {
         <Grid size={{ xs: 6, md: 3 }}>
           <StatTile
             label="Open now"
-            hint="Of those, not yet resolved"
+            hint="Still unresolved from the period"
             state={summary}
             value={(s) => s.open_incidents.toLocaleString()}
           />
