@@ -1227,3 +1227,184 @@ async fn pending_reviews_cursor_resumes_after_last_examined_row() {
         "cursor resume returned the same row that ended page 1; first={first_id} second_ids={second_ids:?}"
     );
 }
+fn completed_trespass_procedures() -> serde_json::Value {
+    json!({
+        "police_letter_issued": true,
+        "ils_alert_set": true,
+        "account_barred": true,
+        "no_computer_access": true,
+        "holds_cancelled": true,
+    })
+}
+
+/// Create an incident with an involved patron plus a trespass ban on that
+/// patron, returning (incident_id, trespass_ban_id). Trespasses are created
+/// with no procedures now — they're captured at review submission.
+async fn create_incident_with_trespass(c: &reqwest::Client, token: &str, title: &str) -> (i64, i64) {
+    let resp = c
+        .post(format!("{}/api/v1/current/incident/create", current_base()))
+        .json(&json!({
+            "org_unit": review_chain_org_unit().await,
+            "title": title,
+            "description": "trespass review-gate fixture",
+            "involved_parties": [{"party_type": "patron", "is_unknown_patron": true}],
+        }))
+        .headers(auth_header(token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let incident_id = resp.json::<serde_json::Value>().await.unwrap()["id"]
+        .as_i64()
+        .unwrap();
+
+    // The create response doesn't echo parties; fetch them for the patron id.
+    let resp = c
+        .post(format!("{}/api/v1/current/incident/get", current_base()))
+        .json(&json!({"id": incident_id, "options": {"with_involved_parties": true}}))
+        .headers(auth_header(token))
+        .send()
+        .await
+        .unwrap();
+    let patron_id = resp.json::<serde_json::Value>().await.unwrap()["involved_parties"][0]
+        ["patron_id"]
+        .as_i64()
+        .expect("unknown_patron party should have patron_id populated");
+
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/create", current_base()))
+        .json(&json!({
+            "patron": patron_id,
+            "incident": incident_id,
+            "org_unit": review_chain_org_unit().await,
+            "is_trespass": true,
+        }))
+        .headers(auth_header(token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200, "trespass creation should not require procedures");
+    let ban_id = resp.json::<serde_json::Value>().await.unwrap()["patron_ban"]["id"]
+        .as_i64()
+        .expect("trespass ban id");
+    (incident_id, ban_id)
+}
+
+async fn submit_with_procedures(
+    c: &reqwest::Client,
+    token: &str,
+    incident_id: i64,
+    procedures: Option<serde_json::Value>,
+) -> reqwest::Response {
+    let mut body = json!({"incident": incident_id, "result": "submitted"});
+    if let Some(p) = procedures {
+        body["trespass_procedures"] = p;
+    }
+    c.post(format!("{}/api/v1/current/incident/review/create", current_base()))
+        .json(&body)
+        .headers(auth_header(token))
+        .send()
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn review_submit_blocks_incomplete_trespass_procedures() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let (incident_id, ban_id) =
+        create_incident_with_trespass(&c, &token, "review-gate-incomplete").await;
+
+    // No procedures at all -> 400 naming the checklist.
+    let resp = submit_with_procedures(&c, &token, incident_id, None).await;
+    assert_eq!(resp.status(), 400, "submitting a trespass without procedures should 400");
+    let body = resp.text().await.unwrap();
+    assert!(
+        body.contains("procedures incomplete"),
+        "error should name the incomplete checklist; got {body}"
+    );
+
+    // Partial (police letter unchecked) -> still 400.
+    let partial = json!({
+        "ils_alert_set": true,
+        "account_barred": true,
+        "no_computer_access": true,
+        "holds_cancelled": true,
+    });
+    let resp = submit_with_procedures(
+        &c,
+        &token,
+        incident_id,
+        Some(json!({ ban_id.to_string(): partial })),
+    )
+    .await;
+    assert_eq!(resp.status(), 400, "missing a required step should 400");
+    assert!(
+        resp.text().await.unwrap().contains("Trespass Letter issued by police"),
+        "error should name the missing step"
+    );
+}
+
+#[tokio::test]
+async fn review_submit_accepts_complete_trespass_procedures_and_persists_snapshot() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let (incident_id, ban_id) =
+        create_incident_with_trespass(&c, &token, "review-gate-complete").await;
+
+    let resp = submit_with_procedures(
+        &c,
+        &token,
+        incident_id,
+        Some(json!({ ban_id.to_string(): completed_trespass_procedures() })),
+    )
+    .await;
+    assert_eq!(resp.status(), 200, "complete checklist should pass the gate");
+
+    // Snapshot frozen onto the ban.
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/details", current_base()))
+        .json(&json!({"ban_id": ban_id}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let details: serde_json::Value = resp.json().await.unwrap();
+    let items = details["ban"]["trespass_procedures"]["items"]
+        .as_array()
+        .expect("snapshot items persisted on the ban");
+    let checked = |code: &str| {
+        items
+            .iter()
+            .find(|i| i["code"].as_str() == Some(code))
+            .map(|i| i["checked"].as_bool() == Some(true))
+            .unwrap_or(false)
+    };
+    assert!(checked("police_letter_issued"));
+    assert!(checked("holds_cancelled"));
+}
+
+#[tokio::test]
+async fn review_submit_escape_hatch_waives_account_steps() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let (incident_id, ban_id) =
+        create_incident_with_trespass(&c, &token, "review-gate-hatch").await;
+
+    // Police letter + "no Evergreen account" hatch waives the four
+    // account-dependent steps, but never the police letter.
+    let resp = submit_with_procedures(
+        &c,
+        &token,
+        incident_id,
+        Some(json!({
+            ban_id.to_string(): {
+                "police_letter_issued": true,
+                "no_library_account": true,
+            }
+        })),
+    )
+    .await;
+    assert_eq!(resp.status(), 200, "escape hatch should waive account-dependent steps");
+}
