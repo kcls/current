@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
+  StickyNote2 as ShiftNotesIcon,
   Dashboard as DashboardIcon,
   ReportProblem as IncidentIcon,
   RateReview as ReviewIcon,
@@ -113,6 +114,12 @@ const Layout: React.FC = () => {
       text: 'Patrons',
       icon: <PatronIcon />,
       path: ROUTES.PATRONS,
+      show: hasAnyRole(STAFF_ROLES)
+    },
+    {
+      text: 'Communication Log',
+      icon: <ShiftNotesIcon />,
+      path: ROUTES.SHIFT_NOTES,
       show: hasAnyRole(STAFF_ROLES)
     },
     {

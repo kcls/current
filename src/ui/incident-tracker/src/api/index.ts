@@ -21,3 +21,4 @@ export { templateApi } from './templates';
 export { locationApi } from './locations';
 export { patronApi } from './patrons';
 export { staffApi } from './staff';
+export { shiftNotesApi } from './shift-notes';

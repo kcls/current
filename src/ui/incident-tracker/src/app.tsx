@@ -15,6 +15,7 @@ import CreateBanPage from './features/incidents/create-ban-page';
 import EditBanPage from './features/incidents/edit-ban-page';
 import TemplateList from './features/settings/template-list';
 import Reports from './features/reports';
+import ShiftNotes from './features/shift-notes';
 import PatronList from './features/patrons/patron-list';
 import PatronDetail from './features/patrons/patron-detail';
 import IncidentReviews from './features/incidents/incident-reviews';
@@ -95,6 +96,11 @@ function App() {
                     <Route path={ROUTES.REPORTS} element={
                       <RoleGuard allowedRoles={[...MANAGER_ROLES]}>
                         <Reports />
+                      </RoleGuard>
+                    } />
+                    <Route path={ROUTES.SHIFT_NOTES} element={
+                      <RoleGuard allowedRoles={[...STAFF_ROLES]} showAccessDenied>
+                        <ShiftNotes />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.PATRONS} element={

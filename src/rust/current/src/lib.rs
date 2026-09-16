@@ -5,8 +5,10 @@ pub mod incidents;
 pub mod patrons;
 pub mod reports;
 pub mod review;
+pub mod shift_notes;
 pub mod sub_locations;
 pub mod templates;
+pub mod trespass_procedures;
 
 use odo_client::auth::TokenManager;
 use odo_client::client::{AssetServiceClient, AuthServiceClient, OrgServiceClient, ServiceClient};

@@ -8,8 +8,10 @@ use current::incidents;
 use current::patrons;
 use current::reports;
 use current::review;
+use current::shift_notes;
 use current::sub_locations;
 use current::templates;
+use current::trespass_procedures;
 use odo_client::auth::TokenManager;
 use odo_service::health;
 use odo_service::middleware::{log_access, request_tracing, require_auth};
@@ -48,9 +50,18 @@ use utoipa::OpenApi;
         bans::create_ban,
         bans::edit_ban,
         bans::archive_ban,
+        bans::purge_ban,
         bans::extend_ban,
         bans::add_to_ban,
         bans::create_ban_letter,
+        bans::update_trespass_procedures,
+        trespass_procedures::list_trespass_procedures,
+        shift_notes::list_shift_notes,
+        shift_notes::create_shift_note,
+        shift_notes::update_shift_note,
+        shift_notes::delete_shift_note,
+        shift_notes::list_shift_note_types,
+        shift_notes::list_shift_note_conduct_areas,
         patrons::get_patron_detail_summary,
         patrons::patron_search,
         patrons::patron_merge_preview,
@@ -129,10 +140,30 @@ use utoipa::OpenApi;
         bans::CreateBanRequest,
         bans::PatronBanResponse,
         bans::CreateBanResponse,
+        bans::UpdateTrespassProceduresRequest,
+        bans::UpdateTrespassProceduresResponse,
+        trespass_procedures::TrespassProcedureItemResponse,
+        trespass_procedures::ListTrespassProceduresResponse,
+        shift_notes::ListShiftNotesRequest,
+        shift_notes::ShiftNoteRow,
+        shift_notes::ShiftNoteAttachmentResponse,
+        shift_notes::ListShiftNotesResponse,
+        shift_notes::CreateShiftNoteRequest,
+        shift_notes::CreateShiftNoteResponse,
+        shift_notes::UpdateShiftNoteRequest,
+        shift_notes::UpdateShiftNoteResponse,
+        shift_notes::DeleteShiftNoteRequest,
+        shift_notes::DeleteShiftNoteResponse,
+        shift_notes::ShiftNoteTypeResponse,
+        shift_notes::ListShiftNoteTypesResponse,
+        shift_notes::ShiftNoteConductAreaResponse,
+        shift_notes::ListShiftNoteConductAreasResponse,
         bans::EditBanRequest,
         bans::EditBanResponse,
         bans::ArchiveBanRequest,
         bans::ArchiveBanResponse,
+        bans::PurgeBanRequest,
+        bans::PurgeBanResponse,
         bans::ExtendBanRequest,
         bans::ExtendBanResponse,
         bans::AddToBanRequest,
@@ -197,6 +228,7 @@ use utoipa::OpenApi;
         (name = "patrons", description = "Patron management"),
         (name = "bans", description = "Patron ban management"),
         (name = "reports", description = "Dashboard report aggregates"),
+        (name = "shift-notes", description = "Shift notes (communication log)"),
     ),
     security(("bearer" = []))
 )]
@@ -337,11 +369,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/v1/current/ban/create", post(bans::create_ban))
         .route("/api/v1/current/ban/edit", post(bans::edit_ban))
         .route("/api/v1/current/ban/archive", post(bans::archive_ban))
+        .route("/api/v1/current/ban/purge", post(bans::purge_ban))
         .route("/api/v1/current/ban/extend", post(bans::extend_ban))
         .route("/api/v1/current/ban/add-to", post(bans::add_to_ban))
         .route(
             "/api/v1/current/ban/letter/create",
             post(bans::create_ban_letter),
+        )
+        .route(
+            "/api/v1/current/trespass-procedure/list",
+            post(trespass_procedures::list_trespass_procedures),
+        )
+        .route(
+            "/api/v1/current/ban/procedure/update",
+            post(bans::update_trespass_procedures),
+        )
+        .route(
+            "/api/v1/current/shift-note/list",
+            post(shift_notes::list_shift_notes),
+        )
+        .route(
+            "/api/v1/current/shift-note/create",
+            post(shift_notes::create_shift_note),
+        )
+        .route(
+            "/api/v1/current/shift-note/update",
+            post(shift_notes::update_shift_note),
+        )
+        .route(
+            "/api/v1/current/shift-note/delete",
+            post(shift_notes::delete_shift_note),
+        )
+        .route(
+            "/api/v1/current/shift-note/type/list",
+            post(shift_notes::list_shift_note_types),
+        )
+        .route(
+            "/api/v1/current/shift-note/conduct-area/list",
+            post(shift_notes::list_shift_note_conduct_areas),
         )
         .route(
             "/api/v1/current/patron/details",
@@ -411,7 +476,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/v1/current/reports/top-patrons",
             post(reports::top_patrons),
         )
-        .route("/api/v1/current/reports/summary", post(reports::summary))
+        .route(
+            "/api/v1/current/reports/summary",
+            post(reports::summary),
+        )
         .route(
             "/api/v1/current/reports/resolution-time",
             post(reports::resolution_time),

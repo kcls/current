@@ -20,6 +20,13 @@ interface LocationSelectorProps {
   sx?: any;
   autoSetDefault?: boolean;
   disableClearable?: boolean;
+  /**
+   * Only allow units whose type has can_have_staff. Non-staff units
+   * (Regions, Root, Lockers) stay visible but unselectable, so the
+   * hierarchy still reads correctly — hiding them leaves branches
+   * indented under nothing.
+   */
+  staffedOnly?: boolean;
 }
 
 const LocationSelector: React.FC<LocationSelectorProps> = ({
@@ -31,7 +38,8 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   placeholder = 'Filter by location...',
   sx = {},
   autoSetDefault = true,
-  disableClearable = true
+  disableClearable = true,
+  staffedOnly = false
 }) => {
   const { locations } = useLocations();
 
@@ -109,6 +117,9 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       autoHighlight
       selectOnFocus
       getOptionLabel={(option) => option.display_label || option.label}
+      getOptionDisabled={(option) =>
+        staffedOnly && option.unit_type_object?.can_have_staff !== true
+      }
       renderOption={(props, option) => {
         const { key, ...otherProps } = props as any;
         const level = (option as any).level || 0;

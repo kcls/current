@@ -23,6 +23,8 @@ pub struct Model {
     pub created_by: Uuid,
     pub lifted_by: Option<Uuid>,
     pub updated_by: Uuid,
+    #[sea_orm(column_type = "JsonBinary", nullable)]
+    pub trespass_procedures: Option<Json>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
