@@ -3,20 +3,12 @@
   "description": "Registration manifest for Current (incident-tracker): everything the app installs into the odo platform. Applied from the odo checkout with scripts/load-data-manifest.sh, which enables the odo-registration account for the length of the run; upsert-only.",
   "permissions": [
     {
-      "code": "odo.asset.current.read",
-      "description": "Read files under the current asset directory"
+      "code": "current.ban.archive",
+      "description": "Archive bans"
     },
     {
-      "code": "odo.asset.current.write",
-      "description": "Upload and delete files under the current asset directory"
-    },
-    {
-      "code": "odo.asset.current.patron.read",
-      "description": "Read files under the current patron asset directory"
-    },
-    {
-      "code": "odo.asset.current.patron.write",
-      "description": "Upload and delete files under the current patron asset directory"
+      "code": "current.ban.purge",
+      "description": "Hard-delete (purge) a ban and its letters/activity history"
     },
     {
       "code": "current.ban.read",
@@ -27,12 +19,12 @@
       "description": "Create, update, and delete bans and trespasses"
     },
     {
-      "code": "current.ban.archive",
-      "description": "Archive bans"
+      "code": "current.incident.read",
+      "description": "View, search, and see statistics for incidents"
     },
     {
-      "code": "current.trespass.archive",
-      "description": "Archive trespasses"
+      "code": "current.incident.write",
+      "description": "Create and update incidents"
     },
     {
       "code": "current.patron.read",
@@ -43,20 +35,12 @@
       "description": "Create, update, and manage patron records and photos"
     },
     {
-      "code": "current.incident.read",
-      "description": "View, search, and see statistics for incidents"
+      "code": "current.review.chain.read",
+      "description": "View review chains and check if org unit has chain"
     },
     {
-      "code": "current.incident.write",
-      "description": "Create and update incidents"
-    },
-    {
-      "code": "current.review.read",
-      "description": "View and list incident reviews, including pending reviews"
-    },
-    {
-      "code": "current.review.write",
-      "description": "Create incident reviews"
+      "code": "current.review.chain.write",
+      "description": "Create and update review chains"
     },
     {
       "code": "current.review.group.read",
@@ -67,12 +51,52 @@
       "description": "Create, update, delete review groups and manage members"
     },
     {
-      "code": "current.review.chain.read",
-      "description": "View review chains and check if org unit has chain"
+      "code": "current.review.read",
+      "description": "View and list incident reviews, including pending reviews"
     },
     {
-      "code": "current.review.chain.write",
-      "description": "Create and update review chains"
+      "code": "current.review.write",
+      "description": "Create incident reviews"
+    },
+    {
+      "code": "current.shift_note.manage_any",
+      "description": "Edit or soft-delete another user's shift note"
+    },
+    {
+      "code": "current.shift_note.read",
+      "description": "View shift notes at or below an org unit"
+    },
+    {
+      "code": "current.shift_note.read_archived",
+      "description": "View shift notes older than the retention window"
+    },
+    {
+      "code": "current.shift_note.write",
+      "description": "Create shift notes; edit and soft-delete your own"
+    },
+    {
+      "code": "current.trespass.archive",
+      "description": "Archive trespasses"
+    },
+    {
+      "code": "current.trespass.purge",
+      "description": "Hard-delete (purge) a trespass and its letters/activity history"
+    },
+    {
+      "code": "odo.asset.current.patron.read",
+      "description": "Read files under the current patron asset directory"
+    },
+    {
+      "code": "odo.asset.current.patron.write",
+      "description": "Upload and delete files under the current patron asset directory"
+    },
+    {
+      "code": "odo.asset.current.read",
+      "description": "Read files under the current asset directory"
+    },
+    {
+      "code": "odo.asset.current.write",
+      "description": "Upload and delete files under the current asset directory"
     }
   ],
   "roles": [
@@ -104,263 +128,53 @@
   ],
   "role_permissions": [
     {
-      "role": "incident-coordinator",
-      "perm": "odo.auth.session",
-      "min_depth": 0
-    },
-    {
       "role": "incident-admin",
-      "perm": "odo.auth.session",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-data",
-      "perm": "odo.auth.session",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-data",
-      "perm": "odo.notify.send",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
-      "perm": "odo.notify.send",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "odo.notify.send",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "odo.notify.send",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "odo.auth.session",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "odo.notify.send",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
-      "perm": "odo.auth.session",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.ban.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.ban.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.incident.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.incident.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.review.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.review.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "current.review.chain.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.ban.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.ban.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
       "perm": "current.ban.archive",
       "min_depth": 0
     },
     {
-      "role": "incident-coordinator",
-      "perm": "current.trespass.archive",
+      "role": "incident-admin",
+      "perm": "current.ban.purge",
       "min_depth": 0
     },
     {
-      "role": "incident-coordinator",
-      "perm": "current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.incident.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.incident.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.review.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.review.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "current.review.chain.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
+      "role": "incident-admin",
       "perm": "current.ban.read",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
+      "role": "incident-admin",
       "perm": "current.ban.write",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
-      "perm": "current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
-      "perm": "current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
+      "role": "incident-admin",
       "perm": "current.incident.read",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
+      "role": "incident-admin",
       "perm": "current.incident.write",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
-      "perm": "current.review.read",
+      "role": "incident-admin",
+      "perm": "current.patron.read",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
-      "perm": "current.review.write",
+      "role": "incident-admin",
+      "perm": "current.patron.write",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
-      "perm": "current.review.group.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
-      "perm": "current.review.group.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
+      "role": "incident-admin",
       "perm": "current.review.chain.read",
       "min_depth": 0
     },
     {
-      "role": "incident-manager",
+      "role": "incident-admin",
       "perm": "current.review.chain.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.ban.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.ban.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.ban.archive",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.trespass.archive",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.incident.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.incident.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.review.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "current.review.write",
       "min_depth": 0
     },
     {
@@ -375,17 +189,172 @@
     },
     {
       "role": "incident-admin",
-      "perm": "current.review.chain.read",
+      "perm": "current.review.read",
       "min_depth": 0
     },
     {
       "role": "incident-admin",
-      "perm": "current.review.chain.write",
+      "perm": "current.review.write",
       "min_depth": 0
     },
     {
-      "role": "incident-staff",
+      "role": "incident-admin",
+      "perm": "current.trespass.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.trespass.purge",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
       "perm": "odo.auth.user.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.purge",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.ban.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.shift_note.manage_any",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.shift_note.read_archived",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.trespass.archive",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.trespass.purge",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.auth.user.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "odo.auth.session",
       "min_depth": 0
     },
     {
@@ -394,23 +363,83 @@
       "min_depth": 0
     },
     {
-      "role": "incident-admin",
-      "perm": "odo.asset.current.read",
+      "role": "incident-data",
+      "perm": "odo.notify.send",
       "min_depth": 0
     },
     {
-      "role": "incident-admin",
-      "perm": "odo.asset.current.write",
+      "role": "incident-manager",
+      "perm": "current.ban.read",
       "min_depth": 0
     },
     {
-      "role": "incident-coordinator",
-      "perm": "odo.asset.current.read",
+      "role": "incident-manager",
+      "perm": "current.ban.write",
       "min_depth": 0
     },
     {
-      "role": "incident-coordinator",
-      "perm": "odo.asset.current.write",
+      "role": "incident-manager",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.chain.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.group.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.group.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "current.shift_note.read_archived",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-manager",
+      "perm": "odo.asset.current.patron.write",
       "min_depth": 0
     },
     {
@@ -424,68 +453,108 @@
       "min_depth": 0
     },
     {
-      "role": "incident-staff",
-      "perm": "odo.asset.current.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "odo.asset.current.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "odo.asset.current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
-      "perm": "odo.asset.current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "odo.asset.current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-coordinator",
-      "perm": "odo.asset.current.patron.write",
+      "role": "incident-manager",
+      "perm": "odo.auth.session",
       "min_depth": 0
     },
     {
       "role": "incident-manager",
-      "perm": "odo.asset.current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-manager",
-      "perm": "odo.asset.current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "odo.asset.current.patron.read",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-staff",
-      "perm": "odo.asset.current.patron.write",
-      "min_depth": 0
-    },
-    {
-      "role": "incident-admin",
       "perm": "odo.auth.user.read",
       "min_depth": 0
     },
     {
       "role": "incident-manager",
+      "perm": "odo.notify.send",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.ban.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.review.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.shift_note.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "current.shift_note.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.patron.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.asset.current.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
+      "perm": "odo.auth.session",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-staff",
       "perm": "odo.auth.user.read",
       "min_depth": 0
     },
     {
-      "role": "incident-coordinator",
-      "perm": "odo.auth.user.read",
+      "role": "incident-staff",
+      "perm": "odo.notify.send",
       "min_depth": 0
     }
   ],
