@@ -34,6 +34,9 @@ export const ROUTES = {
   TEMPLATES: '/templates',
   TEMPLATES_NEW: '/templates/new',
   REPORTS: '/reports',
+
+  // Shift notes (communication log)
+  SHIFT_NOTES: '/shift-notes',
   NOTIFICATIONS: '/notifications',
   STAFF_MANAGEMENT: '/staff-management',
   ROLE_MANAGEMENT: '/role-management',

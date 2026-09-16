@@ -282,6 +282,7 @@ export interface PatronBan extends Omit<Partial<BasePatronBan>, 'patron' | 'crea
   is_active?: boolean; // Computed field
   is_trespass?: boolean; // Trespasses are manually archived only
   org_unit?: string; // Organization unit where ban applies
+  trespass_procedures?: TrespassProcedureSnapshot | null; // Frozen checklist snapshot
 }
 
 // API Response types
@@ -514,3 +515,29 @@ export interface PatronBanStatus {
 export * from './api';
 export * from './settings';
 export * from './patron';
+
+export interface TrespassProcedureItem {
+  id: number;
+  code: string;
+  label: string;
+  required: boolean;
+  account_dependent: boolean; // Waived when the escape-hatch item is checked
+  is_escape_hatch: boolean; // The "patron has no account" opt-out
+  display_order: number;
+  is_active: boolean;
+}
+
+export interface TrespassProcedureSnapshotItem {
+  code: string;
+  label: string;
+  checked: boolean;
+  required: boolean;
+  account_dependent: boolean;
+  is_escape_hatch: boolean;
+}
+
+export interface TrespassProcedureSnapshot {
+  items: TrespassProcedureSnapshotItem[];
+}
+
+export * from './shift-note';

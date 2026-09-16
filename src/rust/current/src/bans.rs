@@ -123,6 +123,9 @@ pub struct BanDetailRow {
     pub created_by: Uuid,
     pub updated_at: chrono::DateTime<chrono::FixedOffset>,
 
+    #[schema(value_type = Option<Object>)]
+    pub trespass_procedures: Option<serde_json::Value>,
+
     // Resolved labels (best-effort).
     pub patron_name: Option<String>,
     pub org_unit_name: Option<String>,
@@ -275,6 +278,7 @@ pub async fn get_ban_details(
             created_at: ban.created_at,
             created_by: ban.created_by,
             updated_at: ban.updated_at,
+            trespass_procedures: ban.trespass_procedures,
         },
         letters,
     };
@@ -1028,6 +1032,8 @@ pub async fn create_ban(
         archives_at: Set(archives_at),
         comments: Set(params.comments.clone()),
         is_trespass: Set(is_trespass),
+        // Trespass procedures are captured later, at first review
+        // submission — not at creation. Left null here.
         created_by: Set(user_id),
         updated_by: Set(user_id),
         ..Default::default()
@@ -1253,6 +1259,7 @@ pub(crate) async fn apply_pending_bans<C: sea_orm::ConnectionTrait>(
                 archives_at: Set(archives_at),
                 comments: Set(intent.comments.clone()),
                 is_trespass: Set(is_trespass),
+                // Procedures captured later, at first review submission.
                 created_by: Set(user_id),
                 updated_by: Set(user_id),
                 ..Default::default()
@@ -1714,6 +1721,119 @@ pub async fn archive_ban(
 }
 
 // ===========================================================================
+// purge_ban
+// ===========================================================================
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PurgeBanRequest {
+    pub ban_id: i32,
+    #[serde(default)]
+    pub comments: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PurgeBanResponse {
+    pub ban_id: i32,
+    pub is_trespass: bool,
+    /// Rows removed from generated_ban_letter / activity_log along with
+    /// the ban itself.
+    pub letters_deleted: u64,
+    pub activity_deleted: u64,
+}
+
+/// Hard-delete a ban or trespass and its history. Unlike `archive_ban`
+/// (the normal end-of-life path, which keeps the row), this removes the
+/// `patron_ban` row along with its generated letters and activity-log
+/// entries. Intended for cleaning up mistaken or migration-artifact
+/// entries; there is no undo.
+#[utoipa::path(
+    post,
+    path = "/api/v1/current/ban/purge",
+    request_body = PurgeBanRequest,
+    responses((status = 200, body = PurgeBanResponse, description = "Purge summary")),
+    security(("bearer" = [])),
+    tag = "bans"
+)]
+pub async fn purge_ban(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<PurgeBanRequest>,
+) -> ApiResult<Json<PurgeBanResponse>> {
+    let user_id = RequestContext::user_uuid().ok_or(LocalError::unauthenticated())?;
+
+    let existing = patron_ban::Entity::find_by_id(params.ban_id)
+        .one(&state.db)
+        .await?
+        .ok_or_else(|| LocalError::not_found(format!("ban {}", params.ban_id)))?;
+
+    // Distinct perms by kind, mirroring archive: trespasses
+    // (cross-location, long-lived) need a higher-trust role than
+    // ordinary bans.
+    let perm = if existing.is_trespass {
+        "current.trespass.purge"
+    } else {
+        "current.ban.purge"
+    };
+    state
+        .auth_client
+        .permission_required_uuid(perm, Some(&existing.org_unit))
+        .await?;
+
+    let txn = state.db.begin().await?;
+
+    // Letters first: generated_ban_letter references both the ban and
+    // (via activity_log_id) the activity rows deleted next.
+    let letters = generated_ban_letter::Entity::delete_many()
+        .filter(generated_ban_letter::Column::Ban.eq(params.ban_id))
+        .exec(&txn)
+        .await?;
+
+    // The ban's full history goes with it.
+    let activity = activity_log::Entity::delete_many()
+        .filter(activity_log::Column::BanId.eq(params.ban_id))
+        .exec(&txn)
+        .await?;
+
+    // ban_reason_entry rows cascade with the ban row.
+    patron_ban::Entity::delete_by_id(params.ban_id)
+        .exec(&txn)
+        .await?;
+
+    // Leave one audit-trail entry for the purge itself. ban_id stays
+    // NULL — the row it would reference no longer exists — so the
+    // details live in event_data. The originating incident survives the
+    // purge, so the entry stays visible in that incident's activity.
+    log_ban_activity(
+        &txn,
+        "ban.purged",
+        user_id,
+        Some(existing.org_unit),
+        Some(existing.incident),
+        None,
+        serde_json::json!({
+            "ban_id": params.ban_id,
+            "patron": existing.patron,
+            "is_trespass": existing.is_trespass,
+            "comments": params.comments,
+        }),
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    tracing::info!(
+        ban_id = params.ban_id,
+        is_trespass = existing.is_trespass,
+        "PurgeBan"
+    );
+    Ok(Json(PurgeBanResponse {
+        ban_id: params.ban_id,
+        is_trespass: existing.is_trespass,
+        letters_deleted: letters.rows_affected,
+        activity_deleted: activity.rows_affected,
+    }))
+}
+
+// ===========================================================================
 // extend_ban
 // ===========================================================================
 
@@ -2085,6 +2205,79 @@ pub async fn create_ban_letter(
 // Helpers
 // ===========================================================================
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateTrespassProceduresRequest {
+    pub ban_id: i32,
+    #[schema(value_type = Object)]
+    pub trespass_procedures: serde_json::Value,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct UpdateTrespassProceduresResponse {
+    #[schema(value_type = Object)]
+    pub trespass_procedures: serde_json::Value,
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/current/ban/procedure/update",
+    request_body = UpdateTrespassProceduresRequest,
+    responses((status = 200, body = UpdateTrespassProceduresResponse,
+        description = "Updated trespass procedure snapshot")),
+    security(("bearer" = [])),
+    tag = "bans"
+)]
+pub async fn update_trespass_procedures(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<UpdateTrespassProceduresRequest>,
+) -> ApiResult<Json<UpdateTrespassProceduresResponse>> {
+    let user_id = RequestContext::user_uuid().ok_or(LocalError::unauthenticated())?;
+
+    let ban = patron_ban::Entity::find_by_id(params.ban_id)
+        .one(&state.db)
+        .await?
+        .ok_or_else(|| LocalError::not_found(format!("ban {}", params.ban_id)))?;
+
+    state
+        .auth_client
+        .permission_required_uuid("current.ban.write", Some(&ban.org_unit))
+        .await?;
+
+    if !ban.is_trespass {
+        return Err(LocalError::invalid_input("Procedures apply to trespasses only").into());
+    }
+
+    let org_unit = ban.org_unit;
+    let incident = ban.incident;
+    let ban_id = ban.id;
+    let items = crate::trespass_procedures::active_items(&state.db).await?;
+    let snapshot = crate::trespass_procedures::build_snapshot(&items, &params.trespass_procedures);
+
+    let txn = state.db.begin().await?;
+
+    let mut active: patron_ban::ActiveModel = ban.into();
+    active.trespass_procedures = Set(Some(snapshot.clone()));
+    active.updated_by = Set(user_id);
+    active.update(&txn).await?;
+
+    log_ban_activity(
+        &txn,
+        "ban.procedures_updated",
+        user_id,
+        Some(org_unit),
+        Some(incident),
+        Some(ban_id),
+        snapshot.clone(),
+    )
+    .await?;
+
+    txn.commit().await?;
+
+    Ok(Json(UpdateTrespassProceduresResponse {
+        trespass_procedures: snapshot,
+    }))
+}
+
 /// Insert a row into `incidents.activity_log` and return its id.
 async fn log_ban_activity<C: sea_orm::ConnectionTrait>(
     txn: &C,
@@ -2203,10 +2396,7 @@ pub(crate) struct BanNotificationParams {
 /// failure is logged but doesn't fail the caller — notifications are
 /// best-effort by design (the ban is already committed).
 async fn send_ban_notification(state: &AppState, params: BanNotificationParams) -> LocalResult<()> {
-    let (location_name, timezone) = match state
-        .org_client
-        .get_unit_detail_by_uuid(&params.org_unit_id)
-        .await
+    let (location_name, timezone) = match state.org_client.get_unit_detail_by_uuid(&params.org_unit_id).await
     {
         Ok(detail) => {
             let unit = detail.get("org_unit");
