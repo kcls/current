@@ -229,6 +229,7 @@ export const incidentApi = {
     has_active_trespass?: boolean;
     patron?: number;
     sort_incident_date?: boolean;
+    sort_by?: string;
     sort_dir?: 'asc' | 'desc';
     page?: number;
     limit?: number;
@@ -256,6 +257,7 @@ export const incidentApi = {
     if (params.has_active_trespass) searchParams.has_active_trespass = params.has_active_trespass;
     if (params.patron !== undefined) searchParams.patron = params.patron;
     if (params.sort_incident_date !== undefined) searchParams.sort_incident_date = params.sort_incident_date;
+    if (params.sort_by) searchParams.sort_by = params.sort_by;
     if (params.sort_dir) searchParams.sort_dir = params.sort_dir;
     if (params.with_involved_parties !== undefined) {
       searchParams.options = { with_involved_parties: params.with_involved_parties };
@@ -446,12 +448,18 @@ export const incidentApi = {
   async createReview(
     incidentId: number,
     result: 'submitted' | 'approved' | 'approved-with-edits' | 'returned' | 'deleted' | 'resolved' | 'reopened',
-    comments?: string
+    comments?: string,
+    // Trespass procedure checklists captured at first review submission,
+    // keyed by trespass ban id. Only sent with result === 'submitted' when
+    // the incident has trespass ban(s) needing procedures; see the backend
+    // gate in review.rs.
+    trespassProcedures?: Record<string, Record<string, boolean>>,
   ): Promise<any> {
     const params = {
       incident: incidentId,
       result,
-      ...(comments && { comments })
+      ...(comments && { comments }),
+      ...(trespassProcedures && { trespass_procedures: trespassProcedures }),
     };
 
     return await currentPost('/incident/review/create', params);

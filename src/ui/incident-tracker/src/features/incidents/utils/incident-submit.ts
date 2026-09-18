@@ -86,6 +86,12 @@ export async function createPostSubmitLetters(params: {
 
 export type SubmitAction = 'save_draft' | 'save_and_ban' | 'submit_for_review';
 
+/** A trespass ban just created by a submit, for the review-procedures dialog. */
+export interface CreatedTrespass {
+  banId: number;
+  patronName: string;
+}
+
 export interface SubmitIncidentParams {
   action: SubmitAction;
   isEditMode: boolean;
@@ -111,6 +117,38 @@ export interface SubmitIncidentResult {
   incidentId: number;
   navigateTo: string;
   successMessage: string;
+  /** Trespass bans created by this submit; empty unless a submit produced
+   * any. The caller uses these to prompt for procedures before submitting
+   * the incident for review. */
+  createdTrespasses?: CreatedTrespass[];
+}
+
+/** Pair created ban ids with their intents (positional, matching
+ * createPostSubmitLetters) and pick out the trespasses, resolving a display
+ * name from the selected patrons. */
+function collectCreatedTrespasses(
+  createdBanIds: number[] | Record<string, number> | undefined,
+  patronBanIntents: Record<string, BanIntentData>,
+  selectedPatrons: PatronSearchResult[],
+): CreatedTrespass[] {
+  if (!createdBanIds) return [];
+  const enabledBans = Object.entries(patronBanIntents).filter(([, d]) => d.enabled);
+  const isMap = !Array.isArray(createdBanIds);
+  const out: CreatedTrespass[] = [];
+  for (let i = 0; i < enabledBans.length; i++) {
+    const [patronId, banData] = enabledBans[i]!;
+    if (banData.ban_type !== 'trespass') continue;
+    const banId = isMap
+      ? (createdBanIds as Record<string, number>)[patronId]
+      : (createdBanIds as number[])[i];
+    if (!banId) continue;
+    const patron = selectedPatrons.find((p) => String(p.id) === String(patronId));
+    out.push({
+      banId,
+      patronName: patron?.display_name || `Patron #${patronId}`,
+    });
+  }
+  return out;
 }
 
 export async function submitIncident(params: SubmitIncidentParams): Promise<SubmitIncidentResult> {
@@ -214,6 +252,25 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
   });
 
   if (action === 'submit_for_review') {
+    // Trespasses need their procedure checklist before the review can be
+    // submitted (backend gate in review.rs). The bans only exist now, so we
+    // return them and let the caller collect procedures via the dialog, then
+    // submit the review. With no trespasses, submit immediately as before.
+    const createdTrespasses = collectCreatedTrespasses(
+      result.created_ban_ids,
+      patronBanIntents,
+      selectedPatrons,
+    );
+    if (createdTrespasses.length > 0) {
+      return {
+        incidentId: result.id,
+        // Saved but not yet submitted — a draft until procedures are done.
+        navigateTo: `/incidents/${result.id}`,
+        successMessage: `Incident #${result.id} created`,
+        createdTrespasses,
+      };
+    }
+
     await incidentApi.createReview(result.id, 'submitted', 'Initial submission for review');
     return {
       incidentId: result.id,

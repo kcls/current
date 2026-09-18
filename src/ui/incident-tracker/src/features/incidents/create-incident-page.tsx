@@ -17,7 +17,9 @@ import { StepReview } from './components/incident-form-step-review';
 import { useIncidents } from '../../contexts/incidents-context';
 import { useFileUpload } from './hooks/use-file-upload';
 import { useIncidentFormState } from './hooks/use-incident-form-state';
-import { submitIncident } from './utils/incident-submit';
+import { submitIncident, type CreatedTrespass } from './utils/incident-submit';
+import { ReviewProceduresDialog } from './components/review-procedures-dialog';
+import { incidentApi } from '../../api/incidents';
 import { authApi as coreAuthApi } from '@core';
 import type { BanLetterTemplate } from '@core/types/auto/incidents';
 import type { PatronSearchResult } from '../../types';
@@ -42,6 +44,13 @@ const CreateIncidentPage: React.FC = () => {
 
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // When a submit-for-review created trespass ban(s), we hold the review and
+  // collect procedures here first (backend gate). The incident is already
+  // saved (a draft) at this point.
+  const [pendingReview, setPendingReview] = useState<{
+    incidentId: number;
+    trespasses: CreatedTrespass[];
+  } | null>(null);
   const [banLetterTemplates, setBanLetterTemplates] = useState<BanLetterTemplate[]>([]);
   const [banValidationSeq, setBanValidationSeq] = useState(0);
 
@@ -225,12 +234,56 @@ const CreateIncidentPage: React.FC = () => {
         updateIncident,
         showError,
       });
+      // Trespasses were created — capture procedures before the review is
+      // actually submitted. The incident is saved as a draft meanwhile.
+      if (result.createdTrespasses && result.createdTrespasses.length > 0) {
+        setPendingReview({
+          incidentId: result.incidentId,
+          trespasses: result.createdTrespasses,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       showSuccess(result.successMessage);
       navigate(result.navigateTo);
     } catch (error: any) {
       showError(error.message || 'Failed to submit incident for review');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Confirm from the procedures dialog: submit the held review with the
+  // per-trespass checklists.
+  const handleProceduresConfirm = async (
+    proceduresByBan: Record<string, Record<string, boolean>>,
+  ) => {
+    if (!pendingReview) return;
+    setIsSubmitting(true);
+    try {
+      await incidentApi.createReview(
+        pendingReview.incidentId,
+        'submitted',
+        'Initial submission for review',
+        proceduresByBan,
+      );
+      showSuccess(`Incident #${pendingReview.incidentId} created and submitted for review`);
+      navigate(`/incidents/${pendingReview.incidentId}`);
+    } catch (error: any) {
+      showError(error.message || 'Failed to submit incident for review');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Cancel: the incident is already saved as a draft, so send them to it.
+  const handleProceduresCancel = () => {
+    const id = pendingReview?.incidentId;
+    setPendingReview(null);
+    if (id) {
+      showSuccess(`Incident #${id} saved as a draft`);
+      navigate(`/incidents/${id}`);
     }
   };
 
@@ -297,7 +350,7 @@ const CreateIncidentPage: React.FC = () => {
             patronExtendIntents={form.patronExtendIntents}
             setPatronExtendIntents={form.setPatronExtendIntents}
             templates={banLetterTemplates}
-            incident={form.tempIncident}
+              incident={form.tempIncident}
             patronDetailsMap={form.patronDetailsMap}
             errors={form.banStepErrors}
             validationSeq={banValidationSeq}
@@ -320,6 +373,14 @@ const CreateIncidentPage: React.FC = () => {
           />
         )}
       </Paper>
+
+      <ReviewProceduresDialog
+        open={pendingReview !== null}
+        trespasses={pendingReview?.trespasses ?? []}
+        submitting={isSubmitting}
+        onCancel={handleProceduresCancel}
+        onConfirm={handleProceduresConfirm}
+      />
     </PageContainer>
   );
 };
