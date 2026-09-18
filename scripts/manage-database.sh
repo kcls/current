@@ -27,12 +27,12 @@ NAMESPACE=${NAMESPACE:-odo-pub}
 
 # Sqitch directories
 SQITCH_DIR="${SQITCH_DIR:-$PROJECT_ROOT/src/sqitch}"
-SQITCH_SCHEMA_DIR="${SQITCH_SCHEMA_DIR:-$SQITCH_DIR/current}"
+SQITCH_CORE_DIR="${SQITCH_CORE_DIR:-$SQITCH_DIR/core}"
 # The demo sub-locations are a separate sqitch project
 # (%project=current-demo) in the same database, so an installation with
 # its own org structure can skip them. They depend on
 # current:002_current_seed, so they deploy after it and revert before it.
-SQITCH_DEMO_DIR="${SQITCH_DEMO_DIR:-$SQITCH_DIR/demo}"
+SQITCH_DEMO_DIR="${SQITCH_DEMO_DIR:-$SQITCH_DIR/demo-data}"
 # Dev/CI fixtures: plain idempotent SQL, not a sqitch project. They live
 # with the suites that consume them rather than with the schema.
 TEST_DATA_DIR="${TEST_DATA_DIR:-$PROJECT_ROOT/tests/fixtures}"
@@ -72,8 +72,8 @@ usage() {
     echo "  PGPASSWORD=password       Override database password (default: from secret)"
     echo "  DRY_RUN=true              Show what would be done without making changes"
     echo "  NAMESPACE=name            Kubernetes namespace for secrets (default: odo-pub)"
-    echo "  SQITCH_SCHEMA_DIR=/path   Override schema directory (default: $SQITCH_SCHEMA_DIR)"
-    echo "  SQITCH_DEMO_DIR=/path     Override demo directory (default: $SQITCH_DEMO_DIR)"
+    echo "  SQITCH_CORE_DIR=/path   Override core directory (default: $SQITCH_CORE_DIR)"
+    echo "  SQITCH_DEMO_DIR=/path     Override demo-data directory (default: $SQITCH_DEMO_DIR)"
     echo "  TEST_DATA_DIR=/path       Override fixtures directory (default: $TEST_DATA_DIR)"
     echo
     echo "Note: Database credentials are retrieved from Kubernetes secret by default"
@@ -147,7 +147,7 @@ run_sqitch() {
 sqitch_deploy() {
     local target="${2:-HEAD}"
     echo -e "\n${YELLOW}Deploying database schema changes${NC}"
-    run_sqitch "$SQITCH_SCHEMA_DIR" deploy $target
+    run_sqitch "$SQITCH_CORE_DIR" deploy $target
     echo -e "${GREEN}Schema deployment completed successfully${NC}"
 }
 
@@ -161,7 +161,7 @@ sqitch_revert() {
     fi
     
     echo -e "\n${YELLOW}Reverting database schema changes to $target${NC}"
-    run_sqitch "$SQITCH_SCHEMA_DIR" revert $target
+    run_sqitch "$SQITCH_CORE_DIR" revert $target
     echo -e "${GREEN}Schema revert completed successfully${NC}"
 }
 
@@ -218,25 +218,25 @@ sqitch_revert_all() {
 
     revert_demo_if_deployed
     
-    #run_sqitch "$SQITCH_SCHEMA_DIR" revert --to @ROOT
-    run_sqitch "$SQITCH_SCHEMA_DIR" revert
+    #run_sqitch "$SQITCH_CORE_DIR" revert --to @ROOT
+    run_sqitch "$SQITCH_CORE_DIR" revert
     echo -e "${GREEN}All schema changes reverted successfully${NC}"
 }
 
 sqitch_status() {
     echo -e "\n${YELLOW}Checking schema deployment status${NC}"
-    run_sqitch "$SQITCH_SCHEMA_DIR" status
+    run_sqitch "$SQITCH_CORE_DIR" status
 }
 
 sqitch_verify() {
     echo -e "\n${YELLOW}Verifying deployed schema changes${NC}"
-    run_sqitch "$SQITCH_SCHEMA_DIR" verify
+    run_sqitch "$SQITCH_CORE_DIR" verify
     echo -e "${GREEN}Schema verification completed${NC}"
 }
 
 sqitch_log() {
     echo -e "\n${YELLOW}Schema deployment history${NC}"
-    run_sqitch "$SQITCH_SCHEMA_DIR" log
+    run_sqitch "$SQITCH_CORE_DIR" log
 }
 
 # Test data: API-driven fixtures plus idempotent SQL files applied in order
