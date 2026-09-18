@@ -84,6 +84,19 @@ export const bansApi = {
     return await currentPost('/ban/archive', params);
   },
 
+  /** Hard-delete a ban/trespass plus its letters and activity history. No undo. */
+  async purgeBan(params: {
+    ban_id: number;
+    comments?: string;
+  }): Promise<{
+    ban_id: number;
+    is_trespass: boolean;
+    letters_deleted: number;
+    activity_deleted: number;
+  }> {
+    return await currentPost('/ban/purge', params);
+  },
+
   async extendBan(params: {
     ban_id: number;
     lifts_at: string;
@@ -102,6 +115,16 @@ export const bansApi = {
 
   async getBanDetails(banId: number): Promise<BanDetailsResponse> {
     return await currentPost<BanDetailsResponse>('/ban/details', { ban_id: banId });
+  },
+
+  async updateTrespassProcedures(
+    banId: number,
+    procedures: Record<string, boolean>,
+  ): Promise<{ trespass_procedures: { items: unknown[] } }> {
+    return await currentPost('/ban/procedure/update', {
+      ban_id: banId,
+      trespass_procedures: procedures,
+    });
   },
 
   async getBanLetter(letterId: number): Promise<{ content: string } | null> {

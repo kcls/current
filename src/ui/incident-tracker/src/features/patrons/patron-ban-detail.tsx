@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Paper,
   Typography,
@@ -26,6 +26,7 @@ import {
 CheckCircle as LiftedIcon,
   Schedule as ScheduleIcon,
   Archive as ArchiveIcon,
+  DeleteForever as PurgeIcon,
   CalendarToday as CalendarIcon,
   Event as EventIcon,
   Person as PersonIcon,
@@ -38,15 +39,16 @@ import { PageContainer } from '../../shared/components/layout';
 import { Breadcrumbs } from '../../shared/components/breadcrumbs';
 import LoadingSkeleton from '../../shared/components/loading-skeleton';
 import { ArchiveBanDialog } from './archive-ban-dialog';
+import { PurgeBanDialog } from './purge-ban-dialog';
 import { LetterViewerDialog } from '../../shared/components/letter-viewer-dialog';
 import { AddBanNoteDialog } from './add-ban-note-dialog';
 import { bansApi } from '../../api/bans';
+import { trespassProceduresApi } from '../../api/trespass-procedures';
 import { getBanActivity } from '../../api/activity';
 import { patronApi } from '../../api/patrons';
-import { uploadService } from '@core';
-import { useAuth } from '../../contexts/auth-context';
+import { TrespassProceduresChecklist } from '../incidents/components/trespass-procedures-checklist';
+import { uploadService, authApi } from '@core';
 import { useToast } from '../../contexts/toast-context';
-import { INCIDENT_ROLES } from '../../shared/utils/roles';
 import { ActivityLogPaper } from '../../shared/components/activity-log';
 import type { ActivityLogEntry } from '../../types';
 import {
@@ -54,19 +56,21 @@ import {
   formatBanDate,
   formatDisplayDateTime,
 } from '../../shared/utils/date-utils';
-import type { BanDetailsResponse } from '../../types';
+import type { BanDetailsResponse, TrespassProcedureItem } from '../../types';
+import type { ProcedureState } from '../../shared/utils/trespass-procedures';
 import { getBanStatus } from '../../shared/utils/ban-status';
-
-const ARCHIVE_ROLES = [INCIDENT_ROLES.COORDINATOR, INCIDENT_ROLES.ADMIN];
 
 const PatronBanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { showError } = useToast();
+  const navigate = useNavigate();
+  const { showError, showSuccess } = useToast();
 
   const [data, setData] = useState<BanDetailsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [purgeDialogOpen, setPurgeDialogOpen] = useState(false);
+  const [canPurge, setCanPurge] = useState(false);
+  const [canArchive, setCanArchive] = useState(false);
 const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [viewLetterContent, setViewLetterContent] = useState<string | null>(null);
   const [viewLetterDialogOpen, setViewLetterDialogOpen] = useState(false);
@@ -74,6 +78,9 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [activityEntries, setActivityEntries] = useState<ActivityLogEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [procedureItems, setProcedureItems] = useState<TrespassProcedureItem[]>([]);
+  const [procState, setProcState] = useState<ProcedureState>({});
+  const [procSaving, setProcSaving] = useState(false);
 
   const loadData = useCallback(async (showLoading = true) => {
     if (!id) return;
@@ -107,10 +114,48 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
     loadData();
   }, [loadData]);
 
-  // Load activity log
   useEffect(() => {
     loadActivity();
   }, [loadActivity]);
+
+  useEffect(() => {
+    trespassProceduresApi.list().then(setProcedureItems).catch(() => setProcedureItems([]));
+  }, []);
+
+  // Seed the editable checklist state from the ban's frozen snapshot
+  useEffect(() => {
+    const items = data?.ban.trespass_procedures?.items;
+    if (!items) {
+      setProcState({});
+      return;
+    }
+    setProcState(Object.fromEntries(items.map((i) => [i.code, i.checked])));
+  }, [data]);
+
+  const proceduresDirty = useMemo(() => {
+    const snap = data?.ban.trespass_procedures?.items ?? [];
+    const orig: ProcedureState = Object.fromEntries(snap.map((i) => [i.code, i.checked]));
+    const codes = new Set([...Object.keys(orig), ...procedureItems.map((i) => i.code)]);
+    for (const c of codes) {
+      if (!!orig[c] !== !!procState[c]) return true;
+    }
+    return false;
+  }, [data, procState, procedureItems]);
+
+  const handleSaveProcedures = async () => {
+    if (!id) return;
+    setProcSaving(true);
+    try {
+      await bansApi.updateTrespassProcedures(parseInt(id), procState);
+      showSuccess('Procedures updated');
+      loadData(false);
+      loadActivity();
+    } catch (e: any) {
+      showError(e?.message || 'Failed to update procedures');
+    } finally {
+      setProcSaving(false);
+    }
+  };
 
   // Load patron photo for avatar
   useEffect(() => {
@@ -126,6 +171,25 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
         setPatronPhotoUrl(uploadService.getFileUrl(primaryPhoto.file_upload_data.relative_path));
       }
     }).catch(() => { /* ignore — avatar will just show default */ });
+    return () => { cancelled = true; };
+  }, [data]);
+
+  // Resolve the user's *effective* archive/purge permissions at the
+  // ban's org unit — the same checks the server enforces — so the
+  // buttons only show when the actions would actually be allowed.
+  useEffect(() => {
+    let cancelled = false;
+    setCanPurge(false);
+    setCanArchive(false);
+    if (!data) return;
+    const { ban } = data;
+    const kind = ban.is_trespass ? 'trespass' : 'ban';
+    authApi.userHasPerm(`current.${kind}.purge`, ban.org_unit).then((allowed) => {
+      if (!cancelled) setCanPurge(allowed);
+    });
+    authApi.userHasPerm(`current.${kind}.archive`, ban.org_unit).then((allowed) => {
+      if (!cancelled) setCanArchive(allowed);
+    });
     return () => { cancelled = true; };
   }, [data]);
 
@@ -180,7 +244,10 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const isActive = !ban.archived_by && !(ban.lifts_at && isTimestampPast(ban.lifts_at) && !ban.is_trespass);
   const typeLabel = ban.is_trespass ? 'Trespass' : 'Ban';
 
-  const canArchive = user?.roles?.some((r: any) => ARCHIVE_ROLES.includes(r.role)) ?? false;
+  // canArchive/canPurge (state above) come from the effective-permission
+  // checks at the ban's org unit. Archive hides once archived; purge
+  // shows regardless of archive state — cleanup applies to archived
+  // entries too.
   const showArchiveButton = canArchive && !ban.archived_by;
 
   const patronId = ban.patron_id || (typeof ban.patron === 'object' ? ban.patron?.id : ban.patron);
@@ -337,8 +404,41 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
                   Archive
                 </Button>
               )}
+              {canPurge && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  startIcon={<PurgeIcon />}
+                  onClick={() => setPurgeDialogOpen(true)}
+                  data-testid="purge-ban-button"
+                >
+                  Delete
+                </Button>
+              )}
             </Box>
           </Paper>
+
+          {ban.is_trespass && procedureItems.length > 0 && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <TrespassProceduresChecklist
+                items={procedureItems}
+                state={procState}
+                onChange={setProcState}
+                embedded
+              />
+              <Box display="flex" justifyContent="flex-end" mt={1.5}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  disabled={!proceduresDirty || procSaving}
+                  onClick={handleSaveProcedures}
+                >
+                  {procSaving ? 'Saving…' : 'Save procedures'}
+                </Button>
+              </Box>
+            </Paper>
+          )}
 
           <ActivityLogPaper
             title={`${typeLabel} History`}
@@ -474,6 +574,17 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
         ban={ban}
         onClose={() => setArchiveDialogOpen(false)}
         onSuccess={handleDialogSuccess}
+      />
+
+      <PurgeBanDialog
+        open={purgeDialogOpen}
+        ban={ban}
+        onClose={() => setPurgeDialogOpen(false)}
+        onSuccess={() =>
+          // The ban no longer exists — leave the page. Fall back to the
+          // patron list if the patron id is somehow unavailable.
+          navigate(patronId ? `/patrons/${patronId}` : '/patrons', { replace: true })
+        }
       />
 
 <LetterViewerDialog
