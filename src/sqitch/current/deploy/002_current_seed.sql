@@ -2,11 +2,17 @@
 -- requires: 001_incidents_baseline
 
 -- Current's application reference data (incident templates, categories,
--- external link types, age ranges, sub-locations, ban letter templates).
--- Sub-locations attach to the platform demo root by its pinned uuid
--- (5eed0000-...-0201: org units are cross-database references, resolved
--- via the odo org API at runtime); ban letter authorship is stamped with
+-- external link types, age ranges, ban letter templates). Every install
+-- needs these: they are the vocabulary the app is written against, not a
+-- sample of one library's setup. Ban letter authorship is stamped with
 -- the odo-registration account's pinned uuid.
+--
+-- Sub-locations are NOT here. They name places inside a building
+-- ("Lobby", "Elevator") and so belong to a specific org unit, which
+-- makes them installation data rather than reference data. The demo set,
+-- pinned to the platform's demo root, lives in the separate
+-- `current-demo` sqitch project (src/sqitch/demo); a real installation
+-- registers its own.
 --
 -- Idempotent: keyed on primary keys; re-runs update nothing (DO NOTHING).
 
@@ -78,17 +84,6 @@ INSERT INTO incidents.templates (id, name, description, category, fields, is_act
 ON CONFLICT (id) DO NOTHING;
 SELECT setval('incidents.templates_id_seq', GREATEST((SELECT MAX(id) FROM incidents.templates), 1));
 
-INSERT INTO incidents.sub_locations (id, label, description, code, org_unit) VALUES
-    (58, $q$Meeting or Study Room$q$, $q$Meeting rooms and study spaces$q$, $q$OLS-MSR$q$, '5eed0000-0000-4000-a000-000000000201'),
-    (59, $q$Parking Lot or Garage$q$, $q$Parking areas and garages$q$, $q$OLS-PLG$q$, '5eed0000-0000-4000-a000-000000000201'),
-    (60, $q$Lobby$q$, $q$Main entrance and lobby area$q$, $q$OLS-LOB$q$, '5eed0000-0000-4000-a000-000000000201'),
-    (61, $q$Outside$q$, $q$Outdoor areas around the building$q$, $q$OLS-OUT$q$, '5eed0000-0000-4000-a000-000000000201'),
-    (62, $q$Elevator$q$, $q$Elevator areas$q$, $q$OLS-ELE$q$, '5eed0000-0000-4000-a000-000000000201'),
-    (63, $q$Restrooms$q$, $q$Public restrooms$q$, $q$OLS-RES$q$, '5eed0000-0000-4000-a000-000000000201'),
-    (64, $q$Makerspace$q$, $q$Creative and technology workspace$q$, $q$OLS-MAK$q$, '5eed0000-0000-4000-a000-000000000201')
-ON CONFLICT (id) DO UPDATE SET
-    label = EXCLUDED.label, description = EXCLUDED.description, code = EXCLUDED.code;
-SELECT setval('incidents.sub_locations_id_seq', GREATEST((SELECT MAX(id) FROM incidents.sub_locations), 1));
 
 INSERT INTO incidents.ban_letter_template (id, subject, body, is_default, name, is_trespass, operation_type, created_by, updated_by) VALUES
     (1, $q$Notice of Library Ban$q$, $q$<!DOCTYPE html>

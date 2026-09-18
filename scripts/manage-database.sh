@@ -28,6 +28,11 @@ NAMESPACE=${NAMESPACE:-odo-pub}
 # Sqitch directories
 SQITCH_DIR="${SQITCH_DIR:-$PROJECT_ROOT/src/sqitch}"
 SQITCH_SCHEMA_DIR="${SQITCH_SCHEMA_DIR:-$SQITCH_DIR/current}"
+# The demo sub-locations are a separate sqitch project
+# (%project=current-demo) in the same database, so an installation with
+# its own org structure can skip them. They depend on
+# current:002_current_seed, so they deploy after it and revert before it.
+SQITCH_DEMO_DIR="${SQITCH_DEMO_DIR:-$SQITCH_DIR/demo}"
 
 # Function to show usage
 usage() {
@@ -48,6 +53,11 @@ usage() {
     echo "Test Data Commands:"
     echo "  deploy-test      Deploy test data (idempotent SQL + API fixtures, src/test-data/)"
     echo
+    echo "Demo Data Commands (sample sub-locations; skip on a real installation):"
+    echo "  deploy-demo      Deploy the demo sub-locations (requires the schema project)"
+    echo "  revert-demo      Revert the demo sub-locations, leaving the schema in place"
+    echo "  status-demo      Show demo project deployment status"
+    echo
     echo "Database Admin Commands:"
     echo "  purge-all        Drop all application schemas (prompts for confirmation)"
     echo
@@ -60,6 +70,7 @@ usage() {
     echo "  DRY_RUN=true              Show what would be done without making changes"
     echo "  NAMESPACE=name            Kubernetes namespace for secrets (default: odo-pub)"
     echo "  SQITCH_SCHEMA_DIR=/path   Override schema directory (default: $SQITCH_SCHEMA_DIR)"
+    echo "  SQITCH_DEMO_DIR=/path     Override demo directory (default: $SQITCH_DEMO_DIR)"
     echo
     echo "Note: Database credentials are retrieved from Kubernetes secret by default"
     echo "      but can be overridden with environment variables"
@@ -148,9 +159,58 @@ sqitch_revert() {
     echo -e "${GREEN}Schema revert completed successfully${NC}"
 }
 
+# Demo commands
+#
+# TODO (root_code): odo's schema project parameterizes the root org unit,
+# and the demo sub-locations here are pinned to the *demo* root's uuid.
+# An installation that deployed a different root does not want them at
+# all -- which is why they live in their own project -- but nothing here
+# checks that the pinned root actually exists. Decide whether these
+# commands should verify the target root, or whether the dependency on
+# current:002_current_seed is guarantee enough.
+sqitch_deploy_demo() {
+    local target="${2:-HEAD}"
+    echo -e "\n${YELLOW}Deploying the demo sub-locations${NC}"
+    run_sqitch "$SQITCH_DEMO_DIR" deploy $target
+    echo -e "${GREEN}Demo deployment completed successfully${NC}"
+}
+
+sqitch_revert_demo() {
+    echo -e "\n${YELLOW}Reverting the demo sub-locations${NC}"
+    run_sqitch "$SQITCH_DEMO_DIR" revert -y
+    echo -e "${GREEN}Demo revert completed successfully${NC}"
+}
+
+sqitch_status_demo() {
+    echo -e "\n${YELLOW}Checking demo project deployment status${NC}"
+    run_sqitch "$SQITCH_DEMO_DIR" status
+}
+
+# Revert the demo project if it has anything deployed. Its change depends
+# on current:002_current_seed, so sqitch refuses to revert the schema
+# project out from under it -- correctly, but any whole-database revert
+# has to come here first.
+revert_demo_if_deployed() {
+    [ -d "$SQITCH_DEMO_DIR" ] || return 0
+
+    local deployed
+    deployed=$(PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" \
+        -d "$PGDATABASE" -tAc \
+        "SELECT 1 FROM sqitch.changes c
+           JOIN sqitch.projects p ON p.project = c.project
+          WHERE p.project = 'current-demo' LIMIT 1" 2>/dev/null)
+
+    if [ "$deployed" == "1" ]; then
+        echo -e "${BLUE}Reverting the demo project first: the schema project cannot revert while it depends on it${NC}"
+        run_sqitch "$SQITCH_DEMO_DIR" revert -y
+    fi
+}
+
 sqitch_revert_all() {
     echo -e "\n${YELLOW}Reverting all database schema changes${NC}"
     echo -e "${RED}WARNING: This will remove all deployed schema changes!${NC}"
+
+    revert_demo_if_deployed
     
     #run_sqitch "$SQITCH_SCHEMA_DIR" revert --to @ROOT
     run_sqitch "$SQITCH_SCHEMA_DIR" revert
@@ -183,11 +243,8 @@ deploy_test_data() {
 }
 
 purge_all_schemas() {
-    echo -e "\n${RED}WARNING: This will drop all application schemas in database '${PGDATABASE}'.${NC}"
-
-    local schemas=(incidents sqitch audit)
-
-    echo -e "${RED}Schemas that will be dropped: $schemas${NC}"
+    echo -e "\n${RED}WARNING: This will DROP AND RECREATE database '${PGDATABASE}'.${NC}"
+    echo -e "${RED}Everything in it is lost, including both sqitch registries.${NC}"
     read -r -p "Type 'purge' to confirm: " confirmation
 
     if [[ "$confirmation" != "purge" ]]; then
@@ -195,13 +252,32 @@ purge_all_schemas() {
         return
     fi
 
-    echo -e "${YELLOW}Dropping application schemas...${NC}"
-    for schema in "${schemas[@]}"; do
-        echo -e "${BLUE}Dropping schema '$schema'${NC}"
-        execute_psql "DROP SCHEMA IF EXISTS \"$schema\" CASCADE;" "$PGDATABASE"
-    done
+    # Drop and recreate rather than dropping schemas one at a time: the
+    # old list had to be kept in step with every new schema, and it left
+    # behind anything outside it (extensions, types, ownership). A fresh
+    # database is the same thing every CI run and every new checkout
+    # starts from.
+    #
+    # Terminate other sessions first: DROP DATABASE fails while any
+    # connection remains, and a running service reconnects faster than
+    # the drop can land.
+    # Every statement here runs against the maintenance database:
+    # execute_psql defaults to $PGDATABASE, which is the one being
+    # dropped, and PostgreSQL refuses to drop the database you are
+    # connected to.
+    echo -e "${YELLOW}Disconnecting other sessions from '${PGDATABASE}'${NC}"
+    execute_psql "SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                   WHERE datname = '$PGDATABASE'
+                     AND pid <> pg_backend_pid();" postgres
 
-    echo -e "${GREEN}All application schemas dropped.${NC}"
+    echo -e "${YELLOW}Dropping database '${PGDATABASE}'${NC}"
+    execute_psql "DROP DATABASE IF EXISTS $PGDATABASE;" postgres
+
+    echo -e "${GREEN}Recreating database '${PGDATABASE}'${NC}"
+    execute_psql "CREATE DATABASE $PGDATABASE OWNER $PGUSER;" postgres
+
+    echo -e "${GREEN}Database recreated. Run '$0 deploy' to rebuild the schema.${NC}"
 }
 
 # Function to update password only
@@ -257,6 +333,15 @@ case "$COMMAND" in
         ;;
     log)
         sqitch_log
+        ;;
+    deploy-demo)
+        sqitch_deploy_demo "$@"
+        ;;
+    revert-demo)
+        sqitch_revert_demo
+        ;;
+    status-demo)
+        sqitch_status_demo
         ;;
     deploy-test)
         deploy_test_data
