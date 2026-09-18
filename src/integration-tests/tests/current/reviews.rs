@@ -1340,7 +1340,7 @@ async fn review_submit_blocks_incomplete_trespass_procedures() {
     .await;
     assert_eq!(resp.status(), 400, "missing a required step should 400");
     assert!(
-        resp.text().await.unwrap().contains("Trespass Letter issued by police"),
+        resp.text().await.unwrap().contains("trespass letter issued by police"),
         "error should name the missing step"
     );
 }
@@ -1392,7 +1392,7 @@ async fn review_submit_escape_hatch_waives_account_steps() {
     let (incident_id, ban_id) =
         create_incident_with_trespass(&c, &token, "review-gate-hatch").await;
 
-    // Police letter + "no Evergreen account" hatch waives the four
+    // Police letter + "no library account" hatch waives the four
     // account-dependent steps, but never the police letter.
     let resp = submit_with_procedures(
         &c,
