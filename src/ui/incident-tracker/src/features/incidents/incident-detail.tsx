@@ -13,6 +13,7 @@ import {
   Chip,
   Divider,
   Alert,
+  Collapse,
   IconButton,
   Tooltip,
   Card,
@@ -29,6 +30,12 @@ import {
   Edit as EditIcon,
   Print as PrintIcon,
   CheckCircle as CheckCircleIcon,
+  PlaylistAddCheck as PlaylistAddCheckIcon,
+  WarningAmber as WarningAmberIcon,
+  Remove as RemoveIcon,
+  RemoveCircleOutline as RemoveCircleOutlineIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
   Refresh as RefreshIcon,
   LocationOn as LocationIcon,
   Person as PersonIcon,
@@ -55,6 +62,7 @@ import { Breadcrumbs } from '../../shared/components/breadcrumbs';
 import { uploadService } from '@core/api/upload';
 import ReviewHistory from './components/review-history';
 import { ReviewDialog, type ReviewResult } from './components/review-dialog';
+import { ReviewProceduresDialog } from './components/review-procedures-dialog';
 import { useIncidentBans } from './hooks/use-incident-bans';
 import { ActivityLogPaper } from '../../shared/components/activity-log';
 import { getIncidentActivity } from '../../api/activity';
@@ -105,6 +113,19 @@ const IncidentDetail: React.FC = () => {
     generatedByName?: string;
   };
   const [incidentLetters, setIncidentLetters] = useState<IncidentLetter[]>([]);
+  type TrespassProcedureRecord = {
+    banId: number;
+    patronName: string;
+    items: import('../../types').TrespassProcedureSnapshotItem[];
+  };
+  const [trespassProcedures, setTrespassProcedures] = useState<TrespassProcedureRecord[]>([]);
+  // Trespass bans on this incident that don't yet have a captured procedure
+  // snapshot — these drive the review-submission dialog.
+  const [trespassesNeedingProcedures, setTrespassesNeedingProcedures] = useState<
+    { banId: number; patronName: string }[]
+  >([]);
+  const [proceduresDialogOpen, setProceduresDialogOpen] = useState(false);
+  const [expandedProcedures, setExpandedProcedures] = useState<Record<number, boolean>>({});
   const [viewLetterTitle, setViewLetterTitle] = useState('');
   const [viewLetterContent, setViewLetterContent] = useState<string | null>(null);
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
@@ -266,6 +287,8 @@ const IncidentDetail: React.FC = () => {
 
     if (entries.length === 0) {
       setIncidentLetters([]);
+      setTrespassProcedures([]);
+      setTrespassesNeedingProcedures([]);
       return;
     }
 
@@ -273,9 +296,25 @@ const IncidentDetail: React.FC = () => {
       entries.map(async ({ banId, patronId, patronName }) => {
         try {
           const details = await bansApi.getBanDetails(banId);
-          const latest = details.letters.find((letter) => letter.incident === incident.id);
-          if (!latest) return [];
-          return [{
+          return { details, banId, patronId, patronName };
+        } catch {
+          return null;
+        }
+      }),
+    ).then((results) => {
+      const letters: IncidentLetter[] = [];
+      const procedures: TrespassProcedureRecord[] = [];
+      const needing: { banId: number; patronName: string }[] = [];
+      for (const r of results) {
+        if (!r) continue;
+        const { details, banId, patronId, patronName } = r;
+        const banIncidentId =
+          typeof details.ban.incident === 'object'
+            ? details.ban.incident?.id
+            : details.ban.incident;
+        const latest = details.letters.find((letter) => letter.incident === incident.id);
+        if (latest) {
+          letters.push({
             id: latest.id,
             banId,
             banType: (details.ban.is_trespass ? 'trespass' : 'ban') as 'ban' | 'trespass',
@@ -285,15 +324,27 @@ const IncidentDetail: React.FC = () => {
             patronName,
             generatedAt: latest.generated_at,
             generatedByName: latest.generated_by_name,
-          }];
-        } catch {
-          return [];
+          });
         }
-      }),
-    ).then((results) => {
+        if (details.ban.is_trespass && Number(banIncidentId) === incident.id) {
+          if (details.ban.trespass_procedures?.items?.length) {
+            procedures.push({
+              banId,
+              patronName,
+              items: details.ban.trespass_procedures.items,
+            });
+          } else {
+            // Trespass with no captured checklist yet — the review-submit
+            // dialog will prompt for it.
+            needing.push({ banId, patronName });
+          }
+        }
+      }
       setIncidentLetters(
-        results.flat().sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()),
+        letters.sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()),
       );
+      setTrespassProcedures(procedures);
+      setTrespassesNeedingProcedures(needing);
     });
   }, [bans.loading, bans.patronParties, bans.bansByPatron, incident?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -331,7 +382,23 @@ const IncidentDetail: React.FC = () => {
     }
   };
 
-  const handleSubmitForReview = async (isResubmission: boolean = false) => {
+  const handleSubmitForReview = (isResubmission: boolean = false) => {
+    if (!incident || !user) return;
+    // If any trespass on this incident still needs its procedure checklist,
+    // capture it in the dialog before submitting; otherwise submit directly.
+    if (trespassesNeedingProcedures.length > 0) {
+      setProceduresDialogOpen(true);
+      return;
+    }
+    void submitForReview(isResubmission);
+  };
+
+  // The actual submission. `trespassProceduresByBan` is only passed from the
+  // dialog's confirm; direct submissions omit it.
+  const submitForReview = async (
+    isResubmission: boolean,
+    trespassProceduresByBan?: Record<string, Record<string, boolean>>,
+  ) => {
     if (!incident || !user) return;
 
     setIsSubmittingForReview(true);
@@ -340,10 +407,10 @@ const IncidentDetail: React.FC = () => {
         ? 'Resubmitted after requested changes'
         : 'Initial submission for review';
 
-      await incidentApi.createReview(incident.id, 'submitted', comments);
+      await incidentApi.createReview(incident.id, 'submitted', comments, trespassProceduresByBan);
 
       showSuccess(`Incident #${incident.id} ${isResubmission ? 'resubmitted' : 'submitted'} for review`);
-
+      setProceduresDialogOpen(false);
       fetchIncident(incident.id);
     } catch (err: any) {
       showError(`Failed to ${isResubmission ? 'resubmit' : 'submit'} incident for review: ${err.message || 'Unknown error'}`);
@@ -1011,6 +1078,117 @@ const IncidentDetail: React.FC = () => {
             </Paper>
           )}
 
+          {/* Trespass Procedures — frozen checklist recorded when the trespass was issued */}
+          {trespassProcedures.length > 0 && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <PlaylistAddCheckIcon fontSize="small" sx={{ display: 'flex' }} />
+                <Typography variant="h6" sx={{ lineHeight: 1 }}>Trespass Procedures</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1.5 }}>
+                {trespassProcedures.map((record, idx) => {
+                  const noAccount = record.items.some((i) => i.is_escape_hatch && i.checked);
+                  const applicable = record.items.filter(
+                    (i) => !i.is_escape_hatch && !(i.account_dependent && noAccount),
+                  );
+                  const waived = record.items.filter(
+                    (i) => !i.is_escape_hatch && i.account_dependent && noAccount,
+                  );
+                  const missing = applicable.filter((i) => i.required && !i.checked);
+                  const incomplete = missing.length > 0;
+                  const expanded = !!expandedProcedures[record.banId];
+                  const escapeReason = record.items.find((i) => i.is_escape_hatch && i.checked)?.label;
+                  const status = incomplete
+                    ? { label: `${missing.length} not completed`, color: 'warning.main' }
+                    : { label: 'All steps complete', color: 'success.main' };
+                  return (
+                    <Box
+                      key={record.banId}
+                      sx={{ borderTop: idx === 0 ? 'none' : '1px solid', borderColor: 'divider', py: 1 }}
+                    >
+                      <Box
+                        onClick={() =>
+                          setExpandedProcedures((prev) => ({ ...prev, [record.banId]: !prev[record.banId] }))
+                        }
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', borderRadius: 1, px: 0.5, py: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
+                      >
+                        {incomplete ? (
+                          <WarningAmberIcon fontSize="small" color="warning" />
+                        ) : (
+                          <CheckCircleIcon fontSize="small" color="success" />
+                        )}
+                        <Typography variant="subtitle2" sx={{ flex: 1 }}>{record.patronName}</Typography>
+                        <Typography variant="caption" sx={{ color: status.color, fontWeight: 500 }}>
+                          {status.label}
+                        </Typography>
+                        {expanded ? <ExpandLessIcon fontSize="small" color="action" /> : <ExpandMoreIcon fontSize="small" color="action" />}
+                      </Box>
+
+                      {incomplete && !expanded && (
+                        <Typography variant="caption" color="warning.main" sx={{ display: 'block', pl: 4 }}>
+                          Missing: {missing.map((i) => i.label).join(', ')}
+                        </Typography>
+                      )}
+                      {!incomplete && escapeReason && !expanded && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 4 }}>
+                          {escapeReason}
+                        </Typography>
+                      )}
+
+                      <Collapse in={expanded} unmountOnExit>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pl: 4, pt: 0.75 }}>
+                          {applicable.map((item) => {
+                            const done = item.checked;
+                            const missingReq = !done && item.required;
+                            return (
+                              <Box key={item.code} display="flex" alignItems="center" gap={1}>
+                                {done ? (
+                                  <CheckCircleIcon fontSize="small" color="success" />
+                                ) : missingReq ? (
+                                  <WarningAmberIcon fontSize="small" color="warning" />
+                                ) : (
+                                  <RemoveIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                                )}
+                                <Typography
+                                  variant="body2"
+                                  color={done ? 'text.primary' : missingReq ? 'warning.main' : 'text.secondary'}
+                                  sx={{ flex: 1 }}
+                                >
+                                  {item.label}
+                                </Typography>
+                                {!done && !item.required && (
+                                  <Typography variant="caption" color="text.disabled">Optional</Typography>
+                                )}
+                              </Box>
+                            );
+                          })}
+
+                          {waived.length > 0 && (
+                            <Box sx={{ mt: 0.5, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                Not applicable{escapeReason ? ` — ${escapeReason}` : ''}
+                              </Typography>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                {waived.map((item) => (
+                                  <Box key={item.code} display="flex" alignItems="center" gap={1}>
+                                    <RemoveCircleOutlineIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                                    <Typography variant="body2" color="text.disabled" sx={{ flex: 1 }}>
+                                      {item.label}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
+                      </Collapse>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Paper>
+          )}
+
           {/* Activity Logs — excludes review events (shown in Review History) */}
           <ActivityLogPaper
             title="Incident History"
@@ -1139,6 +1317,19 @@ const IncidentDetail: React.FC = () => {
         title={viewLetterTitle}
         content={viewLetterContent}
         onClose={() => setViewLetterOpen(false)}
+      />
+
+      {/* Trespass procedure checklist, prompted at first review submission */}
+      <ReviewProceduresDialog
+        open={proceduresDialogOpen}
+        trespasses={trespassesNeedingProcedures}
+        submitting={isSubmittingForReview}
+        onCancel={() => setProceduresDialogOpen(false)}
+        onConfirm={(proceduresByBan) => {
+          // isResubmission is derived the same way the button does; a
+          // trespass being submitted for the first time is a fresh submit.
+          void submitForReview(false, proceduresByBan);
+        }}
       />
 
       {/* Review Dialog */}
