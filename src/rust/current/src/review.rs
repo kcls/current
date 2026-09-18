@@ -12,7 +12,8 @@ use utoipa::ToSchema;
 
 use crate::AppState;
 use crate::entity::{
-    activity_log, incident_review, incidents, review_chain, review_group, review_group_member,
+    activity_log, incident_review, incidents, patron_ban, review_chain, review_group,
+    review_group_member,
 };
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -1611,6 +1612,67 @@ async fn batch_latest_reviews(
 // /enqueue endpoint. Skipped for final/auto-resolved reviews and when
 // the level didn't actually change. See `send_review_notifications`.
 
+/// Validate trespass procedure checklists at review submission.
+///
+/// Returns an empty vec (nothing to freeze) when:
+///   * the result isn't "submitted" (only submission captures procedures),
+///   * the incident has no active trespass bans, or
+///   * the checklist defines no required items (nothing to enforce).
+///
+/// Otherwise every active trespass ban on the incident must have a complete
+/// checklist in `params.trespass_procedures` (keyed by ban id); an incomplete
+/// or missing one is a 400 naming the gaps. Trespasses already past their
+/// first submission (their bans already carry a snapshot) are re-validated
+/// against whatever the caller sends -- the dialog only fires when a snapshot
+/// is absent, so in practice this bites once per trespass.
+async fn gate_trespass_procedures(
+    state: &AppState,
+    incident: &incidents::Model,
+    result: &ReviewResult,
+    params: &CreateReviewRequest,
+) -> LocalResult<Vec<(i32, serde_json::Value)>> {
+    if !matches!(result, ReviewResult::Submitted) {
+        return Ok(Vec::new());
+    }
+    if !crate::trespass_procedures::has_required_items(&state.db).await? {
+        return Ok(Vec::new());
+    }
+
+    let now = chrono::Utc::now().fixed_offset();
+    let trespasses = patron_ban::Entity::find()
+        .filter(patron_ban::Column::Incident.eq(incident.id))
+        .filter(patron_ban::Column::IsTrespass.eq(true))
+        .filter(patron_ban::Column::LiftsAt.gt(now))
+        .filter(
+            sea_orm::Condition::any()
+                .add(patron_ban::Column::ArchivesAt.is_null())
+                .add(patron_ban::Column::ArchivesAt.gt(now)),
+        )
+        .all(&state.db)
+        .await?;
+
+    let mut out = Vec::new();
+    for ban in trespasses {
+        let submitted = params
+            .trespass_procedures
+            .as_ref()
+            .and_then(|m| m.get(&ban.id.to_string()));
+        // validate_and_snapshot 400s (naming missing steps) when submitted
+        // is None or incomplete.
+        let snapshot = crate::trespass_procedures::validate_and_snapshot(&state.db, submitted)
+            .await
+            .map_err(|e| {
+                LocalError::invalid_input(format!(
+                    "Trespass (ban {}) procedures incomplete: {}",
+                    ban.id,
+                    e.message()
+                ))
+            })?;
+        out.push((ban.id, snapshot));
+    }
+    Ok(out)
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateReviewRequest {
     pub incident: i32,
@@ -1619,6 +1681,13 @@ pub struct CreateReviewRequest {
     pub result: String,
     #[serde(default)]
     pub comments: Option<String>,
+    /// Trespass procedure checklists captured at review submission, keyed by
+    /// the trespass ban id (as a string). Only consulted when `result` is
+    /// "submitted" and the incident has trespass ban(s); see
+    /// [`gate_trespass_procedures`]. Absent for non-trespass reviews.
+    #[serde(default)]
+    #[schema(value_type = Option<Object>)]
+    pub trespass_procedures: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -1704,7 +1773,26 @@ pub async fn create_incident_review(
     let was_auto_resolved =
         is_user_final_reviewer(&state, org_unit, user_id).await? && review_result.is_progressing();
 
+    // Trespass procedure gate: on submission, any trespass ban on this
+    // incident must have a complete checklist (when the checklist defines
+    // required items). Validated before the transaction so an incomplete
+    // submission 400s cleanly; the returned snapshots are persisted inside
+    // the txn below.
+    let procedure_snapshots =
+        gate_trespass_procedures(&state, &incident, &review_result, &params).await?;
+
     let txn = state.db.begin().await?;
+
+    // Freeze each validated procedure snapshot onto its trespass ban.
+    for (ban_id, snapshot) in &procedure_snapshots {
+        let mut ban = patron_ban::Entity::find_by_id(*ban_id)
+            .one(&txn)
+            .await?
+            .ok_or_else(|| LocalError::not_found(format!("ban {ban_id}")))?
+            .into_active_model();
+        ban.trespass_procedures = Set(Some(snapshot.clone()));
+        ban.update(&txn).await?;
+    }
 
     // 1. Primary review row.
     let review_model = incident_review::ActiveModel {
