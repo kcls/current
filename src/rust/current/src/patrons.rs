@@ -1039,7 +1039,7 @@ async fn unprimary_existing<C: sea_orm::ConnectionTrait>(
 //      view for just the page's patron ids. Aggregates per (patron,
 //      org_unit) collapse to per-patron in Rust so the view stays
 //      simple. See `incidents.patron_search_summary` in
-//      `src/sqitch/current/deploy/001_incidents_baseline.sql` for the
+//      `src/sqitch/core/deploy/001_incidents_baseline.sql` for the
 //      view body.
 //
 // Sort-by-aggregate modes (sort_lift_date, sort_incident_date) drive

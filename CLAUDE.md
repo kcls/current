@@ -20,7 +20,7 @@ is the reference implementation for Odo applications.
 - `src/ui/incident-tracker/` — React/Vite SPA (served at
   `/incident-tracker`); vendors its own copy of the core UI lib under
   `src/core/`.
-- `src/sqitch/current/` — sqitch project: 001 incidents baseline
+- `src/sqitch/core/` — sqitch project: 001 incidents baseline
   (self-contained snapshot) + 002 reference seed (incident templates,
   categories, link types, age ranges, sub-locations, ban letters).
 - `src/odo-registration/` — `manifest.json`: everything Current installs

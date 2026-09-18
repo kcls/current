@@ -11,7 +11,7 @@
 -- ("Lobby", "Elevator") and so belong to a specific org unit, which
 -- makes them installation data rather than reference data. The demo set,
 -- pinned to the platform's demo root, lives in the separate
--- `current-demo` sqitch project (src/sqitch/demo); a real installation
+-- `current-demo` sqitch project (src/sqitch/demo-data); a real installation
 -- registers its own.
 --
 -- Idempotent: keyed on primary keys; re-runs update nothing (DO NOTHING).
