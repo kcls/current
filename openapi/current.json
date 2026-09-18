@@ -384,6 +384,77 @@
         ]
       }
     },
+    "/api/v1/current/ban/procedure/update": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "update_trespass_procedures",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrespassProceduresRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated trespass procedure snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateTrespassProceduresResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/ban/purge": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "summary": "Hard-delete a ban or trespass and its history. Unlike `archive_ban`\n(the normal end-of-life path, which keeps the row), this removes the\n`patron_ban` row along with its generated letters and activity-log\nentries. Intended for cleaning up mistaken or migration-artifact\nentries; there is no undo.",
+        "operationId": "purge_ban",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeBanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Purge summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeBanResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/incident/activity": {
       "post": {
         "tags": [
@@ -1516,6 +1587,197 @@
         ]
       }
     },
+    "/api/v1/current/shift-note/conduct-area/list": {
+      "post": {
+        "tags": [
+          "shift-notes"
+        ],
+        "operationId": "list_shift_note_conduct_areas",
+        "responses": {
+          "200": {
+            "description": "Active Code of Conduct areas, ordered for display",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListShiftNoteConductAreasResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/shift-note/create": {
+      "post": {
+        "tags": [
+          "shift-notes"
+        ],
+        "operationId": "create_shift_note",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShiftNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created shift note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateShiftNoteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/shift-note/delete": {
+      "post": {
+        "tags": [
+          "shift-notes"
+        ],
+        "operationId": "delete_shift_note",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteShiftNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Soft-deleted shift note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteShiftNoteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/shift-note/list": {
+      "post": {
+        "tags": [
+          "shift-notes"
+        ],
+        "operationId": "list_shift_notes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListShiftNotesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Shift notes at or below the org unit, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListShiftNotesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/shift-note/type/list": {
+      "post": {
+        "tags": [
+          "shift-notes"
+        ],
+        "operationId": "list_shift_note_types",
+        "responses": {
+          "200": {
+            "description": "Active shift note types, ordered for display",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListShiftNoteTypesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/shift-note/update": {
+      "post": {
+        "tags": [
+          "shift-notes"
+        ],
+        "summary": "Edit a note. `org_unit` and `created_by` are deliberately **not**\neditable: moving a note after the fact rewrites history other people have\nalready read.",
+        "operationId": "update_shift_note",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShiftNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated shift note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateShiftNoteResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/sub-location/list": {
       "post": {
         "tags": [
@@ -1580,6 +1842,31 @@
                   "items": {
                     "$ref": "#/components/schemas/TemplateResponse"
                   }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/trespass-procedure/list": {
+      "post": {
+        "tags": [
+          "bans"
+        ],
+        "operationId": "list_trespass_procedures",
+        "responses": {
+          "200": {
+            "description": "Active trespass procedure checklist items, ordered for display",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListTrespassProceduresResponse"
                 }
               }
             }
@@ -2060,6 +2347,12 @@
           "starts_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "trespass_procedures": {
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "updated_at": {
             "type": "string",
@@ -2830,6 +3123,13 @@
           "result": {
             "type": "string",
             "description": "Wire-format string: \"submitted\" | \"approved\" | \"approved-with-edits\"\n| \"returned\" | \"deleted\" | \"resolved\" | \"reopened\"."
+          },
+          "trespass_procedures": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Trespass procedure checklists captured at review submission, keyed by\nthe trespass ban id (as a string). Only consulted when `result` is\n\"submitted\" and the incident has trespass ban(s); see\n[`gate_trespass_procedures`]. Absent for non-trespass reviews."
           }
         }
       },
@@ -2887,6 +3187,73 @@
           "was_auto_resolved": {
             "type": "boolean",
             "description": "True when this action implicitly resolved the incident because\nthe actor was the final reviewer and the action was a progressing\none (submit/approve/approve-with-edits)."
+          }
+        }
+      },
+      "CreateShiftNoteRequest": {
+        "type": "object",
+        "required": [
+          "org_unit",
+          "type",
+          "notes"
+        ],
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "`asset.file_upload` uuids, already uploaded by the caller."
+          },
+          "conduct_areas": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Where it happened. Defaults to the caller's working location in the\nUI, but is explicit here so back-filling from another branch works."
+          },
+          "patron_description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "was_instructed": {
+            "type": "boolean"
+          },
+          "was_warned": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateShiftNoteResponse": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2960,6 +3327,34 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "DeleteShiftNoteRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeleteShiftNoteResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "deleted"
+        ],
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -3989,6 +4384,148 @@
           }
         }
       },
+      "ListShiftNoteConductAreasResponse": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftNoteConductAreaResponse"
+            }
+          }
+        }
+      },
+      "ListShiftNoteTypesResponse": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftNoteTypeResponse"
+            }
+          }
+        }
+      },
+      "ListShiftNotesRequest": {
+        "type": "object",
+        "required": [
+          "org_unit"
+        ],
+        "properties": {
+          "count_only": {
+            "type": "boolean",
+            "description": "Return only `total`, with an empty `rows`. The 30s poll needs a\ncount, not content -- without this it drags a full row body across\nthe wire every tick, for every user on shift."
+          },
+          "include_archived": {
+            "type": "boolean",
+            "description": "Opt in to notes older than the retention window. Requires\n`current.shift_note.read_archived`; ignored (not an error) without\nit, so a caller never silently gets a wider result than it asked\nfor. Default false means every caller — however privileged — sees\nonly the recent window unless it deliberately asks otherwise."
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Scope to this org unit and its descendants. Required -- the UI passes\nthe user's region by default."
+          },
+          "search": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Free-text search over the note body and patron name. Matched as a\ncase-insensitive substring against both, so a phrase the author\ntyped finds the note whichever field it landed in. Blank or\nwhitespace-only is treated as no search."
+          },
+          "since": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Only notes created strictly after this timestamp. The 30s poll passes\nthe newest `created_at` it has seen, so a quiet poll returns no rows."
+          },
+          "sort_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Sort column: `created_at` (default), `org_unit`, `type`, or\n`staff`. Anything else is rejected rather than silently ignored, so\na typo in a caller does not quietly return date-ordered rows."
+          },
+          "sort_dir": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`asc` or `desc`. Defaults to `desc` for dates (newest first) and\n`asc` otherwise, which is what each reads naturally as."
+          },
+          "types": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Restrict to these entry types."
+          }
+        }
+      },
+      "ListShiftNotesResponse": {
+        "type": "object",
+        "required": [
+          "rows",
+          "total",
+          "retention_days",
+          "archived_included",
+          "can_read_archived"
+        ],
+        "properties": {
+          "archived_included": {
+            "type": "boolean",
+            "description": "True when this response actually spans beyond the retention window\n-- the caller asked via `include_archived` and holds the permission."
+          },
+          "can_read_archived": {
+            "type": "boolean",
+            "description": "Whether the caller holds `current.shift_note.read_archived` at the\nrequested scope, i.e. whether asking would work. Lets the UI offer\nthe \"include archived\" control only to those who can use it, and\nre-evaluate per location rather than assuming it is global."
+          },
+          "retention_days": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The retention window applied to this response, so the UI can say\n\"showing the last 30 days\"."
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftNoteRow"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total matching the filters, ignoring limit/offset.",
+            "minimum": 0
+          }
+        }
+      },
       "ListSubLocationsRequest": {
         "type": "object",
         "properties": {
@@ -4025,6 +4562,20 @@
               "boolean",
               "null"
             ]
+          }
+        }
+      },
+      "ListTrespassProceduresResponse": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrespassProcedureItemResponse"
+            }
           }
         }
       },
@@ -5316,6 +5867,53 @@
           }
         }
       },
+      "PurgeBanRequest": {
+        "type": "object",
+        "required": [
+          "ban_id"
+        ],
+        "properties": {
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PurgeBanResponse": {
+        "type": "object",
+        "required": [
+          "ban_id",
+          "is_trespass",
+          "letters_deleted",
+          "activity_deleted"
+        ],
+        "properties": {
+          "activity_deleted": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "letters_deleted": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Rows removed from generated_ban_letter / activity_log along with\nthe ban itself.",
+            "minimum": 0
+          }
+        }
+      },
       "ReportBucket": {
         "type": "string",
         "description": "Time-bucket size for the over-time reports. The UI picks day for short\nranges and month for long ones. Buckets are UTC calendar units.",
@@ -5784,6 +6382,221 @@
           }
         }
       },
+      "ShiftNoteAttachmentResponse": {
+        "type": "object",
+        "required": [
+          "file_upload",
+          "file_name",
+          "relative_path"
+        ],
+        "properties": {
+          "file_name": {
+            "type": "string"
+          },
+          "file_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "file_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "file_upload": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relative_path": {
+            "type": "string"
+          }
+        }
+      },
+      "ShiftNoteConductAreaResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "label",
+          "display_order",
+          "is_active"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "ShiftNoteRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "org_unit",
+          "type",
+          "type_code",
+          "type_label",
+          "was_instructed",
+          "was_warned",
+          "notes",
+          "created_at",
+          "created_by",
+          "conduct_areas",
+          "attachments",
+          "can_edit"
+        ],
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftNoteAttachmentResponse"
+            }
+          },
+          "can_edit": {
+            "type": "boolean",
+            "description": "True when the caller may edit/delete this row -- own note, or\n`manage_any`. Saves the UI from re-deriving the ownership rule."
+          },
+          "conduct_areas": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "org_unit_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Branch label, resolved via odo-org. None when the unit no longer\nresolves (see the db-decoupling note in migration 101)."
+          },
+          "patron_description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Label of the note's Region-type ancestor, resolved via odo-org."
+          },
+          "staff_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Author's display name, resolved via odo-auth. None when the user no\nlonger resolves."
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type_code": {
+            "type": "string"
+          },
+          "type_color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type_label": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "was_instructed": {
+            "type": "boolean"
+          },
+          "was_warned": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ShiftNoteTypeResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "label",
+          "display_order",
+          "is_active"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
       "StatusFilter": {
         "type": "string",
         "description": "Incident-status filter for the count-by reports. The over-time series\nare exempt (their series already encode status), and the review-status\nreport is pinned to open incidents (every closed incident's latest\nresult is \"resolved\", so the breakdown degenerates).",
@@ -5978,6 +6791,47 @@
             "items": {
               "$ref": "#/components/schemas/PatronCountRow"
             }
+          }
+        }
+      },
+      "TrespassProcedureItemResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "label",
+          "required",
+          "account_dependent",
+          "is_escape_hatch",
+          "display_order",
+          "is_active"
+        ],
+        "properties": {
+          "account_dependent": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_escape_hatch": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
           }
         }
       },
@@ -6314,6 +7168,98 @@
             ]
           }
         }
+      },
+      "UpdateShiftNoteRequest": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "notes"
+        ],
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "conduct_areas": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "patron_description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "patron_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "was_instructed": {
+            "type": "boolean"
+          },
+          "was_warned": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateShiftNoteResponse": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UpdateTrespassProceduresRequest": {
+        "type": "object",
+        "required": [
+          "ban_id",
+          "trespass_procedures"
+        ],
+        "properties": {
+          "ban_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "trespass_procedures": {
+            "type": "object"
+          }
+        }
+      },
+      "UpdateTrespassProceduresResponse": {
+        "type": "object",
+        "required": [
+          "trespass_procedures"
+        ],
+        "properties": {
+          "trespass_procedures": {
+            "type": "object"
+          }
+        }
       }
     }
   },
@@ -6338,6 +7284,10 @@
     {
       "name": "reports",
       "description": "Dashboard report aggregates"
+    },
+    {
+      "name": "shift-notes",
+      "description": "Shift notes (communication log)"
     }
   ]
 }
