@@ -35,7 +35,7 @@ pub fn current_base() -> &'static str {
 }
 
 // Test users are defined by the odo platform fixtures and, for the Current
-// app users, by Current's test-data (src/test-data). Rows carry
+// app users, by Current's test-data (tests/fixtures). Rows carry
 // pinned UUIDs; database ids are resolved at runtime (login JWT sub for the
 // caller, get_user-by-uuid for other users) - never hard-coded.
 pub struct TestUser {

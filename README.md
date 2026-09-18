@@ -62,13 +62,13 @@ for dev/demo servers only.
 
 ```bash
 # Bulk load test data housed in Odo
-$ODO_HOME/scripts/load-data-manifest.sh src/test-data/fixtures.json
+$ODO_HOME/scripts/load-data-manifest.sh tests/fixtures/fixtures.json
 
 # Load Current's local test data
-./scripts/deploy-test-data.sh
+./scripts/manage-database.sh deploy-test
 
 # Optional: Install e2e dependencies
-cd src/e2e
+cd tests/e2e
 npm install
 npx playwright install-deps
 cd ../..

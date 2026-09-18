@@ -31,13 +31,13 @@ is the reference implementation for Odo applications.
   the `odo-registration` account ships disabled, and that script is what
   enables it for the length of a run, so nothing here holds registration
   credentials. Upsert-only; re-running is safe.
-- `src/test-data/` — e2e fixtures, split by where they land:
+- `tests/fixtures/` — e2e fixtures, split by where they land:
   `fixtures.json` (users with passwords + role assignments) is platform
   data applied from odo with `load-data-manifest.sh`, exactly like the
   manifest; the review-chain SQL goes to Current's own database via
-  `scripts/deploy-test-data.sh`.
-- `src/integration-tests/` (the `current_mod` suite), `src/e2e/`
-  (Playwright, `current` project), `src/db-tests/` (pgTAP).
+  `manage-database.sh deploy-test`.
+- `tests/integration/` (the `current_mod` suite), `tests/e2e/`
+  (Playwright, `current` project), `tests/db/` (pgTAP).
 - `k8s/` — each service directory owns its manifests: `current/` has
   the API routes + `current-jwt-auth` SecurityPolicy (routes.yaml),
   `ui-incident-tracker/` has the SPA's route. Path prefixes claimed:
@@ -56,7 +56,7 @@ is the reference implementation for Odo applications.
 - `./scripts/run-tests.sh --db --integration --e2e --unit` — DB
   connection resolves from the `current-api` secret's single
   `DATABASE_URL`; PG* env vars are overrides only.
-- e2e locally: `cd src/e2e && BASE_URL=http://localhost:30080 npm test`.
+- e2e locally: `cd tests/e2e && BASE_URL=http://localhost:30080 npm test`.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
 - Releases: `.github/workflows/release-build.yml` publishes images to
@@ -72,8 +72,8 @@ is the reference implementation for Odo applications.
   owns on the PostgreSQL server by hand (Current does not own the server
   and no script creates them) → `manage-database.sh deploy` →
   (from the odo checkout) `load-data-manifest.sh <current>/src/odo-registration/manifest.json`
-  → (from odo) `load-data-manifest.sh <current>/src/test-data/fixtures.json` →
-  `scripts/deploy-test-data.sh`. All idempotent; re-running is always
+  → (from odo) `load-data-manifest.sh <current>/tests/fixtures/fixtures.json` →
+  `manage-database.sh deploy-test`. All idempotent; re-running is always
   safe. (See the README for the full sequence.)
 
 ## Conventions that matter
@@ -89,7 +89,7 @@ is the reference implementation for Odo applications.
   users by pinned uuid (`e2e00000-…`). Current owns ALL of its test
   users — `…-0201` e2e.current.coord / `…-0202` e2e.current.manager / `…-0203`
   e2e.current.admin / `…-0204` e2e.current.staff, defined in
-  `src/test-data/fixtures.json` — and grants nothing on the platform's
+  `tests/fixtures/fixtures.json` — and grants nothing on the platform's
   `e2e.*` users, so the odo and current suites never interact.
 - Anything Current needs installed in the platform goes in the
   registration manifest — never direct SQL against the odo database.

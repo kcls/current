@@ -1,7 +1,7 @@
 use integration_tests::*;
 use serde_json::json;
 
-/// Pinned fixture group id (level-1 reviewers, src/test-data).
+/// Pinned fixture group id (level-1 reviewers, tests/fixtures).
 const REVIEW_GROUP_ID: i64 = 9102;
 /// Resolve an org unit's uuid by code (fresh client + cached admin token).
 async fn unit_by_code(code: &str) -> String {

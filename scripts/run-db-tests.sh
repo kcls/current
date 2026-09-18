@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run the pgTAP database tests (src/db-tests/) against Current's database.
+# Run the pgTAP database tests (tests/db/) against Current's database.
 #
 # Connection details resolve from the current-api secret
 # (DATABASE_URL); any PG* environment variables act as overrides.
@@ -11,7 +11,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEST_DIR="$PROJECT_ROOT/src/db-tests"
+TEST_DIR="$PROJECT_ROOT/tests/db"
 
 source "$SCRIPT_DIR/common.sh"
 
