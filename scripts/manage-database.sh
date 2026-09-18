@@ -74,7 +74,9 @@ usage() {
     echo
     echo "Note: Database credentials are retrieved from Kubernetes secret by default"
     echo "      but can be overridden with environment variables"
-    exit 1
+    # Caller decides the exit status: asking for help succeeds, being
+    # shown it after a bad command does not.
+    exit "${1:-0}"
 }
 
 # Initialize PostgreSQL connection parameters
@@ -374,6 +376,6 @@ case "$COMMAND" in
         ;;
     *)
         echo -e "${RED}Error: Unknown command '$COMMAND'${NC}"
-        usage
+        usage 1
         ;;
 esac
