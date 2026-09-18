@@ -1,0 +1,5 @@
+%syntax-version=1.0.0
+%project=current-demo
+%uri=https://github.com/kcls/current-demo
+
+001_demo_sub_locations [current:002_current_seed] 2026-09-17T00:00:00Z Bill Erickson <bserickson@kcls.org> # Sample sub-locations on the platform demo root, for demos and the e2e suites
