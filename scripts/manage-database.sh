@@ -33,6 +33,9 @@ SQITCH_SCHEMA_DIR="${SQITCH_SCHEMA_DIR:-$SQITCH_DIR/current}"
 # its own org structure can skip them. They depend on
 # current:002_current_seed, so they deploy after it and revert before it.
 SQITCH_DEMO_DIR="${SQITCH_DEMO_DIR:-$SQITCH_DIR/demo}"
+# Dev/CI fixtures: plain idempotent SQL, not a sqitch project. They live
+# with the suites that consume them rather than with the schema.
+TEST_DATA_DIR="${TEST_DATA_DIR:-$PROJECT_ROOT/tests/fixtures}"
 
 # Function to show usage
 usage() {
@@ -51,7 +54,7 @@ usage() {
     echo "  log              Show schema deployment history"
     echo
     echo "Test Data Commands:"
-    echo "  deploy-test      Deploy test data (idempotent SQL + API fixtures, src/test-data/)"
+    echo "  deploy-test      Deploy test data (idempotent SQL + API fixtures, tests/fixtures/)"
     echo
     echo "Demo Data Commands (sample sub-locations; skip on a real installation):"
     echo "  deploy-demo      Deploy the demo sub-locations (requires the schema project)"
@@ -71,6 +74,7 @@ usage() {
     echo "  NAMESPACE=name            Kubernetes namespace for secrets (default: odo-pub)"
     echo "  SQITCH_SCHEMA_DIR=/path   Override schema directory (default: $SQITCH_SCHEMA_DIR)"
     echo "  SQITCH_DEMO_DIR=/path     Override demo directory (default: $SQITCH_DEMO_DIR)"
+    echo "  TEST_DATA_DIR=/path       Override fixtures directory (default: $TEST_DATA_DIR)"
     echo
     echo "Note: Database credentials are retrieved from Kubernetes secret by default"
     echo "      but can be overridden with environment variables"
@@ -237,10 +241,36 @@ sqitch_log() {
 
 # Test data: API-driven fixtures plus idempotent SQL files applied in order
 # (no sqitch, no revert -- reloading pairs with a full DB rebuild).
-# See src/test-data/.
+# See tests/fixtures/.
+# Test data: plain idempotent SQL files applied in filename order. Not a
+# sqitch project -- there is no revert path, and reloading pairs with a
+# full database rebuild rather than with a revert.
+#
+# This covers only the half that lives in Current's database (the review
+# chain). The other half -- the e2e accounts and their role grants in
+# tests/fixtures/fixtures.json -- is platform data, applied from an odo
+# checkout with load-data-manifest.sh, which is what holds the
+# registration credentials. See the README.
 deploy_test_data() {
     echo -e "\n${YELLOW}Deploying test data${NC}"
-    "$SCRIPT_DIR/deploy-test-data.sh"
+
+    if [ ! -d "$TEST_DATA_DIR" ]; then
+        echo -e "${RED}Test data directory not found: $TEST_DATA_DIR${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}Applying SQL fixtures to $PGUSER@$PGHOST:$PGPORT/$PGDATABASE${NC}"
+    local f
+    for f in "$TEST_DATA_DIR"/[0-9]*.sql; do
+        [ -e "$f" ] || { echo -e "${YELLOW}  no SQL fixtures${NC}"; return 0; }
+        echo -e "${BLUE}  applying $(basename "$f")${NC}"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            continue
+        fi
+        PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" \
+            -d "$PGDATABASE" -q -v ON_ERROR_STOP=1 -f "$f" || return 1
+    done
+
     echo -e "${GREEN}Test data deployment completed successfully${NC}"
 }
 

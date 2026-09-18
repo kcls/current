@@ -101,7 +101,7 @@ run_pgtap_tests() {
 run_integration_tests_suite() {
     print_section "Running Current integration tests"
 
-    cd "$PROJECT_ROOT/src/integration-tests"
+    cd "$PROJECT_ROOT/tests/integration"
     cargo test
 
     echo "Current integration tests passed"
@@ -110,7 +110,7 @@ run_integration_tests_suite() {
 run_e2e_tests() {
     print_section "Running UI e2e tests"
 
-    cd "$PROJECT_ROOT/src/e2e"
+    cd "$PROJECT_ROOT/tests/e2e"
 
     # Run against the containerized/k3s UIs. All Playwright projects.
     BASE_URL=http://localhost:30080 npm run test
