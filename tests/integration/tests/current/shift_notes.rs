@@ -1425,3 +1425,231 @@ async fn endpoints_require_auth() {
         assert_eq!(resp.status(), 401, "expected 401 for shift-note/{path}");
     }
 }
+
+// --- occurred_at (CRT-188) -------------------------------------------------
+
+#[tokio::test]
+async fn occurred_at_defaults_to_now_when_omitted() {
+    let c = client();
+    let token = login_token(&c, &STAFF).await;
+    let mark = marker("occ-default");
+
+    let before = chrono::Utc::now();
+    let id = create_note(
+        &c,
+        &token,
+        json!({
+            "org_unit": branch().await,
+            "type": TYPE_PATRON_BEHAVIOR,
+            "notes": format!("{mark} filed as it happened"),
+        }),
+    )
+    .await;
+
+    let data = list_notes(&c, &token, json!({ "org_unit": root().await })).await;
+    let row = find_marked(&data, &mark).expect("note should be listed");
+
+    let occurred = row["occurred_at"].as_str().expect("occurred_at in the row");
+    let parsed = chrono::DateTime::parse_from_rfc3339(occurred)
+        .expect("occurred_at should be RFC3339");
+
+    // Filing without a time means "now": bounded below by the moment
+    // before the request and above by the row's own created_at.
+    assert!(
+        parsed.to_utc() >= before - chrono::Duration::seconds(5),
+        "occurred_at {occurred} predates the request"
+    );
+    let created = chrono::DateTime::parse_from_rfc3339(
+        row["created_at"].as_str().expect("created_at in the row"),
+    )
+    .unwrap();
+    assert!(
+        (parsed - created).num_seconds().abs() <= 5,
+        "omitted occurred_at should track created_at; got {occurred} vs {created}"
+    );
+
+    delete_note(&c, &token, id).await;
+}
+
+#[tokio::test]
+async fn occurred_at_accepts_a_past_time_and_survives_a_round_trip() {
+    let c = client();
+    let token = login_token(&c, &STAFF).await;
+    let mark = marker("occ-past");
+
+    // The case the column exists for: written up at the end of a shift,
+    // hours after the thing happened.
+    let happened = chrono::Utc::now() - chrono::Duration::hours(6);
+    let id = create_note(
+        &c,
+        &token,
+        json!({
+            "org_unit": branch().await,
+            "type": TYPE_PATRON_BEHAVIOR,
+            "notes": format!("{mark} written up later"),
+            "occurred_at": happened.to_rfc3339(),
+        }),
+    )
+    .await;
+
+    let data = list_notes(&c, &token, json!({ "org_unit": root().await })).await;
+    let row = find_marked(&data, &mark).expect("note should be listed");
+    let stored = chrono::DateTime::parse_from_rfc3339(row["occurred_at"].as_str().unwrap())
+        .unwrap();
+    assert!(
+        (stored.to_utc() - happened).num_seconds().abs() <= 1,
+        "occurred_at should round-trip the submitted time"
+    );
+
+    // ...and created_at still records when it was written down, which is
+    // the distinction the column exists to draw.
+    let created = chrono::DateTime::parse_from_rfc3339(row["created_at"].as_str().unwrap())
+        .unwrap();
+    assert!(
+        (created - stored).num_minutes() >= 300,
+        "created_at should be well after occurred_at here"
+    );
+
+    delete_note(&c, &token, id).await;
+}
+
+#[tokio::test]
+async fn update_can_correct_occurred_at_and_omitting_it_leaves_it_alone() {
+    let c = client();
+    let token = login_token(&c, &STAFF).await;
+    let mark = marker("occ-update");
+
+    let happened = chrono::Utc::now() - chrono::Duration::hours(2);
+    let id = create_note(
+        &c,
+        &token,
+        json!({
+            "org_unit": branch().await,
+            "type": TYPE_PATRON_BEHAVIOR,
+            "notes": format!("{mark} initial"),
+            "occurred_at": happened.to_rfc3339(),
+        }),
+    )
+    .await;
+
+    // Correct the time.
+    let corrected = chrono::Utc::now() - chrono::Duration::hours(4);
+    let resp = c
+        .post(format!("{}/api/v1/current/shift-note/update", current_base()))
+        .json(&json!({
+            "id": id,
+            "type": TYPE_PATRON_BEHAVIOR,
+            "notes": format!("{mark} initial"),
+            "occurred_at": corrected.to_rfc3339(),
+        }))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200, "update with occurred_at should succeed");
+
+    let data = list_notes(&c, &token, json!({ "org_unit": root().await })).await;
+    let row = find_marked(&data, &mark).unwrap();
+    let stored = chrono::DateTime::parse_from_rfc3339(row["occurred_at"].as_str().unwrap())
+        .unwrap();
+    assert!(
+        (stored.to_utc() - corrected).num_seconds().abs() <= 1,
+        "update should have corrected occurred_at"
+    );
+
+    // Omitting it on a later edit leaves the corrected value in place,
+    // rather than silently resetting it to now.
+    let resp = c
+        .post(format!("{}/api/v1/current/shift-note/update", current_base()))
+        .json(&json!({
+            "id": id,
+            "type": TYPE_PATRON_BEHAVIOR,
+            "notes": format!("{mark} edited body only"),
+        }))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200, "update without occurred_at should succeed");
+
+    let data = list_notes(&c, &token, json!({ "org_unit": root().await })).await;
+    let row = find_marked(&data, &mark).unwrap();
+    let after = chrono::DateTime::parse_from_rfc3339(row["occurred_at"].as_str().unwrap())
+        .unwrap();
+    assert_eq!(
+        stored, after,
+        "omitting occurred_at must not change the stored value"
+    );
+
+    delete_note(&c, &token, id).await;
+}
+
+#[tokio::test]
+async fn list_sorts_by_occurred_at_by_default() {
+    let c = client();
+    let token = login_token(&c, &STAFF).await;
+    let mark = marker("occ-sort");
+
+    // Created oldest-first, but with occurrence times in the opposite
+    // order -- so sorting by occurred_at and by created_at disagree, and
+    // the default has to pick the one the list is about.
+    let mut ids = Vec::new();
+    for hours in [1_i64, 5, 9] {
+        ids.push(
+            create_note(
+                &c,
+                &token,
+                json!({
+                    "org_unit": branch().await,
+                    "type": TYPE_PATRON_BEHAVIOR,
+                    "notes": format!("{mark} h{hours}"),
+                    "occurred_at": (chrono::Utc::now() - chrono::Duration::hours(hours))
+                        .to_rfc3339(),
+                }),
+            )
+            .await,
+        );
+    }
+
+    let data = list_notes(&c, &token, json!({ "org_unit": root().await, "limit": 100 })).await;
+    let ours: Vec<&serde_json::Value> = data["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["notes"].as_str().is_some_and(|n| n.contains(&mark)))
+        .collect();
+    assert_eq!(ours.len(), 3, "all three notes should be listed");
+
+    // Default is newest occurrence first: h1, h5, h9.
+    let times: Vec<chrono::DateTime<chrono::FixedOffset>> = ours
+        .iter()
+        .map(|r| chrono::DateTime::parse_from_rfc3339(r["occurred_at"].as_str().unwrap()).unwrap())
+        .collect();
+    assert!(
+        times[0] > times[1] && times[1] > times[2],
+        "default sort should be occurred_at descending; got {times:?}"
+    );
+
+    // Explicit ascending flips it.
+    let asc = list_notes(
+        &c,
+        &token,
+        json!({ "org_unit": root().await, "limit": 100, "sort_by": "occurred_at", "sort_dir": "asc" }),
+    )
+    .await;
+    let asc_times: Vec<chrono::DateTime<chrono::FixedOffset>> = asc["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r["notes"].as_str().is_some_and(|n| n.contains(&mark)))
+        .map(|r| chrono::DateTime::parse_from_rfc3339(r["occurred_at"].as_str().unwrap()).unwrap())
+        .collect();
+    assert!(
+        asc_times[0] < asc_times[1] && asc_times[1] < asc_times[2],
+        "sort_dir=asc should reverse the order"
+    );
+
+    for id in ids {
+        delete_note(&c, &token, id).await;
+    }
+}

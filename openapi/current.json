@@ -3216,6 +3216,14 @@
           "notes": {
             "type": "string"
           },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When it happened. Omitted means now -- the common case, filing as\nit happens -- so the column's default applies."
+          },
           "org_unit": {
             "type": "string",
             "format": "uuid",
@@ -6455,6 +6463,7 @@
           "was_instructed",
           "was_warned",
           "notes",
+          "occurred_at",
           "created_at",
           "created_by",
           "conduct_areas",
@@ -6493,6 +6502,11 @@
           },
           "notes": {
             "type": "string"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the thing happened, as distinct from when it was written\ndown. Defaults to the time of filing."
           },
           "org_unit": {
             "type": "string",
@@ -7197,6 +7211,14 @@
           },
           "notes": {
             "type": "string"
+          },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When it happened. Omitted leaves the stored value alone."
           },
           "patron_description": {
             "type": [
