@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useEffect } from 'react';
 import { User } from '../types';
 import { authApi } from '@core';
-import { loadSavedOrgUnits } from '../shared/utils/storage';
+import {
+  loadSavedOrgUnits,
+  forgetSavedOrgUnit,
+  isUnknownOrgUnit,
+} from '../shared/utils/storage';
 
 interface AuthContextValue {
   user: User | null;
@@ -54,7 +58,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      await authApi.loginLocal({ username, password, org_unit: orgUnitUuid });
+      try {
+        await authApi.loginLocal({ username, password, org_unit: orgUnitUuid });
+      } catch (err) {
+        // A saved working location the server no longer recognises must
+        // not block signing in. It happens on any upgrade that rebuilds
+        // the org tree: the browser still holds a uuid from the old one,
+        // and login/refresh 404s on it. Drop it and sign in without a
+        // location -- the caller then resolves a default or shows the
+        // picker, exactly as it does for a first-time user.
+        if (orgUnitUuid && isUnknownOrgUnit(err)) {
+          forgetSavedOrgUnit(orgUnitUuid);
+          await authApi.loginLocal({ username, password });
+        } else {
+          throw err;
+        }
+      }
       const coreUser = await authApi.me();
       const userData: User = {
         ...coreUser,
@@ -141,7 +160,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (defaultOrgUnit) {
           await authApi
             .refreshToken({ org_unit: defaultOrgUnit }, { silent: true })
-            .catch(() => {});
+            .catch((err) => {
+              // Same stale-location case as login: forget it, so the
+              // next load resolves a fresh default instead of retrying
+              // a uuid the server has already disowned.
+              if (isUnknownOrgUnit(err)) forgetSavedOrgUnit(defaultOrgUnit);
+            });
         }
       }
 

@@ -16,7 +16,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/auth-context';
 import { samlApi, type SamlSSOConfig, authApi } from '@core';
-import { loadSavedOrgUnits } from '../utils/storage';
+import {
+  loadSavedOrgUnits,
+  forgetSavedOrgUnit,
+  isUnknownOrgUnit,
+} from '../utils/storage';
 import { ROUTES } from '../../constants';
 import { routeToHref } from '../utils/redirect-utils';
 
@@ -128,8 +132,11 @@ export function useLogin(): UseLoginReturn {
         await fetchCurrentUser();
         navigate(redirectToRef.current || ROUTES.HOME);
         return;
-      } catch {
-        // Fall through to the SAML working location / picker.
+      } catch (err) {
+        // Fall through to the SAML working location / picker. Forget a
+        // location the server no longer knows -- otherwise it is retried
+        // (and re-fails) on every sign-in until site data is cleared.
+        if (isUnknownOrgUnit(err)) forgetSavedOrgUnit(firstSaved.uuid);
       }
     }
 

@@ -141,6 +141,32 @@ async function authPost<T>(path: string, body?: Record<string, any>): Promise<T>
   return response.json();
 }
 
+/**
+ * Build an Error from a failed auth response, preserving what the server
+ * said.
+ *
+ * These endpoints used to throw a bare "Auth Failed", which loses the
+ * distinction between wrong credentials and a request the server could
+ * not resolve -- a saved working location that no longer exists, say.
+ * Callers need that distinction to recover, so the code and message come
+ * along on the Error.
+ */
+async function authError(response: Response, fallback: string): Promise<Error> {
+  const body = await response.text().catch(() => '');
+  let code: string | undefined;
+  let message: string | undefined;
+  try {
+    const parsed = JSON.parse(body) as { code?: string; message?: string };
+    code = parsed.code;
+    message = parsed.message;
+  } catch {
+    // Not JSON; the raw body is the best detail available.
+  }
+  const err = new Error(message || body || fallback) as Error & { code?: string };
+  if (code) err.code = code;
+  return err;
+}
+
 export const authApi = {
   userLoggedOut$: new Subject<void>(),
   sessionExpired$: new Subject<void>(),
@@ -153,7 +179,7 @@ export const authApi = {
       body: JSON.stringify(credentials),
     });
 
-    if (!response.ok) throw new Error('Auth Failed');
+    if (!response.ok) throw await authError(response, 'Auth Failed');
 
     const data = await response.json() as LoginResponse;
     if (!data || !data.user || !data.access_token) throw new Error('Auth Failed');
@@ -273,7 +299,7 @@ export const authApi = {
     if (!response.ok) {
       const deadSession = response.status === 401 && refreshTokenExpiresAt !== null;
       if (!silent || deadSession) this.sessionExpired$.next();
-      throw new Error('Token refresh failed');
+      throw await authError(response, 'Token refresh failed');
     }
 
     const data = await response.json() as LoginResponse;

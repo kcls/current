@@ -1,9 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { STORAGE_KEYS, loadSavedOrgUnits } from '../storage';
+import {
+  STORAGE_KEYS,
+  loadSavedOrgUnits,
+  forgetSavedOrgUnit,
+  isUnknownOrgUnit,
+} from '../storage';
 
 // Mock localStorage
+const storeRef = { get: (): Record<string, string> => ({}) };
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
+  storeRef.get = () => store;
   return {
     getItem: vi.fn((key: string) => store[key] || null),
     setItem: vi.fn((key: string, value: string) => {
@@ -112,5 +119,92 @@ describe('loadSavedOrgUnits', () => {
     const result = loadSavedOrgUnits();
 
     expect(result).toEqual([]);
+  });
+});
+
+describe('forgetSavedOrgUnit', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    vi.clearAllMocks();
+    // Earlier suites stub getItem with a fixed return; clearAllMocks
+    // clears calls but not implementations, so restore the real
+    // store-backed reader before exercising a read/write round trip.
+    localStorageMock.getItem.mockImplementation(
+      (key: string) => storeRef.get()[key] ?? null,
+    );
+  });
+
+  it('drops only the named location', () => {
+    localStorageMock.setItem(
+      STORAGE_KEYS.SAVED_ORG_UNITS,
+      JSON.stringify([
+        { uuid: 'aaa', code: 'A', label: 'A', last_used_at: '2026-01-02T00:00:00Z' },
+        { uuid: 'bbb', code: 'B', label: 'B', last_used_at: '2026-01-01T00:00:00Z' },
+      ]),
+    );
+
+    forgetSavedOrgUnit('aaa');
+
+    expect(loadSavedOrgUnits().map((u) => u.uuid)).toEqual(['bbb']);
+  });
+
+  it('is a no-op for a uuid that was never saved', () => {
+    localStorageMock.setItem(
+      STORAGE_KEYS.SAVED_ORG_UNITS,
+      JSON.stringify([
+        { uuid: 'aaa', code: 'A', label: 'A', last_used_at: '2026-01-01T00:00:00Z' },
+      ]),
+    );
+
+    forgetSavedOrgUnit('never-saved');
+
+    expect(loadSavedOrgUnits().map((u) => u.uuid)).toEqual(['aaa']);
+  });
+
+  it('survives an empty store', () => {
+    expect(() => forgetSavedOrgUnit('aaa')).not.toThrow();
+    expect(loadSavedOrgUnits()).toEqual([]);
+  });
+});
+
+describe('isUnknownOrgUnit', () => {
+  it('matches the NOT_FOUND the server returns for a stale location', () => {
+    expect(
+      isUnknownOrgUnit({
+        code: 'NOT_FOUND',
+        message: 'org unit 5eed0000-0000-4000-a000-000000000204 not found',
+      }),
+    ).toBe(true);
+  });
+
+  it('matches on the message alone when no code is carried', () => {
+    expect(isUnknownOrgUnit({ message: 'org unit abc not found' })).toBe(true);
+  });
+
+  it('does not match a genuine auth failure', () => {
+    expect(
+      isUnknownOrgUnit({ code: 'UNAUTHENTICATED', message: 'Invalid credentials' }),
+    ).toBe(false);
+  });
+
+  it('matches an Error carrying the server code, which is how it arrives', () => {
+    // Regression: loginLocal used to throw a bare Error('Auth Failed'),
+    // discarding the response body, so this predicate could never fire
+    // and the login retry never ran. The client now rebuilds the Error
+    // from the server's JSON -- this asserts the shape it produces.
+    const err = new Error(
+      'org unit 5eed0000-0000-4000-a000-000000000204 not found',
+    ) as Error & { code?: string };
+    err.code = 'NOT_FOUND';
+    expect(isUnknownOrgUnit(err)).toBe(true);
+  });
+
+  it('does not match the bare Error the client used to throw', () => {
+    expect(isUnknownOrgUnit(new Error('Auth Failed'))).toBe(false);
+  });
+
+  it('does not match a non-error value', () => {
+    expect(isUnknownOrgUnit(undefined)).toBe(false);
+    expect(isUnknownOrgUnit('nope')).toBe(false);
   });
 });
