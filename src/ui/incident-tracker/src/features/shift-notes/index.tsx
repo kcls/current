@@ -293,9 +293,12 @@ const ShiftNotes: React.FC = () => {
                 {/* Region is derived from the note's org unit rather than
                     stored, so there is no column to order by. */}
                 <TableCell>Region</TableCell>
+                {/* The log is a chronology of what happened, so the date
+                    column is occurred_at; created_at is shown in the view
+                    dialog when the two differ. */}
                 <SortableHeadCell
                   label="Date"
-                  sortKey="created_at"
+                  sortKey="occurred_at"
                   sort={sort}
                   onSort={toggleSort}
                 />
@@ -325,7 +328,7 @@ const ShiftNotes: React.FC = () => {
                   <TableCell>{note.org_unit_name ?? `Unit ${note.org_unit}`}</TableCell>
                   <TableCell>{note.region_name ?? '—'}</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                    {formatDisplayDateTime(note.created_at)}
+                    {formatDisplayDateTime(note.occurred_at)}
                   </TableCell>
                   <TableCell>
                     <Chip

@@ -37,6 +37,10 @@ interface ShiftNoteViewDialogProps {
 const isImage = (mime: string | null) => Boolean(mime?.startsWith('image/'));
 
 /** One labelled line in the metadata block. */
+/** True when two timestamps land in the same minute. */
+const sameMinute = (a: string, b: string): boolean =>
+  Math.abs(new Date(a).getTime() - new Date(b).getTime()) < 60_000;
+
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <Box>
     <Typography variant="caption" color="text.secondary" display="block">
@@ -76,7 +80,7 @@ const ShiftNoteViewDialog: React.FC<ShiftNoteViewDialogProps> = ({
             {note.org_unit_name ?? `Unit ${note.org_unit}`}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {formatDisplayDateTime(note.created_at)}
+            {formatDisplayDateTime(note.occurred_at)}
           </Typography>
           {/* The database id, for referring to a specific note in a ticket
               or an email. Monospaced and dimmed — it is a lookup handle,
@@ -121,6 +125,12 @@ const ShiftNoteViewDialog: React.FC<ShiftNoteViewDialogProps> = ({
             <Field label="Region">{note.region_name ?? '—'}</Field>
             <Field label="Staff">{note.staff_name ?? `User ${note.created_by}`}</Field>
             <Field label="Type">{note.type_label}</Field>
+            {/* Only worth the space when it differs from the occurrence
+                time -- filing as it happens is the common case, and
+                repeating the same timestamp twice says nothing. */}
+            {!sameMinute(note.occurred_at, note.created_at) && (
+              <Field label="Filed">{formatDisplayDateTime(note.created_at)}</Field>
+            )}
           </Box>
 
           {(note.patron_name || note.patron_description) && (

@@ -23,7 +23,8 @@ use odo_client::context::RequestContext;
 use odo_client::error::{ApiResult, LocalError, LocalResult};
 use sea_orm::prelude::*;
 use sea_orm::{
-    ActiveValue::Set, Condition, PaginatorTrait, QueryOrder, QuerySelect, TransactionTrait,
+    ActiveValue::{NotSet, Set}, Condition, PaginatorTrait, QueryOrder, QuerySelect,
+    TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -366,6 +367,9 @@ pub struct ShiftNoteRow {
     pub was_warned: bool,
     pub notes: String,
 
+    /// When the thing happened, as distinct from when it was written
+    /// down. Defaults to the time of filing.
+    pub occurred_at: chrono::DateTime<chrono::FixedOffset>,
     pub created_at: chrono::DateTime<chrono::FixedOffset>,
     pub updated_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub created_by: Uuid,
@@ -579,7 +583,7 @@ pub async fn list_shift_notes(
 
     if !archived_included {
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days);
-        cond = cond.add(shift_note::Column::CreatedAt.gte(cutoff.fixed_offset()));
+        cond = cond.add(shift_note::Column::OccurredAt.gte(cutoff.fixed_offset()));
     }
     if let Some(since) = params.since {
         cond = cond.add(shift_note::Column::CreatedAt.gt(since));
@@ -639,11 +643,11 @@ pub async fn list_shift_notes(
     // order the rows already fetched. Grouping a person's notes together
     // is what the sort is for, and created_by does that; the caveat is
     // that the groups are not alphabetical.
-    let sort_key = params.sort_by.as_deref().unwrap_or("created_at");
+    let sort_key = params.sort_by.as_deref().unwrap_or("occurred_at");
     let descending = match params.sort_dir.as_deref() {
         Some("desc") => true,
         Some("asc") => false,
-        None => sort_key == "created_at",
+        None => sort_key == "occurred_at" || sort_key == "created_at",
         Some(other) => {
             return Err(LocalError::invalid_input(format!(
                 "unknown sort_dir '{other}' (expected 'asc' or 'desc')"
@@ -653,13 +657,14 @@ pub async fn list_shift_notes(
     };
 
     let sort_col = match sort_key {
+        "occurred_at" => shift_note::Column::OccurredAt,
         "created_at" => shift_note::Column::CreatedAt,
         "org_unit" => shift_note::Column::OrgUnit,
         "type" => shift_note::Column::Type,
         "staff" => shift_note::Column::CreatedBy,
         other => {
             return Err(LocalError::invalid_input(format!(
-                "unknown sort_by '{other}' (expected created_at, org_unit, type, or staff)"
+                "unknown sort_by '{other}' (expected occurred_at, created_at, org_unit, type, or staff)"
             ))
             .into());
         }
@@ -831,6 +836,7 @@ async fn decorate(
                 was_instructed: n.was_instructed,
                 was_warned: n.was_warned,
                 notes: n.notes,
+                occurred_at: n.occurred_at,
                 created_at: n.created_at,
                 updated_at: n.updated_at,
                 created_by: n.created_by,
@@ -879,6 +885,10 @@ pub struct CreateShiftNoteRequest {
     pub was_instructed: bool,
     #[serde(default)]
     pub was_warned: bool,
+    /// When it happened. Omitted means now -- the common case, filing as
+    /// it happens -- so the column's default applies.
+    #[serde(default)]
+    pub occurred_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     #[serde(default)]
     pub conduct_areas: Vec<i32>,
     /// `asset.file_upload` uuids, already uploaded by the caller.
@@ -931,6 +941,11 @@ pub async fn create_shift_note(
         was_instructed: Set(params.was_instructed),
         was_warned: Set(params.was_warned),
         notes: Set(params.notes),
+        // Unset leaves the column default (now), which is the common case.
+        occurred_at: match params.occurred_at {
+            Some(t) => Set(t),
+            None => NotSet,
+        },
         created_by: Set(user_id),
         ..Default::default()
     }
@@ -954,6 +969,9 @@ pub struct UpdateShiftNoteRequest {
     pub id: i32,
     pub r#type: i32,
     pub notes: String,
+    /// When it happened. Omitted leaves the stored value alone.
+    #[serde(default)]
+    pub occurred_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     #[serde(default)]
     pub patron_name: Option<String>,
     #[serde(default)]
@@ -1028,6 +1046,9 @@ pub async fn update_shift_note(
     let mut active: shift_note::ActiveModel = note.into();
     active.r#type = Set(params.r#type);
     active.notes = Set(params.notes);
+    if let Some(t) = params.occurred_at {
+        active.occurred_at = Set(t);
+    }
     active.patron_name = Set(params.patron_name.filter(|s| !s.trim().is_empty()));
     active.patron_description = Set(params.patron_description.filter(|s| !s.trim().is_empty()));
     active.was_instructed = Set(params.was_instructed);

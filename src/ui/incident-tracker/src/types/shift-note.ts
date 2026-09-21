@@ -47,6 +47,8 @@ export interface ShiftNote {
   was_warned: boolean;
   notes: string;
 
+  /** When it happened, as distinct from when it was written down. */
+  occurred_at: string;
   created_at: string;
   updated_at: string | null;
   /** `auth.usr` uuid (durable reference). */
@@ -76,7 +78,7 @@ export interface ShiftNoteListParams {
    * never sets this.
    */
   include_archived?: boolean;
-  /** `created_at` (default), `org_unit`, `type`, or `staff`. */
+  /** `occurred_at` (default), `created_at`, `org_unit`, `type`, or `staff`. */
   sort_by?: string;
   sort_dir?: 'asc' | 'desc';
 }
@@ -109,6 +111,8 @@ export interface ShiftNoteWriteParams {
   patron_description?: string | null;
   was_instructed?: boolean;
   was_warned?: boolean;
+  /** When it happened. Omitted means now. */
+  occurred_at?: string;
   conduct_areas?: number[];
   /** `asset.file_upload` uuids. */
   attachments?: string[];

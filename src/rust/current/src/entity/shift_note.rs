@@ -20,6 +20,7 @@ pub struct Model {
     pub was_warned: bool,
     #[sea_orm(column_type = "Text")]
     pub notes: String,
+    pub occurred_at: DateTimeWithTimeZone,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: Option<DateTimeWithTimeZone>,
     pub deleted_at: Option<DateTimeWithTimeZone>,

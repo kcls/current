@@ -26,6 +26,12 @@ import { uploadService, type FileUploadResponse } from '@core/api/upload';
 import LocationSelector from '../../shared/components/location-selector';
 import { useToast } from '../../contexts/toast-context';
 import { shiftNotesApi } from '../../api/shift-notes';
+import {
+  getLibraryToday,
+  getLibraryNowTime,
+  localDateTimeToUtc,
+  utcToLocalDateTime,
+} from '../../shared/utils/date-utils';
 import type { ShiftNote, ShiftNoteConductArea, ShiftNoteType } from '../../types';
 
 /** Keep quick entry quick — a shift note is not a document repository. */
@@ -101,6 +107,11 @@ const ShiftNoteDialog: React.FC<ShiftNoteDialogProps> = ({
   const [patronDescription, setPatronDescription] = useState('');
   const [wasInstructed, setWasInstructed] = useState(false);
   const [wasWarned, setWasWarned] = useState(false);
+  // Occurrence date/time, as two fields in the library's timezone --
+  // the same shape the ban forms use, rather than a datetime-local
+  // input that would silently use the browser's zone.
+  const [occurredDate, setOccurredDate] = useState('');
+  const [occurredTime, setOccurredTime] = useState('');
   const [areas, setAreas] = useState<number[]>([]);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -120,6 +131,11 @@ const ShiftNoteDialog: React.FC<ShiftNoteDialogProps> = ({
       setPatronDescription(note.patron_description ?? '');
       setWasInstructed(note.was_instructed);
       setWasWarned(note.was_warned);
+      {
+        const { date, time } = utcToLocalDateTime(note.occurred_at);
+        setOccurredDate(date);
+        setOccurredTime(time);
+      }
       setAreas(note.conduct_areas);
       setAttachments(note.attachments.map(a => ({
         fileUpload: a.file_upload,
@@ -134,6 +150,8 @@ const ShiftNoteDialog: React.FC<ShiftNoteDialogProps> = ({
       setPatronName('');
       setPatronDescription('');
       setWasInstructed(false);
+      setOccurredDate(getLibraryToday());
+      setOccurredTime(getLibraryNowTime());
       setWasWarned(false);
       setAreas([]);
       setAttachments([]);
@@ -233,6 +251,10 @@ const ShiftNoteDialog: React.FC<ShiftNoteDialogProps> = ({
         patron_description: patronDescription.trim() || null,
         was_instructed: wasInstructed,
         was_warned: wasWarned,
+        occurred_at:
+          occurredDate && occurredTime
+            ? localDateTimeToUtc(occurredDate, occurredTime)
+            : undefined,
         conduct_areas: areas,
         // update replaces the set wholesale, so this must carry every
         // attachment the note should end up with, not just the new ones.
@@ -300,6 +322,25 @@ const ShiftNoteDialog: React.FC<ShiftNoteDialogProps> = ({
               ))}
             </Select>
           </FormControl>
+
+          <Box display="flex" gap={2}>
+            <TextField
+              label="Date occurred"
+              type="date"
+              value={occurredDate}
+              onChange={e => setOccurredDate(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+            />
+            <TextField
+              label="Time"
+              type="time"
+              value={occurredTime}
+              onChange={e => setOccurredTime(e.target.value)}
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+            />
+          </Box>
 
           <TextField
             label="Notes"
