@@ -22,6 +22,7 @@ import {
   LockOpen as BanLiftedIcon,
   Archive as BanArchivedIcon,
   Description as LetterIcon,
+  PlaylistAddCheck as ProceduresIcon,
   StickyNote2Outlined as NoteIcon,
   History as HistoryIcon,
   OpenInNew as OpenInNewIcon,
@@ -71,6 +72,7 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
   'ban.lifted':                          { label: 'Ban/Trespass Lifted',      icon: <BanLiftedIcon sx={{ fontSize: 16 }} />,            color: 'success' },
   'ban.archived':                        { label: 'Ban/Trespass Archived',    icon: <BanArchivedIcon sx={{ fontSize: 16 }} />,          color: 'grey'    },
   'ban.updated':                         { label: 'Ban/Trespass Updated',     icon: <IncidentUpdatedIcon sx={{ fontSize: 16 }} />,      color: 'info'    },
+  'ban.procedures_updated':              { label: 'Procedures Updated',       icon: <ProceduresIcon sx={{ fontSize: 16 }} />,           color: 'info'    },
   'ban.letter_generated':                { label: 'Letter Generated',         icon: <LetterIcon sx={{ fontSize: 16 }} />,               color: 'primary' },
   'ban.letter_regenerated':              { label: 'Letter Regenerated',       icon: <LetterIcon sx={{ fontSize: 16 }} />,               color: 'primary' },
   'ban.note':                            { label: 'Note Added',              icon: <NoteIcon sx={{ fontSize: 16 }} />,                 color: 'info'    },
@@ -104,7 +106,7 @@ const FIELD_LABELS: Record<string, string> = {
 const DATE_FIELDS = new Set(['starts_at', 'lifts_at', 'archives_at']);
 
 // Events whose flat event_data fields are internal metadata, not display values
-const SKIP_FLAT_DISPLAY = new Set(['ban.letter_generated', 'ban.letter_regenerated', 'incident.created']);
+const SKIP_FLAT_DISPLAY = new Set(['ban.letter_generated', 'ban.letter_regenerated', 'incident.created', 'ban.procedures_updated']);
 
 const footerLinkSx = {
   display: 'inline-flex',
