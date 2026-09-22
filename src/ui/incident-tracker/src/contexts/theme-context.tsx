@@ -181,6 +181,32 @@ export const getDesignTokens = (
           },
         },
       },
+      // Dialogs need a visible edge. MuiPaper above clears MUI's elevation
+      // overlay (backgroundImage), which is what normally lifts a surface
+      // off the background in dark mode — and in light mode paper (#ffffff)
+      // sits on default (#fafafa), which is nearly the same colour. Without
+      // a border a dialog blends into the page it is covering. High
+      // contrast is the worst case: both are pure #ffffff / #000000.
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            border: `${highContrast ? 2 : 1}px solid`,
+            borderColor: highContrast
+              ? mode === 'light'
+                ? '#000000'
+                : '#ffffff'
+              : mode === 'light'
+              ? 'rgba(0, 0, 0, 0.16)'
+              : 'rgba(255, 255, 255, 0.18)',
+            // A stronger shadow than the default so the dialog reads as
+            // floating above the page, not painted onto it.
+            boxShadow:
+              mode === 'light'
+                ? '0 8px 32px rgba(0, 0, 0, 0.24)'
+                : '0 8px 32px rgba(0, 0, 0, 0.6)',
+          },
+        },
+      },
       MuiButton: {
         defaultProps: {
           size: (density === 'compact' ? 'small' : density === 'spacious' ? 'large' : 'medium') as 'small' | 'medium' | 'large',
