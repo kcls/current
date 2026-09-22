@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '../../../contexts/toast-context';
 import { useTableUrlState, useFilterUrlState } from '../../../shared/hooks/use-table-url-state';
+import { useSortUrlState } from '../../../shared/hooks/use-sort-state';
 import { useLocationFilter } from '../../../shared/hooks/use-location-filter';
 import { useDebouncedSearch } from '../../../shared/hooks/use-debounced-search';
 import { patronApi } from '../../../api/patrons';
@@ -21,6 +22,7 @@ export const usePatronList = () => {
   }), []);
 
   const { filters, setFilter, setFilters } = useFilterUrlState(filterConfig);
+  const { sort, toggleSort } = useSortUrlState();
 
   const {
     locationCode,
@@ -67,6 +69,10 @@ export const usePatronList = () => {
       if (filters.consequence === 'ban') params.has_active_bans = true;
       if (filters.consequence === 'trespass') params.has_visible_trespass = true;
       if (filters.hide_unknown) params.is_unknown = false;
+      if (sort.key) {
+        params.sort_by = sort.key;
+        params.sort_dir = sort.dir;
+      }
 
       const response = await patronApi.search(params);
       setPatrons(response.items);
@@ -79,7 +85,7 @@ export const usePatronList = () => {
       setIsLoading(false);
       setIsInitialLoad(false);
     }
-  }, [locationId, debouncedSearch, filters.consequence, filters.hide_unknown, page, rowsPerPage, showError, locationInitialized]);
+  }, [locationId, debouncedSearch, filters.consequence, filters.hide_unknown, sort.key, sort.dir, page, rowsPerPage, showError, locationInitialized]);
 
   useEffect(() => {
     fetchPatrons();
@@ -125,6 +131,9 @@ export const usePatronList = () => {
     filters,
     setFilter,
     hasActiveFilters,
+
+    sort,
+    toggleSort,
 
     page,
     rowsPerPage,

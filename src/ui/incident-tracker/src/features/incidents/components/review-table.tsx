@@ -22,8 +22,23 @@ import {
 } from '@mui/icons-material';
 import { PaginatedTableContainer } from '../../../shared/components/paginated-table-container';
 import { LinkTableRow, LinkTableCell } from '../../../shared/components/link-table-row';
+import { SortableHeadCell } from '../../../shared/components/data-table/sortable-head-cell';
+import { useClientSort } from '../../../shared/hooks/use-client-sort';
 import { formatDisplayTime } from '../../../shared/utils/date-utils';
 import type { Incident } from '../../../types';
+
+const getReviewSortValue = (incident: Incident, key: string): unknown => {
+  switch (key) {
+    case 'id':
+      return incident.id;
+    case 'title':
+      return incident.template_name || incident.title || '';
+    case 'incident_date':
+      return incident.occurred_at ? Date.parse(incident.occurred_at) : null;
+    default:
+      return null;
+  }
+};
 
 interface ReviewTableProps {
   incidents: Incident[];
@@ -60,7 +75,9 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
   canReviewIncident,
   showReviewActions = true,
 }) => {
-  const paginatedIncidents = incidents.slice(
+  const { sorted, sort, toggleSort } = useClientSort(incidents, getReviewSortValue);
+
+  const paginatedIncidents = sorted.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -135,11 +152,29 @@ export const ReviewTable: React.FC<ReviewTableProps> = ({
                   </Tooltip>
                 </TableCell>
               )}
-              <TableCell sx={{ minWidth: 60 }}>ID</TableCell>
-              <TableCell sx={{ minWidth: 200 }}>Title</TableCell>
+              <SortableHeadCell
+                label="ID"
+                minWidth={60}
+                sortKey="id"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortableHeadCell
+                label="Title"
+                minWidth={200}
+                sortKey="title"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <TableCell sx={{ minWidth: 120 }}>Location</TableCell>
               <TableCell sx={{ minWidth: 100 }}>Reporter</TableCell>
-              <TableCell sx={{ minWidth: 100 }}>Occurred</TableCell>
+              <SortableHeadCell
+                label="Occurred"
+                minWidth={100}
+                sortKey="incident_date"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <TableCell align="right" sx={{ minWidth: 80 }}>Review</TableCell>
             </TableRow>
           </TableHead>

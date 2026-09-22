@@ -384,6 +384,8 @@ export const BanOptionsPanel: React.FC<BanOptionsPanelProps> = ({
           </Box>
         )}
       </Box>
+
+
       <ConfirmDialog {...dialogProps} />
     </Box>
   );

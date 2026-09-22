@@ -31,6 +31,7 @@ import LoadingSkeleton from '../../shared/components/loading-skeleton';
 import LocationSelector from '../../shared/components/location-selector';
 import { usePatronList } from './hooks/use-patron-list';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
+import { SortableHeadCell } from '../../shared/components/data-table/sortable-head-cell';
 import { formatAlias } from '../../shared/utils/patron-utils';
 
 const PatronList: React.FC = () => {
@@ -49,6 +50,8 @@ const PatronList: React.FC = () => {
     filters,
     setFilter,
     hasActiveFilters,
+    sort,
+    toggleSort,
     page,
     rowsPerPage,
     handlePageChange,
@@ -159,17 +162,42 @@ const PatronList: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
+              <SortableHeadCell
+                label="First Name"
+                minWidth={120}
+                sortKey="first_name"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortableHeadCell
+                label="Last Name"
+                minWidth={120}
+                sortKey="last_name"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <TableCell sx={{ minWidth: 120 }}>Library Card</TableCell>
               <TableCell sx={{ minWidth: 120 }}>Status</TableCell>
-              <TableCell sx={{ minWidth: 100 }}>Open Incidents</TableCell>
-              <TableCell sx={{ minWidth: 100 }}>Last Incident</TableCell>
+              <SortableHeadCell
+                label="Open Incidents"
+                minWidth={100}
+                sortKey="incident_count"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortableHeadCell
+                label="Last Incident"
+                minWidth={100}
+                sortKey="incident_date"
+                sort={sort}
+                onSort={toggleSort}
+              />
             </TableRow>
           </TableHead>
           <TableBody>
             {patrons.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography color="text.secondary" py={3}>
                     No patrons found
                   </Typography>
@@ -184,7 +212,7 @@ const PatronList: React.FC = () => {
                 >
                   <LinkTableCell>
                     <Typography variant="body2" fontWeight="medium" component="span">
-                      {patron.display_name}
+                      {patron.first_name || '—'}
                     </Typography>
                     {(() => {
                       const aliasText = formatAlias(patron.alias);
@@ -199,6 +227,11 @@ const PatronList: React.FC = () => {
                         </Typography>
                       ) : null;
                     })()}
+                  </LinkTableCell>
+                  <LinkTableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {patron.last_name || '—'}
+                    </Typography>
                   </LinkTableCell>
                   <LinkTableCell>
                     <Typography variant="body2">

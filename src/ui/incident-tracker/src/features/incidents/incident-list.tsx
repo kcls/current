@@ -22,6 +22,7 @@ import { useIncidentList } from './hooks/use-incident-list';
 import { getIncidentStatus, getStatusColor, getStatusLabel } from '../../shared/utils/incident-status';
 import { formatDisplayTime } from '../../shared/utils/date-utils';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
+import { SortableHeadCell } from '../../shared/components/data-table/sortable-head-cell';
 
 const IncidentList: React.FC = () => {
   const {
@@ -38,6 +39,8 @@ const IncidentList: React.FC = () => {
     filters,
     setFilter,
     hasActiveFilters,
+    sort,
+    toggleSort,
     dateRangePreset,
     handleDateRangePresetChange,
     page,
@@ -107,11 +110,29 @@ const IncidentList: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ minWidth: 60 }}>ID</TableCell>
-              <TableCell sx={{ minWidth: 200 }}>Title</TableCell>
+              <SortableHeadCell
+                label="ID"
+                minWidth={60}
+                sortKey="id"
+                sort={sort}
+                onSort={toggleSort}
+              />
+              <SortableHeadCell
+                label="Title"
+                minWidth={200}
+                sortKey="title"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <TableCell sx={{ minWidth: 100 }}>Status</TableCell>
               <TableCell sx={{ minWidth: 120 }}>Location</TableCell>
-              <TableCell sx={{ minWidth: 100 }}>Occurred</TableCell>
+              <SortableHeadCell
+                label="Occurred"
+                minWidth={100}
+                sortKey="incident_date"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <TableCell sx={{ minWidth: 100 }}>Reporter</TableCell>
             </TableRow>
           </TableHead>

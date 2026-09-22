@@ -8,6 +8,8 @@ const mockPatrons: PatronSearchResult[] = [
   {
     id: '1',
     display_name: 'John Doe',
+    first_name: 'John',
+    last_name: 'Doe',
     library_card: '1234567890',
     barcode: '1234567890',
     ban_max_lifts_at: '2024-01-15T10:30:00Z',
@@ -20,11 +22,13 @@ const mockPatrons: PatronSearchResult[] = [
   {
     id: '2',
     display_name: 'Jane Smith',
+    first_name: 'Jane',
+    last_name: 'Smith',
     library_card: '0987654321',
     barcode: '0987654321',
     ban_max_lifts_at: '2024-01-10T14:20:00Z',
     trespass_max_lifts_at: '2024-01-12T14:20:00Z',
-    incident_org_unit_label: 'Main Street Branch',
+    incident_org_unit_label: 'Bellevue Library',
     incident_count: 1,
     primary_photo_url: undefined,
     status: 'active',
@@ -40,28 +44,42 @@ const defaultProps = {
   variant: 'bans' as const,
   onPageChange: vi.fn(),
   onRowsPerPageChange: vi.fn(),
+  sort: { key: null, dir: 'asc' as const },
+  onSort: vi.fn(),
 };
 
 describe('PatronTable', () => {
   describe('Loading State', () => {
-    it('should display loading spinner when loading is true', () => {
-      renderWithProviders(
+    it('should display skeleton rows on initial load with the header mounted', () => {
+      const { container } = renderWithProviders(
         <PatronTable {...defaultProps} loading={true} patrons={[]} />
       );
 
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
-      expect(screen.queryByRole('table')).not.toBeInTheDocument();
+      expect(container.querySelectorAll('.MuiSkeleton-root').length).toBeGreaterThan(0);
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(screen.getByText('First Name')).toBeInTheDocument();
+      expect(screen.getByText('Last Name')).toBeInTheDocument();
+    });
+
+    it('should keep current rows visible while re-fetching', () => {
+      const { container } = renderWithProviders(
+        <PatronTable {...defaultProps} loading={true} />
+      );
+
+      expect(screen.getByText('John')).toBeInTheDocument();
+      expect(screen.getByText('Smith')).toBeInTheDocument();
+      expect(container.querySelectorAll('.MuiSkeleton-root')).toHaveLength(0);
     });
   });
 
   describe('Empty State', () => {
-    it('should display default empty message when no patrons', () => {
+    it('should display default empty message with the header still shown', () => {
       renderWithProviders(
         <PatronTable {...defaultProps} patrons={[]} total={0} />
       );
 
       expect(screen.getByText('No patrons found')).toBeInTheDocument();
-      expect(screen.queryByRole('table')).not.toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
 
     it('should display custom empty message when provided', () => {
@@ -83,18 +101,21 @@ describe('PatronTable', () => {
       renderWithProviders(<PatronTable {...defaultProps} />);
 
       expect(screen.getByRole('table')).toBeInTheDocument();
-      expect(screen.getByText('Patron Name')).toBeInTheDocument();
+      expect(screen.getByText('First Name')).toBeInTheDocument();
+      expect(screen.getByText('Last Name')).toBeInTheDocument();
       expect(screen.getByText('Library Card')).toBeInTheDocument();
       expect(screen.getByText('Lift Date')).toBeInTheDocument();
       expect(screen.getByText('Location')).toBeInTheDocument();
       expect(screen.getByText('Open Incidents')).toBeInTheDocument();
     });
 
-    it('should render all patron rows', () => {
+    it('should render all patron rows with split name columns', () => {
       renderWithProviders(<PatronTable {...defaultProps} />);
 
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
+      expect(screen.getByText('Doe')).toBeInTheDocument();
+      expect(screen.getByText('Jane')).toBeInTheDocument();
+      expect(screen.getByText('Smith')).toBeInTheDocument();
     });
 
     it('should display patron library card numbers', () => {
@@ -124,7 +145,7 @@ describe('PatronTable', () => {
       renderWithProviders(<PatronTable {...defaultProps} />);
 
       expect(screen.getByText('Shoreline Library')).toBeInTheDocument();
-      expect(screen.getByText('Main Street Branch')).toBeInTheDocument();
+      expect(screen.getByText('Bellevue Library')).toBeInTheDocument();
     });
 
     it('should display incident counts', () => {
@@ -141,8 +162,8 @@ describe('PatronTable', () => {
       renderWithProviders(<PatronTable {...defaultProps} />);
 
       // MUI Avatar renders PersonIcon, check for patron names instead
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByText('John')).toBeInTheDocument();
+      expect(screen.getByText('Jane')).toBeInTheDocument();
     });
   });
 
@@ -276,13 +297,40 @@ describe('PatronTable', () => {
     });
   });
 
+  describe('Sorting', () => {
+    it('should call onSort with the column key when a sortable header is clicked', async () => {
+      const user = userEvent.setup();
+      const onSort = vi.fn();
+
+      renderWithProviders(<PatronTable {...defaultProps} onSort={onSort} />);
+
+      await user.click(screen.getByRole('button', { name: 'First Name' }));
+      expect(onSort).toHaveBeenCalledWith('first_name');
+
+      await user.click(screen.getByRole('button', { name: 'Last Name' }));
+      expect(onSort).toHaveBeenCalledWith('last_name');
+
+      await user.click(screen.getByRole('button', { name: 'Open Incidents' }));
+      expect(onSort).toHaveBeenCalledWith('incident_count');
+    });
+
+    it('should show the active sort direction on the sorted column', () => {
+      renderWithProviders(
+        <PatronTable {...defaultProps} sort={{ key: 'lift_date', dir: 'desc' }} />
+      );
+
+      const header = screen.getByRole('columnheader', { name: /Lift Date/ });
+      expect(header).toHaveAttribute('aria-sort', 'descending');
+    });
+  });
+
   describe('Accessibility', () => {
     it('should have proper table structure', () => {
       renderWithProviders(<PatronTable {...defaultProps} />);
 
       const table = screen.getByRole('table');
       expect(table).toBeInTheDocument();
-      expect(within(table).getAllByRole('columnheader')).toHaveLength(5);
+      expect(within(table).getAllByRole('columnheader')).toHaveLength(6);
     });
 
     it('should have accessible pagination controls', () => {
@@ -301,7 +349,7 @@ describe('PatronTable', () => {
       expect(table).toBeInTheDocument();
 
       // Table rows are clickable and keyboard accessible via tab navigation
-      const firstPatronName = screen.getByText('John Doe');
+      const firstPatronName = screen.getByText('John');
       firstPatronName.focus();
 
       await user.tab();
