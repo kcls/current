@@ -1799,7 +1799,7 @@ dependencies = [
 [[package]]
 name = "odo-client"
 version = "0.1.0"
-source = "git+https://github.com/kcls/odo?tag=v0.2.2#a7f9bcb11098bc0e37765b37e5bd776e134a7a3d"
+source = "git+https://github.com/kcls/odo?tag=v0.2.3#cd5965e69d03ef804df32b4158b3b5fe6ec83462"
 dependencies = [
  "axum",
  "base64",
@@ -1820,7 +1820,7 @@ dependencies = [
 [[package]]
 name = "odo-service"
 version = "0.1.0"
-source = "git+https://github.com/kcls/odo?tag=v0.2.2#a7f9bcb11098bc0e37765b37e5bd776e134a7a3d"
+source = "git+https://github.com/kcls/odo?tag=v0.2.3#cd5965e69d03ef804df32b4158b3b5fe6ec83462"
 dependencies = [
  "axum",
  "chrono",
