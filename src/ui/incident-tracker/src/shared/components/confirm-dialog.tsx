@@ -53,13 +53,17 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       <DialogTitle id="confirm-dialog-title" sx={{ pb: 1 }}>
         {title}
       </DialogTitle>
-      <DialogContent>
-        {children ?? (
-          <DialogContentText id="confirm-dialog-description">
-            {message}
-          </DialogContentText>
-        )}
-      </DialogContent>
+      {/* A title-only confirm is legitimate when the title says it all --
+          render no body rather than an empty paragraph. */}
+      {(children || message) && (
+        <DialogContent>
+          {children ?? (
+            <DialogContentText id="confirm-dialog-description">
+              {message}
+            </DialogContentText>
+          )}
+        </DialogContent>
+      )}
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onCancel} variant="outlined" disabled={loading}>
           {cancelLabel}
