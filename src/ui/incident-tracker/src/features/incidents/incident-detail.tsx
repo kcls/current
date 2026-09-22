@@ -1039,7 +1039,7 @@ const IncidentDetail: React.FC = () => {
 
           {/* Ban/Trespass Letters — all ban/trespass letters generated from this incident */}
           {incidentLetters.length > 0 && (
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: 3, mb: 3 }}>
               <Box display="flex" alignItems="center" gap={1}>
                 <DescriptionIcon fontSize="small" sx={{ display: 'flex' }} />
                 <Typography variant="h6" sx={{ lineHeight: 1 }}>Ban/Trespass Letters</Typography>
