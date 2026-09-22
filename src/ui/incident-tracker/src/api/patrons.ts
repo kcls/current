@@ -40,6 +40,8 @@ const transformToPatronSearchResult = (instance: ModelInstance): PatronSearchRes
   return {
     id: String(instance.id),
     display_name: displayName,
+    first_name: instance.first_name,
+    last_name: instance.last_name,
     barcode: instance.library_card,
     library_card: instance.library_card,
     status: (instance.risk_level === 'banned' ? 'banned' : 'active') as PatronStatus,
@@ -195,6 +197,7 @@ export const patronApi = {
     limit?: number;
     sort_incident_date?: boolean;
     sort_lift_date?: boolean;
+    sort_by?: string;
     sort_dir?: 'asc' | 'desc';
   }): Promise<ListResponse<PatronSearchResult>> {
     const limit = params.limit || 25;
@@ -210,6 +213,7 @@ export const patronApi = {
     if (params.is_unknown !== undefined) searchParams.is_unknown = params.is_unknown;
     if (params.sort_incident_date !== undefined) searchParams.sort_incident_date = params.sort_incident_date;
     if (params.sort_lift_date !== undefined) searchParams.sort_lift_date = params.sort_lift_date;
+    if (params.sort_by) searchParams.sort_by = params.sort_by;
     if (params.sort_dir) searchParams.sort_dir = params.sort_dir;
 
     const response = await currentPost<{ patrons?: unknown[]; total_count?: number }>(

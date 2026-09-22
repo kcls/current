@@ -5,6 +5,10 @@ const MAX_FILES_DEFAULT = 100;
 
 interface UseFileUploadOptions {
   maxFiles?: number;
+  // Narrower than it looks like it should be: uploadService.uploadFile
+  // (core/api/upload.ts) accepts only these two, so widening here just
+  // moves the error downstream. sjora's copy lists six and does not
+  // compile against that signature.
   entityType?: 'incident' | 'patron';
   entityId?: string;
   showError: (msg: string) => void;

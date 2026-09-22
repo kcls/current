@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useToast } from '../../../contexts/toast-context';
 import { useAuth } from '../../../contexts/auth-context';
 import { useTableUrlState, useFilterUrlState } from '../../../shared/hooks/use-table-url-state';
+import { useSortUrlState } from '../../../shared/hooks/use-sort-state';
 import { useLocationFilter } from '../../../shared/hooks/use-location-filter';
 import { useDebouncedSearch } from '../../../shared/hooks/use-debounced-search';
 import { incidentApi } from '../../../api/incidents';
@@ -31,6 +32,7 @@ export const useIncidentList = () => {
   }), []);
 
   const { filters, setFilter, setFilters } = useFilterUrlState(filterConfig);
+  const { sort, toggleSort } = useSortUrlState();
 
   const hasInitializedDates = useRef(false);
   useEffect(() => {
@@ -120,6 +122,10 @@ export const useIncidentList = () => {
       if (debouncedSearch) params['query'] = debouncedSearch;
       if (filters.from) params['occurred_after'] = startOfDayUtc(filters.from);
       if (filters.to) params['occurred_before'] = endOfDayUtc(filters.to);
+      if (sort.key) {
+        params['sort_by'] = sort.key;
+        params['sort_dir'] = sort.dir;
+      }
 
       const response = await incidentApi.searchV2(params);
       setIncidents(response.items);
@@ -132,7 +138,7 @@ export const useIncidentList = () => {
       setIsLoading(false);
       setIsInitialLoad(false);
     }
-  }, [locationId, debouncedSearch, filters.status, filters.from, filters.to, page, rowsPerPage, showError, locationInitialized]);
+  }, [locationId, debouncedSearch, filters.status, filters.from, filters.to, sort.key, sort.dir, page, rowsPerPage, showError, locationInitialized]);
 
   useEffect(() => {
     fetchIncidents();
@@ -185,6 +191,8 @@ export const useIncidentList = () => {
     filters,
     setFilter,
     hasActiveFilters,
+    sort,
+    toggleSort,
     dateRangePreset,
     handleDateRangePresetChange,
     page,

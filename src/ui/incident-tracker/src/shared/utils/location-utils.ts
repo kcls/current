@@ -14,6 +14,14 @@ export const buildLocationMap = (locations: OrgUnit[]) => {
 };
 
 /**
+ * Get the root org unit (level 0, no parent) -- the top of the tree.
+ */
+export const getRootOrgUnit = (locations: OrgUnit[]): OrgUnit | null => {
+  const activeLocations = locations.filter(loc => loc.is_active && !loc.deleted_at);
+  return activeLocations.find(loc => !loc.parent) ?? null;
+};
+
+/**
  * Get the region (level 1 parent) org unit for a given org unit.
  * If the org unit is already at level 0 or 1, returns itself.
  * If the org unit is at level > 1, traverses up to find the level 1 parent.
