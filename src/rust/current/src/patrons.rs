@@ -1083,6 +1083,8 @@ pub struct PatronSearchRequest {
     /// Sort by ban / trespass lift date. Ascending picks the soonest
     /// to expire; descending picks the furthest out.
     #[serde(default)]
+    pub sort_by: Option<SortKey>,
+    #[serde(default)]
     pub sort_lift_date: Option<bool>,
     /// "asc" (default) or "desc". Drives the MIN/MAX choice on the
     /// sort aggregate and the ORDER BY direction.
@@ -1193,20 +1195,32 @@ pub async fn patron_search(
 
     // Sort-by-aggregate modes require activity to be meaningful, so
     // they drive off the view (which only has rows for patrons WITH
-    // activity). The default name sort drives off the base patron
-    // table so patrons with zero activity still appear.
-    let (page_ids, total_count) = if sort.requires_activity() {
-        find_page_by_aggregate(
-            &state.db,
-            &inputs,
-            org_scope.as_deref(),
-            &sort,
-            limit,
-            offset,
-        )
-        .await?
-    } else {
-        find_page_by_name(&state.db, &inputs, org_scope.as_deref(), limit, offset).await?
+    // activity). The name sorts drive off the base patron table so
+    // patrons with zero activity still appear.
+    let (page_ids, total_count) = match sort.by {
+        SortKey::IncidentDate | SortKey::LiftDate | SortKey::IncidentCount => {
+            find_page_by_aggregate(
+                &state.db,
+                &inputs,
+                org_scope.as_deref(),
+                &sort,
+                limit,
+                offset,
+            )
+            .await?
+        }
+        SortKey::Name | SortKey::FirstName | SortKey::LastName => {
+            find_page_by_name(
+                &state.db,
+                &inputs,
+                org_scope.as_deref(),
+                sort.by,
+                sort.descending,
+                limit,
+                offset,
+            )
+            .await?
+        }
     };
 
     if page_ids.is_empty() {
@@ -1275,11 +1289,16 @@ struct SortMode {
     descending: bool,
 }
 
-#[derive(PartialEq, Eq)]
-enum SortKey {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SortKey {
+    /// Legacy combined name sort — equivalent to `LastName`.
     Name,
+    FirstName,
+    LastName,
     IncidentDate,
     LiftDate,
+    IncidentCount,
 }
 
 impl SortMode {
@@ -1289,18 +1308,16 @@ impl SortMode {
             .as_deref()
             .map(|s| s.eq_ignore_ascii_case("desc"))
             .unwrap_or(false);
-        let by = if p.sort_lift_date.unwrap_or(false) {
-            SortKey::LiftDate
-        } else if p.sort_incident_date.unwrap_or(false) {
-            SortKey::IncidentDate
-        } else {
-            SortKey::Name
-        };
+        let by = p.sort_by.unwrap_or_else(|| {
+            if p.sort_lift_date.unwrap_or(false) {
+                SortKey::LiftDate
+            } else if p.sort_incident_date.unwrap_or(false) {
+                SortKey::IncidentDate
+            } else {
+                SortKey::Name
+            }
+        });
         Self { by, descending }
-    }
-
-    fn requires_activity(&self) -> bool {
-        self.by != SortKey::Name
     }
 }
 
@@ -1412,10 +1429,16 @@ where
 /// Default-sort path: a single SELECT from `incidents.patrons` with
 /// the name / is_unknown / activity-gate filters, ORDER BY name,
 /// LIMIT + OFFSET. Also runs the matching `COUNT(*)` query.
+/// `sort_key` picks which name column leads the ORDER BY: `FirstName`
+/// leads with first_name; everything else (`LastName` and the legacy
+/// combined `Name`) leads with last_name. The other name column is the
+/// tiebreaker either way.
 async fn find_page_by_name<C: ConnectionTrait>(
     db: &C,
     inputs: &SearchInputs,
     org_scope: Option<&[Uuid]>,
+    sort_key: SortKey,
+    descending: bool,
     limit: u64,
     offset: u64,
 ) -> LocalResult<(Vec<i32>, i64)> {
@@ -1439,11 +1462,18 @@ async fn find_page_by_name<C: ConnectionTrait>(
     let where_sql = build_patrons_where(inputs, org_scope, &mut p);
     let limit_ph = p.push(limit as i64);
     let offset_ph = p.push(offset as i64);
+    let dir = if descending { "DESC" } else { "ASC" };
+    let (lead, tiebreak) = match sort_key {
+        SortKey::FirstName => ("first_name", "last_name"),
+        _ => ("last_name", "first_name"),
+    };
+    // lower() makes the ordering explicitly case-insensitive instead of
+    // inheriting whatever the database collation happens to do with case.
     let page_sql = format!(
         "SELECT ip.id
            FROM incidents.patrons ip
           WHERE {where_sql}
-          ORDER BY ip.last_name ASC, ip.first_name ASC, ip.id ASC
+          ORDER BY lower(ip.{lead}) {dir}, lower(ip.{tiebreak}) {dir}, ip.id ASC
           LIMIT {limit_ph} OFFSET {offset_ph}"
     );
     let rows = PatronIdRow::find_by_statement(Statement::from_sql_and_values(
@@ -1510,9 +1540,12 @@ async fn find_page_by_aggregate<C: ConnectionTrait>(
             "GREATEST(MAX(s.ban_max_lifts_at), MAX(s.trespass_max_lifts_at))",
             "DESC",
         ),
-        // SortKey::Name shouldn't reach here — that path is in
-        // find_page_by_name. Treat it as a defensive fallback.
-        (SortKey::Name, _) => ("MIN(s.last_name)", "ASC"),
+        (SortKey::IncidentCount, false) => ("SUM(s.incident_count)", "ASC"),
+        (SortKey::IncidentCount, true) => ("SUM(s.incident_count)", "DESC"),
+        // The name sorts shouldn't reach here — that path is in
+        // find_page_by_name. Treat them as a defensive fallback.
+        (SortKey::Name | SortKey::LastName, _) => ("MIN(lower(s.last_name))", "ASC"),
+        (SortKey::FirstName, _) => ("MIN(lower(s.first_name))", "ASC"),
     };
     // Always NULLS LAST. Postgres' default with ASC already puts
     // NULLs at the tail, but DESC defaults NULLs FIRST — overriding
@@ -3102,4 +3135,63 @@ struct MergePatronsFnRow {
     photos_transferred: i32,
     bans_transferred: i32,
     notes_transferred: i32,
+}
+
+#[cfg(test)]
+mod sort_tests {
+    use super::*;
+
+    fn parse(body: serde_json::Value) -> PatronSearchRequest {
+        serde_json::from_value(body).expect("valid PatronSearchRequest")
+    }
+
+    #[test]
+    fn sort_by_deserializes_whitelisted_columns() {
+        for (wire, expected) in [
+            ("name", SortKey::Name),
+            ("lift_date", SortKey::LiftDate),
+            ("incident_date", SortKey::IncidentDate),
+            ("incident_count", SortKey::IncidentCount),
+        ] {
+            let req = parse(serde_json::json!({ "sort_by": wire }));
+            assert_eq!(SortMode::from_request(&req).by, expected);
+        }
+    }
+
+    #[test]
+    fn unknown_sort_by_is_rejected_by_serde() {
+        assert!(serde_json::from_value::<PatronSearchRequest>(serde_json::json!({"sort_by": "ssn"}))
+            .is_err());
+        assert!(serde_json::from_value::<PatronSearchRequest>(
+            serde_json::json!({"sort_by": "name; drop table"})
+        )
+        .is_err());
+        assert!(
+            serde_json::from_value::<PatronSearchRequest>(serde_json::json!({"sort_by": ""}))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn absent_sort_by_falls_back_to_name() {
+        assert_eq!(SortMode::from_request(&parse(serde_json::json!({}))).by, SortKey::Name);
+    }
+
+    #[test]
+    fn legacy_bool_flags_resolve_when_sort_by_absent() {
+        assert_eq!(
+            SortMode::from_request(&parse(serde_json::json!({"sort_lift_date": true}))).by,
+            SortKey::LiftDate
+        );
+        assert_eq!(
+            SortMode::from_request(&parse(serde_json::json!({"sort_incident_date": true}))).by,
+            SortKey::IncidentDate
+        );
+    }
+
+    #[test]
+    fn sort_dir_desc_is_parsed() {
+        assert!(SortMode::from_request(&parse(serde_json::json!({"sort_dir": "desc"}))).descending);
+        assert!(!SortMode::from_request(&parse(serde_json::json!({"sort_dir": "asc"}))).descending);
+    }
 }

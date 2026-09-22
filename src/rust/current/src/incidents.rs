@@ -541,6 +541,8 @@ pub struct SearchIncidentsRequest {
     #[serde(default)]
     pub sort_dir: Option<String>,
     #[serde(default)]
+    pub sort_by: Option<IncidentSortColumn>,
+    #[serde(default)]
     pub sort_incident_date: Option<bool>,
     #[serde(default)]
     pub limit: Option<u64>,
@@ -772,6 +774,30 @@ async fn run_count(db: &DatabaseConnection, f: &SearchFilters) -> LocalResult<u6
     Ok(q.count(db).await?)
 }
 
+/// Sortable incident columns.
+///
+/// An enum rather than a string so an unknown value is a deserialization
+/// error, not SQL. The wire names are the UI's sort keys.
+#[derive(Debug, Clone, Copy, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum IncidentSortColumn {
+    Id,
+    Title,
+    IncidentDate,
+    CreatedDate,
+}
+
+impl IncidentSortColumn {
+    fn column(self) -> incidents::Column {
+        match self {
+            Self::Id => incidents::Column::Id,
+            Self::Title => incidents::Column::Title,
+            Self::IncidentDate => incidents::Column::OccurredAt,
+            Self::CreatedDate => incidents::Column::CreatedAt,
+        }
+    }
+}
+
 async fn run_search(
     db: &DatabaseConnection,
     f: &SearchFilters,
@@ -787,9 +813,14 @@ async fn run_search(
         .map(|s| s.eq_ignore_ascii_case("desc"))
         .unwrap_or(false);
 
-    q = if params.sort_incident_date == Some(true) {
-        let order = if descending { Order::Desc } else { Order::Asc };
-        q.order_by(incidents::Column::OccurredAt, order)
+    let order = if descending { Order::Desc } else { Order::Asc };
+
+    q = if let Some(sort_by) = params.sort_by {
+        q.order_by(sort_by.column(), order.clone())
+            .order_by(incidents::Column::Id, order)
+    } else if params.sort_incident_date == Some(true) {
+        q.order_by(incidents::Column::OccurredAt, order.clone())
+            .order_by(incidents::Column::Id, order)
     } else {
         // Default ordering mirrors the legacy: most-recently created first.
         q.order_by_desc(incidents::Column::CreatedAt)
@@ -921,6 +952,10 @@ const INCIDENT_ACTIVITY_EVENT_TYPES: &[&str] = &[
     "incident.review.deleted",
     "incident.review.resolved",
     "incident.review.reopened",
+    // Ban events otherwise live on the ban's own activity view, but a
+    // purged ban has no surviving row — the originating incident is the
+    // only place its purge audit entry can surface.
+    "ban.purged",
 ];
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -1817,4 +1852,44 @@ pub async fn update_incident(
     txn.commit().await?;
 
     Ok(Json(updated.into()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn incident_sort_column_maps_to_orm_columns() {
+        assert!(matches!(
+            IncidentSortColumn::Id.column(),
+            incidents::Column::Id
+        ));
+        assert!(matches!(
+            IncidentSortColumn::Title.column(),
+            incidents::Column::Title
+        ));
+        assert!(matches!(
+            IncidentSortColumn::IncidentDate.column(),
+            incidents::Column::OccurredAt
+        ));
+        assert!(matches!(
+            IncidentSortColumn::CreatedDate.column(),
+            incidents::Column::CreatedAt
+        ));
+    }
+
+    #[test]
+    fn sort_by_deserializes_whitelisted_and_rejects_unknown() {
+        let req: SearchIncidentsRequest =
+            serde_json::from_value(serde_json::json!({"sort_by": "incident_date"})).unwrap();
+        assert!(matches!(req.sort_by, Some(IncidentSortColumn::IncidentDate)));
+        assert!(serde_json::from_value::<SearchIncidentsRequest>(
+            serde_json::json!({"sort_by": "password"})
+        )
+        .is_err());
+        assert!(serde_json::from_value::<SearchIncidentsRequest>(
+            serde_json::json!({"sort_by": "ii.id; drop table"})
+        )
+        .is_err());
+    }
 }
