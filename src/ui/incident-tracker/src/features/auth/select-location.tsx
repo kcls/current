@@ -43,13 +43,22 @@ const SelectLocation: React.FC = () => {
     const loadAllOrgUnits = async () => {
       setLoadingOrgUnits(true);
       try {
-        // TODO: Filter by can_have_staff and restrict based on user role
+        // Every active org unit is selectable here, deliberately -- this is
+        // not the same question as "can staff be stationed here".
+        //
+        // A working location seeds the default scope of what you see
+        // across the app, and staff pick a Region (or Root) on purpose to
+        // start with a wider view. can_have_staff gates where *entries can
+        // be filed*, which is a different constraint and is enforced where
+        // entries are created: the entry dialog's picker and shift-note
+        // create, not here.
+        //
+        // Soft-deleted units are already absent -- the org tree endpoint
+        // filters them at the source.
+        //
+        // TODO: restrict based on user role.
         const tree = await orgUnitApi.getOrgUnitTree();
-        const flattened = orgUnitApi.flattenOrgUnits(tree);
-        const staffUnits = flattened.filter(unit =>
-          unit.unit_type?.can_have_staff === true
-        );
-        setOrgUnits(staffUnits);
+        setOrgUnits(orgUnitApi.flattenOrgUnits(tree));
       } catch (err) {
         console.error('Failed to load org units:', err);
         setError('Failed to load organization units. Please try logging in again.');
