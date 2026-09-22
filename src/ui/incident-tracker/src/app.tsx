@@ -94,7 +94,7 @@ function App() {
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.REPORTS} element={
-                      <RoleGuard allowedRoles={[...MANAGER_ROLES]}>
+                      <RoleGuard allowedRoles={[...COORDINATOR_ROLES]}>
                         <Reports />
                       </RoleGuard>
                     } />

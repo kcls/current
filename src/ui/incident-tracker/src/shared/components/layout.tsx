@@ -150,7 +150,7 @@ const Layout: React.FC = () => {
       text: 'Reports',
       icon: <BarChartIcon />,
       path: ROUTES.REPORTS,
-      show: hasAnyRole(MANAGER_ROLES)
+      show: hasAnyRole(COORDINATOR_ROLES)
     },
     {
       text: 'Review Process',
