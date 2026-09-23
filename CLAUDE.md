@@ -10,6 +10,8 @@ is the reference implementation for Odo applications.
 
 - Do not add 'Co-authored-by' metadata to commit messages.
 - Author all git commits as the human user.
+- Keep commit message bodies concise, limited to 2 paragraphs; no need to
+  fully document features in commit messages.
 
 ## Layout
 
