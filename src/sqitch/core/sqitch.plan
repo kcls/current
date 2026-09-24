@@ -6,3 +6,4 @@
 002_current_seed [001_incidents_baseline] 2026-08-18T00:05:00Z Bill Erickson <bserickson@kcls.org> # Reference data: incident templates, categories, link types, age ranges, sub-locations, ban letters
 003_shift_notes_and_trespass_procedures [002_current_seed] 2026-09-17T00:00:00Z Bill Erickson <bserickson@kcls.org> # Shift Notes (Communication Log) + configurable trespass procedure checklist
 004_shift_note_occurred_at [003_shift_notes_and_trespass_procedures] 2026-09-21T00:00:00Z Bill Erickson <bserickson@kcls.org> # shift_note.occurred_at: when it happened, distinct from when it was written down
+005_ban_view_predicates [004_shift_note_occurred_at] 2026-09-24T00:00:00Z Bill Erickson <bserickson@kcls.org> # Un-swap active_patron_ban / visible_patron_ban: only the active view filters on lifts_at
