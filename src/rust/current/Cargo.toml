@@ -5,8 +5,22 @@ edition = "2024"
 description = "Current — incident tracking and management service"
 
 [dependencies]
-odo-client = { git = "https://github.com/kcls/odo", tag = "v0.2.5" }
-odo-service = { git = "https://github.com/kcls/odo", tag = "v0.2.5" }
+# Tracking odo's main branch while the two repositories are moving
+# together. Cargo.lock still pins an exact commit, so a build is
+# reproducible; `cargo update -p odo-client -p odo-service` is what
+# advances it, and that shows up as a reviewable lockfile diff.
+#
+# Switch back to a tag once odo's releases settle -- a released Current
+# should depend on a released odo, not on whatever main happened to be:
+#
+#   odo-client = { git = "https://github.com/kcls/odo", tag = "v0.2.5" }
+#   odo-service = { git = "https://github.com/kcls/odo", tag = "v0.2.5" }
+#
+# Both lines must name the same ref. Two different refs can resolve to
+# two copies of odo in one binary, and the type mismatch that follows
+# is reported far from its cause.
+odo-client = { git = "https://github.com/kcls/odo", branch = "main" }
+odo-service = { git = "https://github.com/kcls/odo", branch = "main" }
 
 sea-orm = { version = "2.0", features = [
     "sqlx-postgres",
