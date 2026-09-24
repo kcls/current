@@ -1051,3 +1051,174 @@ async fn create_ban_letter_round_trip_through_letter_get() {
         Some("Letter content for round-trip")
     );
 }
+
+// ============================================================================
+// ban.purge
+// ============================================================================
+
+#[tokio::test]
+async fn purge_ban_requires_auth() {
+    let c = client();
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/purge", current_base()))
+        .json(&json!({"ban_id": 1}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 401);
+}
+
+#[tokio::test]
+async fn purge_ban_unknown_id_returns_404() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/purge", current_base()))
+        .json(&json!({"ban_id": 2_000_000_000_i64}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 404);
+}
+
+#[tokio::test]
+async fn purge_ban_requires_purge_perm() {
+    let c = client();
+    let coord_token = login_token(&c, &COORD).await;
+    let (_inc, _patron, ban_id) =
+        create_basic_ban(&c, &coord_token, "ban-purge-denied", false).await;
+
+    // STAFF has ban.write but not ban.purge.
+    let staff_token = login_token(&c, &STAFF).await;
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/purge", current_base()))
+        .json(&json!({"ban_id": ban_id}))
+        .headers(auth_header(&staff_token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 403, "staff purge should be denied");
+}
+
+#[tokio::test]
+async fn purge_ban_removes_ban_letters_and_activity() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let (incident_id, patron_id) =
+        create_test_incident_with_patron(&c, &token, "ban-purge-full").await;
+
+    // Create the ban with a letter so the purge exercises the
+    // generated_ban_letter -> activity_log FK ordering.
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/create", current_base()))
+        .json(&json!({
+            "patron": patron_id,
+            "incident": incident_id,
+            "org_unit": ban_test_org_unit().await,
+            "ban_letter_content": "Letter body for purge test",
+        }))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200, "body: {:?}", resp.text().await);
+    let data: serde_json::Value = resp.json().await.unwrap();
+    let ban_id = data["patron_ban"]["id"].as_i64().unwrap();
+    assert!(data["ban_letter_id"].as_i64().unwrap() > 0);
+
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/purge", current_base()))
+        .json(&json!({"ban_id": ban_id, "comments": "purge-test"}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200, "body: {:?}", resp.text().await);
+    let data: serde_json::Value = resp.json().await.unwrap();
+    assert_eq!(data["ban_id"].as_i64(), Some(ban_id));
+    assert_eq!(data["is_trespass"].as_bool(), Some(false));
+    assert!(
+        data["letters_deleted"].as_u64().unwrap() >= 1,
+        "the created letter should be purged"
+    );
+    assert!(
+        data["activity_deleted"].as_u64().unwrap() >= 1,
+        "ban.created (+ letter) activity should be purged"
+    );
+
+    // The ban is gone.
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/details", current_base()))
+        .json(&json!({"ban_id": ban_id}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 404, "purged ban should not be fetchable");
+
+    // The purge audit entry lands on the originating incident's
+    // activity (ban_id is NULL -- the ban row is gone -- but incident_id
+    // survives), carrying the purged ban's details in event_data.
+    let resp = c
+        .post(format!("{}/api/v1/current/incident/activity", current_base()))
+        .json(&json!({"incident_id": incident_id}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+    let data: serde_json::Value = resp.json().await.unwrap();
+    let purged = data["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["event_type"].as_str() == Some("ban.purged"))
+        .expect("incident activity should include the ban.purged entry");
+    assert_eq!(purged["event_data"]["ban_id"].as_i64(), Some(ban_id));
+    assert_eq!(
+        purged["event_data"]["comments"].as_str(),
+        Some("purge-test")
+    );
+
+    // Purging again 404s -- nothing left to purge.
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/purge", current_base()))
+        .json(&json!({"ban_id": ban_id}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 404);
+}
+
+#[tokio::test]
+async fn purge_trespass_uses_trespass_perm() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let (_inc, _patron, ban_id) =
+        create_basic_ban(&c, &token, "trespass-purge", true).await;
+
+    // COORD holds current.trespass.purge, so this exercises the
+    // trespass-specific perm branch.
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/purge", current_base()))
+        .json(&json!({"ban_id": ban_id}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200, "body: {:?}", resp.text().await);
+    let data: serde_json::Value = resp.json().await.unwrap();
+    assert_eq!(data["is_trespass"].as_bool(), Some(true));
+
+    // Really gone.
+    let resp = c
+        .post(format!("{}/api/v1/current/ban/details", current_base()))
+        .json(&json!({"ban_id": ban_id}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 404);
+}

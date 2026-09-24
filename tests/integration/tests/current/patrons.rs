@@ -1189,6 +1189,200 @@ async fn search_org_unit_scope_excludes_other_orgs() {
     );
 }
 
+#[tokio::test]
+async fn search_visible_trespass_includes_waiting_for_archive() {
+    // Regression: a trespass past its lift date but not yet archived
+    // ("waiting for archive") stays in force until a human archives it,
+    // so it must still satisfy has_visible_trespass -- this powers the
+    // dashboard's Active Trespasses table, which silently dropped such
+    // rows when the view's trespass aggregates were lifts_at-gated.
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let unique = format!(
+        "WaitArch{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+
+    // Patron + incident + trespass at the test org.
+    let patron_resp = create_patron_body(
+        &c,
+        &token,
+        &json!({"first_name": unique, "last_name": "Trespass"}),
+    )
+    .await;
+    assert_eq!(patron_resp.status(), 200);
+    let patron_id = patron_resp.json::<serde_json::Value>().await.unwrap()["id"]
+        .as_i64()
+        .unwrap();
+
+    let incident_resp = c
+        .post(format!("{}/api/v1/current/incident/create", current_base()))
+        .headers(auth_header(&token))
+        .json(&json!({
+            "org_unit": test_org_unit().await,
+            "title": format!("{unique} fixture"),
+            "description": "waiting-for-archive fixture",
+            "involved_parties": [
+                {"party_type": "patron", "patron_id": patron_id}
+            ],
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(incident_resp.status(), 200);
+    let incident_id = incident_resp.json::<serde_json::Value>().await.unwrap()["id"]
+        .as_i64()
+        .unwrap();
+
+    let ban_resp = c
+        .post(format!("{}/api/v1/current/ban/create", current_base()))
+        .headers(auth_header(&token))
+        .json(&json!({
+            "patron": patron_id,
+            "incident": incident_id,
+            "org_unit": test_org_unit().await,
+            "is_trespass": true,
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(ban_resp.status(), 200, "body: {:?}", ban_resp.text().await);
+    let ban_id = ban_resp.json::<serde_json::Value>().await.unwrap()["patron_ban"]["id"]
+        .as_i64()
+        .unwrap();
+
+    // Push the lift date into the past. Trespasses never auto-archive
+    // (archives_at stays NULL), so this leaves it "waiting for archive".
+    let edit_resp = c
+        .post(format!("{}/api/v1/current/ban/edit", current_base()))
+        .headers(auth_header(&token))
+        .json(&json!({"ban_id": ban_id, "lifts_at": "2020-01-01T00:00:00+00:00"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(edit_resp.status(), 200, "body: {:?}", edit_resp.text().await);
+
+    // The expired-but-unarchived trespass must still gate the patron in.
+    let data = search_patrons(
+        &c,
+        &token,
+        // Mirror the dashboard's Active Trespasses query: gate +
+        // lift-date sort (which populates trespass_max_lifts_at).
+        json!({
+            "limit": 25,
+            "query": unique,
+            "has_visible_trespass": true,
+            "sort_by": "lift_date",
+            "sort_dir": "asc",
+        }),
+    )
+    .await;
+    let hit = data["patrons"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["id"].as_i64() == Some(patron_id))
+        .expect("waiting-for-archive trespass should satisfy has_visible_trespass")
+        .clone();
+    assert!(
+        hit["active_trespass_count"].as_i64().unwrap() >= 1,
+        "trespass should count until archived; got {:?}",
+        hit["active_trespass_count"]
+    );
+    // The lift date survives as the sort/display key even though it's past.
+    assert!(
+        hit["trespass_max_lifts_at"].is_string(),
+        "past lift date should still populate the sort aggregate; got {:?}",
+        hit["trespass_max_lifts_at"]
+    );
+}
+
+#[tokio::test]
+async fn search_sorts_by_first_and_last_name_independently() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+
+    // Two patrons whose first-name and last-name orderings invert:
+    // sorting by first name puts Alphasortnames first; by last name,
+    // Omegasortnames-first (whose last name is Alphasortnames) wins.
+    // Re-runs create duplicates, but relative first-occurrence order is
+    // unaffected, and the query term isolates these fixtures.
+    // The all-lowercase patron proves case-insensitivity: ascending, it
+    // must sort before the capitalized names ('aaron' < 'alpha'); under a
+    // case-sensitive (C-collation) sort it would land after both.
+    for (first, last) in [
+        ("Alphasortnames", "Omegasortnames"),
+        ("Omegasortnames", "Alphasortnames"),
+        ("aaronsortnames", "zulusortnames"),
+    ] {
+        let resp = create_patron_body(
+            &c,
+            &token,
+            &json!({"first_name": first, "last_name": last}),
+        )
+        .await;
+        assert_eq!(resp.status(), 200);
+    }
+
+    let position = |patrons: &serde_json::Value, field: &str, value: &str| {
+        patrons
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|p| p[field].as_str() == Some(value))
+            .unwrap_or_else(|| panic!("no patron with {field}={value}"))
+    };
+
+    for (sort_by, field, expect_first) in [
+        ("first_name", "first_name", "Alphasortnames"),
+        ("last_name", "last_name", "Alphasortnames"),
+    ] {
+        let data = search_patrons(
+            &c,
+            &token,
+            json!({
+                "query": "sortnames",
+                "limit": 100,
+                "sort_by": sort_by,
+                "sort_dir": "asc",
+            }),
+        )
+        .await;
+        let alpha = position(&data["patrons"], field, expect_first);
+        let omega = position(&data["patrons"], field, "Omegasortnames");
+        assert!(
+            alpha < omega,
+            "sort_by={sort_by} asc: expected {field}=Alphasortnames before Omegasortnames"
+        );
+        if sort_by == "first_name" {
+            let aaron = position(&data["patrons"], field, "aaronsortnames");
+            assert!(
+                aaron < alpha,
+                "sort is case-insensitive: lowercase 'aaronsortnames' precedes 'Alphasortnames'"
+            );
+        }
+
+        // Descending flips the pair.
+        let data = search_patrons(
+            &c,
+            &token,
+            json!({
+                "query": "sortnames",
+                "limit": 100,
+                "sort_by": sort_by,
+                "sort_dir": "desc",
+            }),
+        )
+        .await;
+        let alpha = position(&data["patrons"], field, expect_first);
+        let omega = position(&data["patrons"], field, "Omegasortnames");
+        assert!(omega < alpha, "sort_by={sort_by} desc flips the order");
+    }
+}
+
 // ============================================================================
 // patron.merge.preview / patron.merge
 // ============================================================================
