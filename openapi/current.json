@@ -4162,6 +4162,16 @@
           }
         }
       },
+      "IncidentSortColumn": {
+        "type": "string",
+        "description": "Sortable incident columns.\n\nAn enum rather than a string so an unknown value is a deserialization\nerror, not SQL. The wire names are the UI's sort keys.",
+        "enum": [
+          "id",
+          "title",
+          "incident_date",
+          "created_date"
+        ]
+      },
       "IncidentsOverTimeResponse": {
         "type": "object",
         "required": [
@@ -5509,6 +5519,17 @@
             ],
             "description": "Free-text search across first/last/alias/library_card/email.\nWhitespace-split into terms; per-term hits are OR'd across\nthe fields, and terms are AND'd together."
           },
+          "sort_by": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SortKey",
+                "description": "Sort by ban / trespass lift date. Ascending picks the soonest\nto expire; descending picks the furthest out."
+              }
+            ]
+          },
           "sort_dir": {
             "type": [
               "string",
@@ -5527,8 +5548,7 @@
             "type": [
               "boolean",
               "null"
-            ],
-            "description": "Sort by ban / trespass lift date. Ascending picks the soonest\nto expire; descending picks the furthest out."
+            ]
           }
         }
       },
@@ -6339,6 +6359,16 @@
               "null"
             ]
           },
+          "sort_by": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IncidentSortColumn"
+              }
+            ]
+          },
           "sort_dir": {
             "type": [
               "string",
@@ -6610,6 +6640,17 @@
             "type": "string"
           }
         }
+      },
+      "SortKey": {
+        "type": "string",
+        "enum": [
+          "name",
+          "first_name",
+          "last_name",
+          "incident_date",
+          "lift_date",
+          "incident_count"
+        ]
       },
       "StatusFilter": {
         "type": "string",
