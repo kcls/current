@@ -37,6 +37,9 @@ kubectl apply -f ./k8s/services/current/secrets.yaml
 # Deploy Current SQL schema
 ./scripts/manage-database.sh deploy
 
+# Deploy Current Demo Data
+./scripts/manage-database.sh deploy-demo
+
 # Build and deploy services to the cluster
 ./scripts/build-and-deploy-service.sh --all
 ```
