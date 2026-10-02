@@ -21,7 +21,11 @@ is the reference implementation for Odo applications.
   templates, sub_locations); SeaORM entities in `src/entity/`.
 - `src/ui/incident-tracker/` — React/Vite SPA (served at
   `/incident-tracker`); vendors its own copy of the core UI lib under
-  `src/core/`.
+  `src/core/`. The serving path is a runtime setting, not a build: the
+  image builds with a placeholder base and `INCIDENT_TRACKER_BASE_PATH`
+  (`/` for a host root) is applied at container start by
+  `docker-entrypoint.d/40-base-path.sh`, which also renders the nginx
+  config from `nginx.conf.template`.
 - `src/sqitch/core/` — sqitch project: 001 incidents baseline
   (self-contained snapshot) + 002 reference seed (incident templates,
   categories, link types, age ranges, sub-locations, ban letters).

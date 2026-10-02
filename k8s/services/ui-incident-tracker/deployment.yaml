@@ -23,6 +23,11 @@ spec:
     spec:
       containers:
         - env:
+            # URL path the SPA is served under. "/" serves it at the host
+            # root. Keep the HTTPRoute and the current service's
+            # CURRENT_PUBLIC_URL in step with it.
+            - name: INCIDENT_TRACKER_BASE_PATH
+              value: /incident-tracker
             - name: NODE_ENV
               value: production
             - name: NEXT_PUBLIC_APP_NAME

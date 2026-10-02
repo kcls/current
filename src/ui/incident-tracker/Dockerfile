@@ -15,6 +15,9 @@ FROM node:20-alpine AS builder
 
 ARG VERSION
 ENV VITE_VERSION=$VERSION
+# Substituted with INCIDENT_TRACKER_BASE_PATH when the container starts;
+# see docker-entrypoint.d/40-base-path.sh.
+ENV VITE_BASE_PATH=/__INCIDENT_TRACKER_BASE_PATH__/
 
 WORKDIR /app
 
@@ -36,11 +39,14 @@ FROM nginx:alpine
 # Install debugging tools (optional, remove for production)
 #RUN apk add --no-cache bash curl wget bind-tools iputils netcat-openbsd vim jq
 
-# Copy custom nginx configuration
-COPY src/ui/incident-tracker/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx config template and the startup script that renders it and places
+# the app at INCIDENT_TRACKER_BASE_PATH (default /incident-tracker).
+COPY src/ui/incident-tracker/nginx.conf.template /etc/nginx/templates-current/default.conf.template
+COPY --chmod=755 src/ui/incident-tracker/docker-entrypoint.d/40-base-path.sh /docker-entrypoint.d/40-base-path.sh
 
-# Copy built React app from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# The pristine build stays root-owned; the startup script copies it into
+# the served directory and substitutes the base path there.
+COPY --from=builder /app/dist /usr/share/nginx/html-dist
 
 # Create a non-root user
 RUN addgroup -g 1010 -S nginx-user && \

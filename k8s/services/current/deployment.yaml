@@ -76,7 +76,8 @@ spec:
               name: odo-notify-service-account
               key: password
         # Public-facing URL for the UI; embedded in notification template
-        # variables (e.g. "View Incident" links in review emails).
+        # variables (e.g. "View Incident" links in review emails). Its path
+        # must match the UI's INCIDENT_TRACKER_BASE_PATH.
         - name: CURRENT_PUBLIC_URL
           value: "http://localhost:30080/incident-tracker"
         # Enable and configure incident draft report reminder emails

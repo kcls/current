@@ -22,7 +22,10 @@ export default defineConfig({
       '@core': new URL('./src/core', import.meta.url).pathname,
     },
   },
-  base: '/incident-tracker',
+  // The container image builds with a placeholder base and substitutes the
+  // real one at startup (docker-entrypoint.d/40-base-path.sh), so one image
+  // can serve at /incident-tracker or at a host's root.
+  base: process.env.VITE_BASE_PATH || '/incident-tracker',
 
   // Dev server configuration
   server: {
