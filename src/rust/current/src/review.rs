@@ -2035,7 +2035,7 @@ async fn send_review_notifications(
         let payload = serde_json::json!({
             "recipients": [{
                 "type": "user",
-                "user_id": target_user,
+                "user_uuid": target_user,
                 "channels": ["in_app", "email"],
             }],
             "template_code": template_code,
