@@ -28,10 +28,11 @@ NAMESPACE=${NAMESPACE:-odo-pub}
 # Sqitch directories
 SQITCH_DIR="${SQITCH_DIR:-$PROJECT_ROOT/src/sqitch}"
 SQITCH_CORE_DIR="${SQITCH_CORE_DIR:-$SQITCH_DIR/core}"
-# The demo sub-locations are a separate sqitch project
-# (%project=current-demo) in the same database, so an installation with
-# its own org structure can skip them. They depend on
-# current:002_current_seed, so they deploy after it and revert before it.
+# The demo data (sub-locations, alert routing onto odo's demo email
+# groups) is a separate sqitch project (%project=current-demo) in the
+# same database, so an installation with its own org structure can skip
+# it. It depends on current:002_current_seed, so it deploys after it and
+# reverts before it.
 SQITCH_DEMO_DIR="${SQITCH_DEMO_DIR:-$SQITCH_DIR/demo-data}"
 # Dev/CI fixtures: plain idempotent SQL, not a sqitch project. They live
 # with the suites that consume them rather than with the schema.
@@ -56,9 +57,9 @@ usage() {
     echo "Test Data Commands:"
     echo "  deploy-test      Deploy test data (idempotent SQL + API fixtures, tests/fixtures/)"
     echo
-    echo "Demo Data Commands (sample sub-locations; skip on a real installation):"
-    echo "  deploy-demo      Deploy the demo sub-locations (requires the schema project)"
-    echo "  revert-demo      Revert the demo sub-locations, leaving the schema in place"
+    echo "Demo Data Commands (sample sub-locations and alert routing; skip on a real installation):"
+    echo "  deploy-demo      Deploy the demo data (requires the schema project)"
+    echo "  revert-demo      Revert the demo data, leaving the schema in place"
     echo "  status-demo      Show demo project deployment status"
     echo
     echo "Database Admin Commands:"
@@ -168,21 +169,22 @@ sqitch_revert() {
 # Demo commands
 #
 # TODO (root_code): odo's schema project parameterizes the root org unit,
-# and the demo sub-locations here are pinned to the *demo* root's uuid.
-# An installation that deployed a different root does not want them at
-# all -- which is why they live in their own project -- but nothing here
-# checks that the pinned root actually exists. Decide whether these
+# and the demo data here is pinned to the *demo* org units' uuids (and
+# odo's demo email groups'). An installation that deployed a different
+# root does not want it at all -- which is why it lives in its own
+# project -- but nothing here checks that the pinned units actually
+# exist. Decide whether these
 # commands should verify the target root, or whether the dependency on
 # current:002_current_seed is guarantee enough.
 sqitch_deploy_demo() {
     local target="${2:-HEAD}"
-    echo -e "\n${YELLOW}Deploying the demo sub-locations${NC}"
+    echo -e "\n${YELLOW}Deploying the demo data${NC}"
     run_sqitch "$SQITCH_DEMO_DIR" deploy $target
     echo -e "${GREEN}Demo deployment completed successfully${NC}"
 }
 
 sqitch_revert_demo() {
-    echo -e "\n${YELLOW}Reverting the demo sub-locations${NC}"
+    echo -e "\n${YELLOW}Reverting the demo data${NC}"
     run_sqitch "$SQITCH_DEMO_DIR" revert -y
     echo -e "${GREEN}Demo revert completed successfully${NC}"
 }
