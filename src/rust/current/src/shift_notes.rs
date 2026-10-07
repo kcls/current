@@ -33,8 +33,8 @@ use utoipa::ToSchema;
 
 use crate::AppState;
 use crate::entity::{
-    config_shift_note_conduct_area, config_shift_note_setting, config_shift_note_type, shift_note,
-    shift_note_attachment, shift_note_conduct_area,
+    config_shift_note_conduct_area, config_shift_note_setting, config_shift_note_type,
+    notification_email_routing, shift_note, shift_note_attachment, shift_note_conduct_area,
 };
 
 /// Cap on a single page of notes. The UI pages; this stops a caller from
@@ -957,7 +957,111 @@ pub async fn create_shift_note(
 
     txn.commit().await?;
 
+    // Post-commit and best-effort, like ban alerts: a notify failure must
+    // not fail a note that is already saved.
+    if let Err(e) = send_shift_note_notification(&state, &note).await {
+        tracing::error!(
+            shift_note_id = note.id,
+            error = %e,
+            "shift note notification fan-out failed"
+        );
+    }
+
     Ok(Json(CreateShiftNoteResponse { id: note.id }))
+}
+
+const SHIFT_NOTE_CREATED_TEMPLATE: &str = "shift-note-created";
+
+/// Email every email group routed to the note's location. Matching is the
+/// same as ban alerts: a routing row whose `incident_org_unit` is the
+/// note's own unit, or NULL (everywhere).
+///
+/// The note body and patron fields are deliberately left out of the
+/// email: they can describe a patron, and email leaves the access
+/// controls that guard the log. The email links to the log instead.
+async fn send_shift_note_notification(
+    state: &AppState,
+    note: &shift_note::Model,
+) -> LocalResult<()> {
+    let routes = notification_email_routing::Entity::find()
+        .filter(
+            notification_email_routing::Column::TemplateCode.eq(SHIFT_NOTE_CREATED_TEMPLATE),
+        )
+        .filter(notification_email_routing::Column::IsActive.eq(true))
+        .filter(
+            Condition::any()
+                .add(notification_email_routing::Column::IncidentOrgUnit.eq(note.org_unit))
+                .add(notification_email_routing::Column::IncidentOrgUnit.is_null()),
+        )
+        .all(&state.db)
+        .await?;
+
+    // A group can match twice (a row on the unit and a broadcast row); it
+    // gets one email.
+    let groups: HashSet<Uuid> = routes.iter().map(|r| r.email_group).collect();
+    if groups.is_empty() {
+        tracing::debug!(
+            shift_note_id = note.id,
+            "no email_groups routed for shift note notification"
+        );
+        return Ok(());
+    }
+
+    let (location_name, timezone) =
+        crate::review::fetch_org_label_and_timezone(state, note.org_unit).await;
+    let note_type = config_shift_note_type::Entity::find_by_id(note.r#type)
+        .one(&state.db)
+        .await?
+        .map(|t| t.label)
+        .unwrap_or_default();
+    let author_name = state
+        .auth_client
+        .get_user_by_uuid(&note.created_by, true)
+        .await
+        .ok()
+        .and_then(|u| u["display_name"].as_str().map(str::to_string))
+        .unwrap_or_default();
+
+    let template_variables = serde_json::json!({
+        "location_name": location_name.unwrap_or_else(|| "Unknown".to_string()),
+        "timezone": timezone.unwrap_or_else(|| "America/Los_Angeles".to_string()),
+        "note_type": note_type,
+        "author_name": author_name,
+        "occurred_at": note.occurred_at.to_rfc3339(),
+        "log_url": format!("{}/shift-notes", state.public_url),
+        "action_url": "/shift-notes",
+    });
+
+    for group in groups {
+        let payload = serde_json::json!({
+            "recipients": [{
+                "type": "email_group",
+                "email_group_uuid": group,
+                "channels": ["email"],
+            }],
+            "template_code": SHIFT_NOTE_CREATED_TEMPLATE,
+            "template_variables": template_variables,
+            "source_service": "current",
+            "source_entity_type": "shift_note",
+            "source_entity_id": note.id,
+            "dedup_key": format!("shift-note:{}:{group}", note.id),
+        });
+
+        if let Err(e) = state
+            .notify_client
+            .post::<serde_json::Value, _>("/api/v1/odo/notify/enqueue", &payload)
+            .await
+        {
+            tracing::warn!(
+                shift_note_id = note.id,
+                email_group = %group,
+                error = %e,
+                "shift note notification enqueue failed",
+            );
+        }
+    }
+
+    Ok(())
 }
 
 // ===========================================================================
