@@ -2472,7 +2472,7 @@ async fn send_ban_notification(state: &AppState, params: BanNotificationParams) 
         let payload = serde_json::json!({
             "recipients": [{
                 "type": "email_group",
-                "email_group_id": route.email_group,
+                "email_group_uuid": route.email_group,
                 "channels": ["email"],
             }],
             "template_code": template_code,

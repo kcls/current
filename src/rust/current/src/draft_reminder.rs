@@ -274,7 +274,7 @@ async fn enqueue_reminder(
     let payload = serde_json::json!({
         "recipients": [{
             "type": "user",
-            "user_id": report.created_by,
+            "user_uuid": report.created_by,
             "channels": ["email"],
         }],
         "template_code": "incident-draft-reminder",
