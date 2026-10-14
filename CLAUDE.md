@@ -57,8 +57,10 @@ is the reference implementation for Odo applications.
 ## Build / deploy / test (dev k3s cluster)
 
 - `cargo check` from `src/rust/current/`.
-- `./scripts/build-and-deploy-service.sh <name>` (`current`,
-  `ui-incident-tracker`, or `--all`). Wait ~20s after a deploy.
+- `$ODO_HOME/scripts/build-and-deploy-service.sh <name>` (`current`,
+  `ui-incident-tracker`, or `--all`), run from this checkout: odo's
+  build/deploy scripts act on the nearest `service-map.yaml`, so this
+  repo keeps no copies of them. Wait ~20s after a deploy.
 - `./scripts/run-tests.sh --db --integration --e2e --unit` — DB
   connection resolves from the `current-api` secret's single
   `DATABASE_URL`; PG* env vars are overrides only.
