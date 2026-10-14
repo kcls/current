@@ -8,14 +8,16 @@
 
 ## Testing
 
-Connection details resolve from the cluster's `current-api` secret
-(PG\* environment variables act as overrides).
+Run with odo's shared script, from anywhere in this checkout. Connection
+details resolve from the secret named in `service-map.yaml` (`database:`,
+the cluster's `current-api` secret); PG\* environment variables act as
+overrides.
 
 ```
-scripts/run-db-tests.sh
+$ODO_HOME/scripts/run-db-tests.sh
 
 # OR
 
-VERBOSE=1 scripts/run-db-tests.sh
+VERBOSE=1 $ODO_HOME/scripts/run-db-tests.sh
 ```
 

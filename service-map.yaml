@@ -3,6 +3,12 @@
 # language:
 #   - the programming language/framework of the service (rust, node, etc.)
 #
+# Current's own database, for odo's shared database scripts (common.sh
+# load_db_config, run-db-tests.sh): the secret holding DATABASE_URL.
+database:
+  namespace: odo-pub
+  secret: current-api
+
 services:
 
   # API service for Current
