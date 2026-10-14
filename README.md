@@ -6,7 +6,14 @@
 ## Quick Install Guide for Developers
 
 Requires a running [Odo platform](https://github.com/kcls/odo). Current
-deploys into the same dev cluster.
+deploys into the same dev cluster, using the build and deploy scripts
+and data loaders from an Odo checkout on the same machine. Point
+`$ODO_HOME` at that checkout:
+
+```bash
+# For example, if Odo is checked out next to Current:
+ODO_HOME="$(cd .. && pwd)/odo"
+```
 
 ### Create The Database
 
@@ -40,21 +47,17 @@ kubectl apply -f ./k8s/services/current/secrets.yaml
 # Deploy Current Demo Data
 ./scripts/manage-database.sh deploy-demo
 
-# Build and deploy services to the cluster
-./scripts/build-and-deploy-service.sh --all
+# Build and deploy services to the cluster. Odo's scripts act on the
+# service-map.yaml of the checkout you run them from.
+$ODO_HOME/scripts/build-and-deploy-service.sh --all
 ```
 
 ### Bulk-Load Odo Data
 
-Developer setup assumes a Git checkout of [https://github.com/kcls/odo](Odo)
-is available on the same machine for bulk data loads (users, roles, permission,
-etc).  Set the `$ODO_HOME` variable to point to the root of the Odo checkout.
+Bulk data loads (users, roles, permissions, etc.) also run from the Odo
+checkout (`$ODO_HOME`, above).
 
 ```bash
-# For example, if Odo is checked out in the parent directory:
-ODO_HOME="$(cd .. && pwd)/odo" 
-
-# Load the data 
 $ODO_HOME/scripts/load-data-manifest.sh ./src/odo-registration/manifest.json
 ```
 ### Setup Tests

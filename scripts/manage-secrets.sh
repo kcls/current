@@ -83,7 +83,7 @@ update_db_url() {
 
     echo -e "\n${BLUE}Host tooling picks this up straight from the secret.${NC}"
     echo -e "${YELLOW}Restart the service to pick it up there too:${NC}"
-    echo "  ./scripts/deploy-service.sh current"
+    echo '  $ODO_HOME/scripts/deploy-service.sh current'  # literal: shown as typed
 }
 
 case "$COMMAND" in
