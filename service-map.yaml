@@ -4,10 +4,13 @@
 #   - the programming language/framework of the service (rust, node, etc.)
 #
 # Current's own database, for odo's shared database scripts (common.sh
-# load_db_config, run-db-tests.sh): the secret holding DATABASE_URL.
+# load_db_config, run-db-tests.sh, manage-database.sh); keys are described
+# in odo's service-map.yaml. Current's role does not own the server: it
+# and its database are created by hand (see the README).
 database:
   namespace: odo-pub
   secret: current-api
+  schemas: [incidents, sqitch, audit]
 
 services:
 

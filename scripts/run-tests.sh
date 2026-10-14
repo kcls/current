@@ -42,8 +42,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Shared DB connection helpers (init_pg_connection parses DATABASE_URL).
-# Shared helpers live in the odo checkout ($ODO_HOME; see the README).
-source "${ODO_HOME:?set ODO_HOME to your odo checkout (see the README)}/scripts/common.sh"
+# Shared helpers live in the odo checkout ($ODO_HOME; see lib/odo-home.sh).
+source "$SCRIPT_DIR/lib/odo-home.sh"
+source "$ODO_HOME/scripts/common.sh"
 load_db_config "$PROJECT_ROOT" || exit 1
 
 # PGHOST/PGPORT are NOT pre-defaulted here: init_pg_connection resolves

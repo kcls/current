@@ -13,8 +13,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-# Shared helpers live in the odo checkout ($ODO_HOME; see the README).
-source "${ODO_HOME:?set ODO_HOME to your odo checkout (see the README)}/scripts/common.sh"
+# Shared helpers live in the odo checkout ($ODO_HOME; see lib/odo-home.sh).
+source "$SCRIPT_DIR/lib/odo-home.sh"
+source "$ODO_HOME/scripts/common.sh"
 load_db_config "$PROJECT_ROOT" || exit 1
 
 SECRET_NAMESPACE=$DB_SECRET_NAMESPACE
