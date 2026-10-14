@@ -42,7 +42,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Shared DB connection helpers (init_pg_connection parses DATABASE_URL).
-source "$SCRIPT_DIR/common.sh"
+# Shared helpers live in the odo checkout ($ODO_HOME; see the README).
+source "${ODO_HOME:?set ODO_HOME to your odo checkout (see the README)}/scripts/common.sh"
+load_db_config "$PROJECT_ROOT" || exit 1
 
 # PGHOST/PGPORT are NOT pre-defaulted here: init_pg_connection resolves
 # them from the secret's DATABASE_URL, and setting them first would
@@ -64,14 +66,14 @@ resolve_pg_password() {
     # The shared resolver fills host/port/user/db/password from the
     # secret's DATABASE_URL; any PG* env vars the caller exported act
     # as overrides.
-    if ! init_pg_connection odo-pub; then
+    if ! init_pg_connection; then
         echo -e "${RED}Error: could not read postgres password from k8s secrets.${NC}"
-        echo "Set PGPASSWORD manually or check that the odo-pub current-api"
+        echo "Set PGPASSWORD manually or check that the $DB_SECRET_NAMESPACE $DB_SECRET_NAME"
         echo "secret exists and contains a DATABASE_URL."
         exit 1
     fi
 
-    echo "Connection resolved from odo-pub/current-api"
+    echo "Connection resolved from $DB_SECRET_NAMESPACE/$DB_SECRET_NAME"
 }
 
 # ---------------------------------------------------------------------------
@@ -93,7 +95,7 @@ run_pgtap_tests() {
 
     # Resolves its own connection from the secret; the PG* variables we
     # exported above (or the caller's overrides) take precedence.
-    "$SCRIPT_DIR/run-db-tests.sh"
+    ODO_PROJECT_ROOT="$PROJECT_ROOT" "$ODO_HOME/scripts/run-db-tests.sh"
 
     echo "pgtap tests passed"
 }

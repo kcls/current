@@ -17,13 +17,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Source common database functions
-source "$SCRIPT_DIR/common.sh"
+# Shared helpers live in the odo checkout ($ODO_HOME; see the README).
+source "${ODO_HOME:?set ODO_HOME to your odo checkout (see the README)}/scripts/common.sh"
+load_db_config "$PROJECT_ROOT" || exit 1
 
 # Default values
 COMMAND=${1:-help}
 DRY_RUN=${DRY_RUN:-false}
-NAMESPACE=${NAMESPACE:-odo-pub}
+NAMESPACE=$DB_SECRET_NAMESPACE
 
 # Sqitch directories
 SQITCH_DIR="${SQITCH_DIR:-$PROJECT_ROOT/src/sqitch}"
@@ -72,7 +73,7 @@ usage() {
     echo "  PGUSER=username           Override database user (default: from secret)"
     echo "  PGPASSWORD=password       Override database password (default: from secret)"
     echo "  DRY_RUN=true              Show what would be done without making changes"
-    echo "  NAMESPACE=name            Kubernetes namespace for secrets (default: odo-pub)"
+    echo "  NAMESPACE=name            Kubernetes namespace for secrets (default: database.namespace in service-map.yaml)"
     echo "  SQITCH_CORE_DIR=/path   Override core directory (default: $SQITCH_CORE_DIR)"
     echo "  SQITCH_DEMO_DIR=/path     Override demo-data directory (default: $SQITCH_DEMO_DIR)"
     echo "  TEST_DATA_DIR=/path       Override fixtures directory (default: $TEST_DATA_DIR)"

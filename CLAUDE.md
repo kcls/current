@@ -61,6 +61,11 @@ is the reference implementation for Odo applications.
   `ui-incident-tracker`, or `--all`), run from this checkout: odo's
   build/deploy scripts act on the nearest `service-map.yaml`, so this
   repo keeps no copies of them. Wait ~20s after a deploy.
+- `ODO_HOME` must point at an odo checkout for every script here:
+  `manage-database.sh`, `manage-secrets.sh` and `run-tests.sh` source
+  `$ODO_HOME/scripts/common.sh`, which reads Current's database secret
+  from the `database:` block in `service-map.yaml`. pgTAP tests run via
+  `$ODO_HOME/scripts/run-db-tests.sh`.
 - `./scripts/run-tests.sh --db --integration --e2e --unit` — DB
   connection resolves from the `current-api` secret's single
   `DATABASE_URL`; PG* env vars are overrides only.
