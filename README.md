@@ -6,9 +6,10 @@
 ## Quick Install Guide for Developers
 
 Requires a running [Odo platform](https://github.com/kcls/odo). Current
-deploys into the same dev cluster, using the build and deploy scripts
-and data loaders from an Odo checkout on the same machine. Point
-`$ODO_HOME` at that checkout:
+deploys into the same dev cluster, using the build, deploy, and database
+scripts and data loaders from an Odo checkout on the same machine. Point
+`$ODO_HOME` at that checkout (Current's own scripts fall back to an `odo`
+checkout next to this one when it is unset):
 
 ```bash
 # For example, if Odo is checked out next to Current:
