@@ -60,6 +60,8 @@ import LoadingSkeleton from '../../shared/components/loading-skeleton';
 import EmptyStateCard from '../../shared/components/empty-state-card';
 import { Breadcrumbs } from '../../shared/components/breadcrumbs';
 import { uploadService } from '@core/api/upload';
+import { useFileUrl } from '../../shared/hooks/use-file-url';
+import { SignedVideo } from '../../shared/components/signed-video';
 import ReviewHistory from './components/review-history';
 import { ReviewDialog, type ReviewResult } from './components/review-dialog';
 import { ReviewProceduresDialog } from './components/review-procedures-dialog';
@@ -84,6 +86,7 @@ import { formatDisplayDateTime } from '../../shared/utils/date-utils';
 import type { IncidentTemplate } from '../../types';
 
 const IncidentDetail: React.FC = () => {
+  const fileUrl = useFileUrl();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -712,11 +715,11 @@ const IncidentDetail: React.FC = () => {
                                     boxShadow: 3,
                                   },
                                 }}
-                                onClick={() => window.open(uploadService.getFileUrl(photo.relative_path), '_blank')}
+                                onClick={() => { const url = fileUrl(photo.relative_path); if (url) window.open(url, '_blank'); }}
                               >
                                 <Box
                                   component="img"
-                                  src={uploadService.getFileUrl(photo.relative_path)}
+                                  src={fileUrl(photo.relative_path)}
                                   alt={photo.original_name}
                                   sx={{
                                     width: '100%',
@@ -754,15 +757,14 @@ const IncidentDetail: React.FC = () => {
                           <Box display="flex" gap={2} flexWrap="wrap">
                             {videoAttachments.map((video: any) => (
                               <Box key={`video-${video.id}`} sx={{ maxWidth: 400 }}>
-                                <Box
-                                  component="video"
+                                <SignedVideo
+                                  path={video.relative_path}
                                   width="100%"
                                   sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
                                   controls
-                                  src={uploadService.getFileUrl(video.relative_path)}
                                 >
                                   Your browser does not support the video tag.
-                                </Box>
+                                </SignedVideo>
                                 <Typography variant="caption" display="block" mt={0.5}>
                                   {video.original_name} • {uploadService.formatFileSize(video.size)}
                                 </Typography>
@@ -812,7 +814,7 @@ const IncidentDetail: React.FC = () => {
                                   <IconButton
                                     size="small"
                                     component="a"
-                                    href={uploadService.getFileUrl(doc.relative_path)}
+                                    href={fileUrl(doc.relative_path)}
                                     target="_blank"
                                     download={doc.original_name}
                                   >
@@ -974,7 +976,7 @@ const IncidentDetail: React.FC = () => {
                         if (party.patron_id) {
                           const pid = parseInt(party.patron_id, 10);
                           const photoPath = bans.patronPhotos.get(pid);
-                          const photoUrl = photoPath ? uploadService.getFileUrl(photoPath) : undefined;
+                          const photoUrl = photoPath ? fileUrl(photoPath) : undefined;
                           return (
                             <Avatar src={photoUrl} sx={{ width: 32, height: 32 }}>
                               <PersonIcon fontSize="small" />

@@ -97,18 +97,6 @@ class UploadService {
     });
   }
 
-  getFileUrl(relativePath: string): string {
-    const token = authApi.getAuthToken();
-
-    // For authenticated file access, we need to append the token as a query parameter
-    // since we can't set headers on img src attributes
-    if (token) {
-       return this.getBasePath() + `files/${relativePath}?token=${encodeURIComponent(token)}`;
-    }
-
-    return this.getBasePath() + `files/${relativePath}`;
-  }
-
     /** Returns the upload service base path, which may vary in dev
      *  environments in particular.
      *

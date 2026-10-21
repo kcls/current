@@ -15,6 +15,8 @@ import {
   Description as DocIcon,
 } from '@mui/icons-material';
 import { uploadService } from '@core/api/upload';
+import { useFileUrl } from '../../../shared/hooks/use-file-url';
+import { SignedVideo } from '../../../shared/components/signed-video';
 import type { AttachmentProps } from './incident-form-step-report';
 
 const getFileIcon = (mimeType: string) => {
@@ -25,6 +27,7 @@ const getFileIcon = (mimeType: string) => {
 };
 
 export const AttachmentsSection: React.FC<{ attachment: AttachmentProps }> = ({ attachment }) => {
+  const fileUrl = useFileUrl();
   const photos = attachment.files.filter((f) => f.category === 'photo');
   const nonPhotos = attachment.files.filter((f) => f.category !== 'photo');
 
@@ -50,7 +53,7 @@ export const AttachmentsSection: React.FC<{ attachment: AttachmentProps }> = ({ 
                 <Box key={`photo-${index}`} position="relative">
                   <Box
                     component="img"
-                    src={uploadService.getFileUrl(file.relative_path)}
+                    src={fileUrl(file.relative_path)}
                     alt={file.original_name}
                     sx={{
                       width: 120,
@@ -96,14 +99,14 @@ export const AttachmentsSection: React.FC<{ attachment: AttachmentProps }> = ({ 
               <Box key={`file-${index}`} sx={{ mb: 1.5 }}>
                 {isVideo && (
                   <Box sx={{ mb: 1 }}>
-                    <video
+                    <SignedVideo
+                      path={file.relative_path}
                       width="100%"
                       style={{ maxWidth: 400, height: 'auto', borderRadius: 4 }}
                       controls
-                      src={uploadService.getFileUrl(file.relative_path)}
                     >
                       Your browser does not support the video tag.
-                    </video>
+                    </SignedVideo>
                   </Box>
                 )}
                 <Box
@@ -130,7 +133,7 @@ export const AttachmentsSection: React.FC<{ attachment: AttachmentProps }> = ({ 
                   <IconButton
                     size="small"
                     component="a"
-                    href={uploadService.getFileUrl(file.relative_path)}
+                    href={fileUrl(file.relative_path)}
                     target="_blank"
                     download={file.original_name}
                   >
