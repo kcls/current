@@ -27,7 +27,7 @@ import {
   History as HistoryIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { uploadService } from '@core';
+import { useFileUrl } from '../hooks/use-file-url';
 import type { ActivityLogEntry } from '../../types';
 import { formatTimestamp, formatBanDate } from '../utils/date-utils';
 
@@ -141,6 +141,7 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
   showIncidentLink,
   onViewLetter,
 }) => {
+  const fileUrl = useFileUrl();
   const { label, icon, color } = getEventConfig(entry.event_type);
   const data = entry.event_data ?? {};
 
@@ -263,11 +264,11 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
                         cursor: 'pointer',
                         '&:hover': { boxShadow: 3 },
                       }}
-                      onClick={() => window.open(uploadService.getFileUrl((file as any).relative_path), '_blank')}
+                      onClick={() => { const url = fileUrl((file as any).relative_path); if (url) window.open(url, '_blank'); }}
                     >
                       <Box
                         component="img"
-                        src={uploadService.getFileUrl((file as any).relative_path)}
+                        src={fileUrl((file as any).relative_path)}
                         alt={(file as any).original_name}
                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -283,7 +284,7 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
                       sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, bgcolor: 'action.hover', borderRadius: 0.5 }}
                     >
                       <Chip label={(file as any).category} size="small" />
-                      <Link href={uploadService.getFileUrl((file as any).relative_path)} target="_blank" rel="noopener noreferrer" variant="caption">
+                      <Link href={fileUrl((file as any).relative_path)} target="_blank" rel="noopener noreferrer" variant="caption">
                         {(file as any).original_name}
                       </Link>
                     </Box>
