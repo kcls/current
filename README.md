@@ -43,10 +43,11 @@ kubectl apply -f ./k8s/services/current/secrets.yaml
 ./scripts/manage-secrets.sh update-db-url
 
 # Deploy Current SQL schema
-./scripts/manage-database.sh deploy
+$ODO_HOME/scripts/manage-database.sh status
+$ODO_HOME/scripts/manage-database.sh deploy
 
 # Deploy Current Demo Data
-./scripts/manage-database.sh deploy-demo
+$ODO_HOME/scripts/manage-database.sh deploy-demo
 
 # Build and deploy services to the cluster. Odo's scripts act on the
 # service-map.yaml of the checkout you run them from.
