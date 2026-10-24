@@ -10,7 +10,6 @@
 database:
   namespace: odo-pub
   secret: current-api
-  schemas: [incidents, sqitch, audit]
 
 services:
 

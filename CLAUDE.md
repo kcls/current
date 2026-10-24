@@ -66,7 +66,7 @@ is the reference implementation for Odo applications.
   is also what odo-deploy's site scripts use, without exporting
   ODO_HOME). `manage-database.sh` is a thin wrapper around odo's shared
   one; `manage-secrets.sh` and `run-tests.sh` source odo's `common.sh`.
-  All read Current's database settings (secret, purge schemas) from the
+  All read Current's database settings (secret) from the
   `database:` block in `service-map.yaml`. pgTAP tests run via
   `$ODO_HOME/scripts/run-db-tests.sh`. Keep the `manage-database.sh`
   wrapper: odo-deploy runs `./scripts/manage-database.sh` in this
