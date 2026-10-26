@@ -260,26 +260,6 @@ export const StepReport: React.FC<StepReportProps> = ({
               }
               noOptionsText="No staff found"
             />
-
-            {staff.selected.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                {staff.selected.map((s) => (
-                  <TextField
-                    key={s.uuid}
-                    fullWidth
-                    multiline
-                    rows={2}
-                    label={`Notes for ${s.display_name}`}
-                    value={staff.notes[s.uuid] || ''}
-                    onChange={(e) =>
-                      staff.setNotes((prev) => ({ ...prev, [s.uuid]: e.target.value }))
-                    }
-                    sx={{ mb: 2 }}
-                    placeholder="Add any notes about this staff member's involvement..."
-                  />
-                ))}
-              </Box>
-            )}
           </Box>
         </Box>
 
