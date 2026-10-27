@@ -27,6 +27,14 @@
       "description": "Create and update incidents"
     },
     {
+      "code": "current.incident_template.read",
+      "description": "View incident templates in the admin UI, including deleted ones"
+    },
+    {
+      "code": "current.incident_template.write",
+      "description": "Create, update, and delete incident templates"
+    },
+    {
       "code": "current.patron.read",
       "description": "View and search patrons"
     },
@@ -159,6 +167,16 @@
     },
     {
       "role": "incident-admin",
+      "perm": "current.incident_template.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
+      "perm": "current.incident_template.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-admin",
       "perm": "current.patron.read",
       "min_depth": 0
     },
@@ -270,6 +288,16 @@
     {
       "role": "incident-coordinator",
       "perm": "current.incident.write",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.incident_template.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-coordinator",
+      "perm": "current.incident_template.write",
       "min_depth": 0
     },
     {

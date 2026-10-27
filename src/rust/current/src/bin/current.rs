@@ -36,6 +36,9 @@ use utoipa::OpenApi;
         review::get_pending_reviews,
         review::create_incident_review,
         templates::list_templates,
+        templates::create_template,
+        templates::update_template,
+        templates::delete_template,
         sub_locations::list_sub_locations,
         incidents::get_incident,
         incidents::search_incidents,
@@ -98,6 +101,9 @@ use utoipa::OpenApi;
         review::CreateReviewResponse,
         templates::ListTemplatesRequest,
         templates::TemplateResponse,
+        templates::SaveTemplateFields,
+        templates::UpdateTemplateRequest,
+        templates::DeleteTemplateRequest,
         sub_locations::ListSubLocationsRequest,
         sub_locations::SubLocationResponse,
         incidents::GetIncidentRequest,
@@ -333,6 +339,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/v1/current/template/list",
             post(templates::list_templates),
+        )
+        .route(
+            "/api/v1/current/template/create",
+            post(templates::create_template),
+        )
+        .route(
+            "/api/v1/current/template/update",
+            post(templates::update_template),
+        )
+        .route(
+            "/api/v1/current/template/delete",
+            post(templates::delete_template),
         )
         .route(
             "/api/v1/current/sub-location/list",

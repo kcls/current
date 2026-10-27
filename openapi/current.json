@@ -1816,6 +1816,77 @@
         ]
       }
     },
+    "/api/v1/current/template/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTemplateFields"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/template/delete": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Soft-delete a template. Incidents already filed against it keep their\nmapping; the template just stops being offered.",
+        "operationId": "delete_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/template/list": {
       "post": {
         "tags": [
@@ -1842,6 +1913,42 @@
                   "items": {
                     "$ref": "#/components/schemas/TemplateResponse"
                   }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/template/update": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Replace a template's editable values. `version` is bumped whenever\n`fields` changes, so it tracks revisions of the form definition.",
+        "operationId": "update_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
                 }
               }
             }
@@ -3366,6 +3473,18 @@
           }
         }
       },
+      "DeleteTemplateRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "EditBanRequest": {
         "type": "object",
         "required": [
@@ -4574,6 +4693,10 @@
               "null"
             ],
             "format": "int32"
+          },
+          "include_deleted": {
+            "type": "boolean",
+            "description": "Also return soft-deleted templates; requires\n`current.incident_template.read`."
           },
           "is_active": {
             "type": [
@@ -6278,6 +6401,42 @@
           }
         }
       },
+      "SaveTemplateFields": {
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "requires_patron": {
+            "type": "boolean"
+          },
+          "show_called_emergency": {
+            "type": "boolean"
+          }
+        }
+      },
       "SearchIncidentsRequest": {
         "type": "object",
         "properties": {
@@ -6762,6 +6921,13 @@
             "type": "string"
           },
           "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "deleted_at": {
             "type": [
               "string",
               "null"
@@ -7296,6 +7462,25 @@
             "format": "int32"
           }
         }
+      },
+      "UpdateTemplateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SaveTemplateFields"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ]
       },
       "UpdateTrespassProceduresRequest": {
         "type": "object",
