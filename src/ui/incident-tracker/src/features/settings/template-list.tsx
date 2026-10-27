@@ -31,7 +31,8 @@ import {
 } from '@mui/icons-material';
 import { authApi } from '@core';
 import { templateApi } from '../../api/templates';
-import type { IncidentTemplate } from '../../types';
+import { categoryApi } from '../../api/categories';
+import type { Category, IncidentTemplate } from '../../types';
 import { useToast } from '../../contexts/toast-context';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import TemplateDialog from './components/template-dialog';
@@ -41,7 +42,8 @@ import { useTableUrlState, useFilterUrlState } from '../../shared/hooks/use-tabl
 import LoadingSkeleton from '../../shared/components/loading-skeleton';
 
 const TemplateList: React.FC = () => {
-  const { templates, categories, isLoading, error, fetchTemplates } = useTemplates();
+  const { templates, isLoading, error, fetchTemplates } = useTemplates();
+  const [categories, setCategories] = useState<Category[]>([]);
   const { showSuccess, showError } = useToast();
   const [canWrite, setCanWrite] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -83,6 +85,20 @@ const TemplateList: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
+    categoryApi.list().then((result) => {
+      if (!cancelled) setCategories(result);
+    }).catch(() => { /* labels fall back to category codes */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const categoryLabels = useMemo(
+    () => new Map(categories.map((c) => [c.code, c.label])),
+    [categories]
+  );
+  const categoryLabel = (code: string) => categoryLabels.get(code) ?? code;
+
+  useEffect(() => {
+    let cancelled = false;
     authApi.userHasPerm('current.incident_template.write').then((allowed) => {
       if (!cancelled) setCanWrite(allowed);
     });
@@ -119,7 +135,7 @@ const TemplateList: React.FC = () => {
     const matchesSearch =
       template.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       template.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      template.category.toLowerCase().includes(debouncedSearch.toLowerCase());
+      categoryLabel(template.category).toLowerCase().includes(debouncedSearch.toLowerCase());
 
     const matchesActive = filters.show_inactive || template.is_active;
 
@@ -261,7 +277,7 @@ const TemplateList: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={template.category}
+                      label={categoryLabel(template.category)}
                       color={getCategoryColor(template.category) as any}
                       size="small"
                     />

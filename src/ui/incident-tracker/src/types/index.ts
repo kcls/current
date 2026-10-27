@@ -314,10 +314,10 @@ export interface PaginatedResponse<T> {
 export interface Category {
   code: string;
   label: string;
-  description: string;
-  icon: string;
-  display_order: number;
-  is_active: boolean;
+  description: string | null;
+  icon: string | null;
+  display_order: number | null;
+  is_active: boolean | null;
 }
 
 // Settings types

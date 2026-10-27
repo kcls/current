@@ -13,7 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import { templateApi, type TemplateInput } from '../../../api/templates';
-import type { IncidentTemplate } from '../../../types';
+import type { Category, IncidentTemplate } from '../../../types';
 
 interface TemplateDialogProps {
   open: boolean;
@@ -21,7 +21,7 @@ interface TemplateDialogProps {
   onSaved: (template: IncidentTemplate) => void;
   /** Template to edit; null to create a new one */
   template: IncidentTemplate | null;
-  categories: string[];
+  categories: Category[];
 }
 
 const NAME_MAX_LENGTH = 255;
@@ -48,6 +48,12 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({
   const [saving, setSaving] = useState(false);
 
   const isEditMode = !!template;
+
+  // Offer active categories, plus the template's own if it has since been
+  // deactivated, so editing doesn't silently change it.
+  const categoryOptions = categories.filter(
+    (c) => c.is_active !== false || c.code === template?.category
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -132,9 +138,9 @@ const TemplateDialog: React.FC<TemplateDialogProps> = ({
             value={formData.category}
             onChange={(e) => handleChange('category', e.target.value)}
           >
-            {categories.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
+            {categoryOptions.map((category) => (
+              <MenuItem key={category.code} value={category.code}>
+                {category.label}
               </MenuItem>
             ))}
           </TextField>

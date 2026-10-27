@@ -3,7 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { renderWithProviders, userEvent } from '../../../../tests/test-utils';
 import TemplateDialog from '../template-dialog';
 import { templateApi } from '../../../../api/templates';
-import type { IncidentTemplate } from '../../../../types';
+import type { Category, IncidentTemplate } from '../../../../types';
 
 vi.mock('../../../../api/templates', () => ({
   templateApi: {
@@ -24,6 +24,20 @@ describe('TemplateDialog', () => {
     show_called_emergency: false,
   };
 
+  const category = (code: string, label: string, is_active = true): Category => ({
+    code,
+    label,
+    description: null,
+    icon: null,
+    display_order: 0,
+    is_active,
+  });
+  const categories = [
+    category('behavior', 'Behavior'),
+    category('security', 'Security', false),
+    category('retired', 'Retired', false),
+  ];
+
   const onClose = vi.fn();
   const onSaved = vi.fn();
 
@@ -34,7 +48,7 @@ describe('TemplateDialog', () => {
         onClose={onClose}
         onSaved={onSaved}
         template={t}
-        categories={['behavior', 'security']}
+        categories={categories}
       />
     );
 
@@ -74,7 +88,7 @@ describe('TemplateDialog', () => {
 
     await user.type(screen.getByLabelText(/Name/), 'New');
     await user.click(screen.getByLabelText(/Category/));
-    await user.click(await screen.findByRole('option', { name: 'behavior' }));
+    await user.click(await screen.findByRole('option', { name: 'Behavior' }));
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(templateApi.create).toHaveBeenCalledTimes(1));
@@ -108,5 +122,14 @@ describe('TemplateDialog', () => {
 
     expect(await screen.findByText('Unknown template category: x')).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('lists active categories by label, plus the template\'s own inactive one', async () => {
+    const user = userEvent.setup();
+    renderDialog(template);
+
+    await user.click(screen.getByLabelText(/Category/));
+    const options = (await screen.findAllByRole('option')).map((o) => o.textContent);
+    expect(options).toEqual(['Behavior', 'Security']);
   });
 });
