@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTemplates } from '../../contexts/templates-context';
 import {
   Paper,
@@ -36,6 +36,7 @@ import type { Category, IncidentTemplate } from '../../types';
 import { useToast } from '../../contexts/toast-context';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import TemplateDialog from './components/template-dialog';
+import CategoriesSection from './components/categories-section';
 import { PageContainer } from '../../shared/components/layout';
 import { PaginatedTableContainer } from '../../shared/components/paginated-table-container';
 import { useTableUrlState, useFilterUrlState } from '../../shared/hooks/use-table-url-state';
@@ -83,13 +84,15 @@ const TemplateList: React.FC = () => {
     fetchTemplates({});
   }, [fetchTemplates]);
 
-  useEffect(() => {
-    let cancelled = false;
-    categoryApi.list().then((result) => {
-      if (!cancelled) setCategories(result);
-    }).catch(() => { /* labels fall back to category codes */ });
-    return () => { cancelled = true; };
+  const fetchCategories = useCallback(() => {
+    categoryApi.list().then(setCategories).catch(() => {
+      // Labels fall back to category codes
+    });
   }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const categoryLabels = useMemo(
     () => new Map(categories.map((c) => [c.code, c.label])),
@@ -316,6 +319,13 @@ const TemplateList: React.FC = () => {
           </TableBody>
         </Table>
       </PaginatedTableContainer>
+
+      <CategoriesSection
+        categories={categories}
+        templates={templates}
+        canWrite={canWrite}
+        onChanged={fetchCategories}
+      />
 
       <TemplateDialog
         open={dialogOpen}
