@@ -1,4 +1,5 @@
 pub mod bans;
+pub mod categories;
 pub mod draft_reminder;
 pub mod entity;
 pub mod incidents;

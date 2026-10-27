@@ -3,6 +3,7 @@ use axum::middleware;
 use axum::routing::{get, post};
 use current::AppState;
 use current::bans;
+use current::categories;
 use current::draft_reminder;
 use current::incidents;
 use current::patrons;
@@ -39,6 +40,9 @@ use utoipa::OpenApi;
         templates::create_template,
         templates::update_template,
         templates::delete_template,
+        categories::list_categories,
+        categories::create_category,
+        categories::update_category,
         sub_locations::list_sub_locations,
         incidents::get_incident,
         incidents::search_incidents,
@@ -104,6 +108,9 @@ use utoipa::OpenApi;
         templates::SaveTemplateFields,
         templates::UpdateTemplateRequest,
         templates::DeleteTemplateRequest,
+        categories::ListCategoriesRequest,
+        categories::CategoryResponse,
+        categories::SaveCategoryRequest,
         sub_locations::ListSubLocationsRequest,
         sub_locations::SubLocationResponse,
         incidents::GetIncidentRequest,
@@ -351,6 +358,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/v1/current/template/delete",
             post(templates::delete_template),
+        )
+        .route(
+            "/api/v1/current/category/list",
+            post(categories::list_categories),
+        )
+        .route(
+            "/api/v1/current/category/create",
+            post(categories::create_category),
+        )
+        .route(
+            "/api/v1/current/category/update",
+            post(categories::update_category),
         )
         .route(
             "/api/v1/current/sub-location/list",

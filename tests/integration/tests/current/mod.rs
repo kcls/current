@@ -1,4 +1,5 @@
 mod bans;
+mod categories;
 mod incidents;
 mod patrons;
 mod reports;
