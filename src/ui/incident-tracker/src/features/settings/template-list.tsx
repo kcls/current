@@ -16,22 +16,38 @@ import {
   FormControlLabel,
   Switch,
   Alert,
+  Button,
+  Tooltip,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Clear as ClearIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
+import { authApi } from '@core';
+import { templateApi } from '../../api/templates';
+import type { IncidentTemplate } from '../../types';
+import { useToast } from '../../contexts/toast-context';
+import { ConfirmDialog } from '../../shared/components/confirm-dialog';
+import TemplateDialog from './components/template-dialog';
 import { PageContainer } from '../../shared/components/layout';
 import { PaginatedTableContainer } from '../../shared/components/paginated-table-container';
 import { useTableUrlState, useFilterUrlState } from '../../shared/hooks/use-table-url-state';
 import LoadingSkeleton from '../../shared/components/loading-skeleton';
 
-// Templates are reference data installed by the reference seed; the UI
-// is read-only until the backend grows template CUD endpoints.
 const TemplateList: React.FC = () => {
-  const { templates, isLoading, error, fetchTemplates } = useTemplates();
+  const { templates, categories, isLoading, error, fetchTemplates } = useTemplates();
+  const { showSuccess, showError } = useToast();
+  const [canWrite, setCanWrite] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<IncidentTemplate | null>(null);
+  const [deletingTemplate, setDeletingTemplate] = useState<IncidentTemplate | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { page, rowsPerPage, setPage, setRowsPerPage } = useTableUrlState({
     defaultRowsPerPage: 10,
   });
@@ -64,6 +80,39 @@ const TemplateList: React.FC = () => {
   useEffect(() => {
     fetchTemplates({});
   }, [fetchTemplates]);
+
+  useEffect(() => {
+    let cancelled = false;
+    authApi.userHasPerm('current.incident_template.write').then((allowed) => {
+      if (!cancelled) setCanWrite(allowed);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const openDialog = (template: IncidentTemplate | null) => {
+    setEditingTemplate(template);
+    setDialogOpen(true);
+  };
+
+  const handleSaved = (template: IncidentTemplate) => {
+    showSuccess(`Template "${template.name}" saved`);
+    fetchTemplates({});
+  };
+
+  const handleDelete = async () => {
+    if (!deletingTemplate) return;
+    setDeleting(true);
+    try {
+      await templateApi.delete(Number(deletingTemplate.id));
+      showSuccess(`Template "${deletingTemplate.name}" deleted`);
+      setDeletingTemplate(null);
+      fetchTemplates({});
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to delete template');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Filter templates based on search and active status
   const filteredTemplates = templates.filter(template => {
@@ -124,6 +173,11 @@ const TemplateList: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">Incident Templates</Typography>
+        {canWrite && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => openDialog(null)}>
+            New Template
+          </Button>
+        )}
       </Box>
 
       {/* Search and Filters */}
@@ -177,15 +231,16 @@ const TemplateList: React.FC = () => {
             <TableRow>
               <TableCell>Template Name</TableCell>
               <TableCell width="180px">Category</TableCell>
-              <TableCell width="120px">Fields</TableCell>
-              <TableCell width="120px">Usage</TableCell>
+              <TableCell width="130px" align="center">Requires Patron</TableCell>
+              <TableCell width="130px" align="center">Asks 911/988</TableCell>
               <TableCell width="150px">Status</TableCell>
+              {canWrite && <TableCell width="110px" align="right">Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
             {paginatedTemplates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={canWrite ? 6 : 5} align="center">
                   <Typography color="text.secondary" py={3}>
                     No templates found
                   </Typography>
@@ -211,15 +266,11 @@ const TemplateList: React.FC = () => {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {template.fields?.length || 0} fields
-                    </Typography>
+                  <TableCell align="center">
+                    {template.requires_patron && <CheckIcon fontSize="small" aria-label="Yes" />}
                   </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {template.usage_count || 0} uses
-                    </Typography>
+                  <TableCell align="center">
+                    {template.show_called_emergency && <CheckIcon fontSize="small" aria-label="Yes" />}
                   </TableCell>
                   <TableCell>
                     <Chip
@@ -229,6 +280,20 @@ const TemplateList: React.FC = () => {
                       icon={template.is_active ? <VisibilityIcon /> : <VisibilityOffIcon />}
                     />
                   </TableCell>
+                  {canWrite && (
+                    <TableCell align="right">
+                      <Tooltip title="Edit">
+                        <IconButton size="small" onClick={() => openDialog(template)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton size="small" onClick={() => setDeletingTemplate(template)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -236,34 +301,24 @@ const TemplateList: React.FC = () => {
         </Table>
       </PaginatedTableContainer>
 
-      {/* Summary Stats */}
-      <Box display="flex" gap={2} mt={2}>
-        <Paper sx={{ p: 2, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            Total Templates
-          </Typography>
-          <Typography variant="h6">{templates.length}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            Active Templates
-          </Typography>
-          <Typography variant="h6">
-            {templates.filter(t => t.is_active).length}
-          </Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            Most Used
-          </Typography>
-          <Typography variant="h6">
-            {templates.reduce((max, t) => 
-              (t.usage_count || 0) > (max.usage_count || 0) ? t : max, 
-              templates[0] || { name: 'N/A', usage_count: 0 }
-            ).name}
-          </Typography>
-        </Paper>
-      </Box>
+      <TemplateDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSaved={handleSaved}
+        template={editingTemplate}
+        categories={categories}
+      />
+
+      <ConfirmDialog
+        open={!!deletingTemplate}
+        title="Delete Template"
+        message={`Delete "${deletingTemplate?.name ?? ''}"? Incidents already filed with this template keep it; it will no longer be offered for new incidents.`}
+        confirmLabel="Delete"
+        confirmColor="error"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeletingTemplate(null)}
+      />
     </PageContainer>
   );
 };
