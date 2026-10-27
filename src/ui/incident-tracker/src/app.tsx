@@ -13,6 +13,7 @@ import EditIncidentPage from './features/incidents/edit-incident-page';
 import IncidentDetail from './features/incidents/incident-detail';
 import CreateBanPage from './features/incidents/create-ban-page';
 import EditBanPage from './features/incidents/edit-ban-page';
+import CategoryList from './features/settings/category-list';
 import TemplateList from './features/settings/template-list';
 import Reports from './features/reports';
 import ShiftNotes from './features/shift-notes';
@@ -86,6 +87,11 @@ function App() {
                     <Route path={ROUTES.BAN_EDIT} element={
                       <RoleGuard allowedRoles={[...STAFF_ROLES]}>
                         <EditBanPage />
+                      </RoleGuard>
+                    } />
+                    <Route path={ROUTES.CATEGORIES} element={
+                      <RoleGuard allowedRoles={[...COORDINATOR_ROLES]}>
+                        <CategoryList />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.TEMPLATES} element={

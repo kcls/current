@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Paper,
   Typography,
@@ -13,33 +13,60 @@ import {
   Button,
   Tooltip,
   TableContainer,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import type { Category, IncidentTemplate } from '../../../types';
-import { useToast } from '../../../contexts/toast-context';
-import CategoryDialog from './category-dialog';
-
-interface CategoriesSectionProps {
-  categories: Category[];
-  templates: IncidentTemplate[];
-  canWrite: boolean;
-  onChanged: () => void;
-}
+import { authApi } from '@core';
+import { categoryApi } from '../../api/categories';
+import type { Category } from '../../types';
+import { useTemplates } from '../../contexts/templates-context';
+import { useToast } from '../../contexts/toast-context';
+import CategoryDialog from './components/category-dialog';
+import { PageContainer } from '../../shared/components/layout';
+import LoadingSkeleton from '../../shared/components/loading-skeleton';
 
 // Categories can't be deleted (templates reference them by code), so the
 // only way to retire one is to mark it inactive.
-const CategoriesSection: React.FC<CategoriesSectionProps> = ({
-  categories,
-  templates,
-  canWrite,
-  onChanged,
-}) => {
+const CategoryList: React.FC = () => {
+  const { templates, fetchTemplates } = useTemplates();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [canWrite, setCanWrite] = useState(false);
   const { showSuccess } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      setCategories(await categoryApi.list());
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load categories');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Only for the per-category template counts
+  useEffect(() => {
+    fetchTemplates({});
+  }, [fetchTemplates]);
+
+  useEffect(() => {
+    let cancelled = false;
+    authApi.userHasPerm('current.incident_template.write').then((allowed) => {
+      if (!cancelled) setCanWrite(allowed);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const templateCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -56,15 +83,31 @@ const CategoriesSection: React.FC<CategoriesSectionProps> = ({
 
   const handleSaved = (category: Category) => {
     showSuccess(`Category "${category.label}" saved`);
-    onChanged();
+    fetchCategories();
   };
 
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <LoadingSkeleton variant="table" rows={8} />
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer>
+        <Alert severity="error">{error}</Alert>
+      </PageContainer>
+    );
+  }
+
   return (
-    <Box mt={4}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" component="h2">Categories</Typography>
+    <PageContainer maxWidth="lg">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" component="h1">Incident Categories</Typography>
         {canWrite && (
-          <Button variant="outlined" startIcon={<AddIcon />} onClick={() => openDialog(null)}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => openDialog(null)}>
             New Category
           </Button>
         )}
@@ -141,8 +184,8 @@ const CategoriesSection: React.FC<CategoriesSectionProps> = ({
         onSaved={handleSaved}
         category={editingCategory}
       />
-    </Box>
+    </PageContainer>
   );
 };
 
-export default CategoriesSection;
+export default CategoryList;

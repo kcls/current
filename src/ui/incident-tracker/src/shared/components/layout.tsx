@@ -22,6 +22,7 @@ import {
   Dashboard as DashboardIcon,
   ReportProblem as IncidentIcon,
   RateReview as ReviewIcon,
+  Category as IncidentCategoryIcon,
   Article as IncidentTemplateIcon,
   BarChart as BarChartIcon,
   AdminPanelSettings as RoleManagementIcon,
@@ -157,6 +158,14 @@ const Layout: React.FC = () => {
       icon: <ReviewProcessIcon />,
       path: ROUTES.REVIEW_PROCESS,
       show: hasAnyRole(MANAGER_ROLES)
+    },
+    {
+      // Gated like its route in app.tsx (coordinator, not manager), as is
+      // Incident Templates below.
+      text: 'Incident Categories',
+      icon: <IncidentCategoryIcon />,
+      path: ROUTES.CATEGORIES,
+      show: hasAnyRole(COORDINATOR_ROLES)
     },
     {
       // Gated like its route in app.tsx (coordinator, not manager) so the
