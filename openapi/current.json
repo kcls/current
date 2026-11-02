@@ -634,6 +634,41 @@
         ]
       }
     },
+    "/api/v1/current/incident/followup/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_followup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFollowupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Newly created follow-up incident's identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateIncidentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/incident/get": {
       "post": {
         "tags": [
@@ -3145,6 +3180,40 @@
           }
         }
       },
+      "CreateFollowupRequest": {
+        "type": "object",
+        "description": "A follow-up is a full incident (own review cycle) that continues an\nearlier one. Everything but the narrative, occurrence time and\nattachments is taken from the source: org unit, title, templates and\ninvolved parties. Sub-location is left empty, and no bans or\ntrespasses can be attached to it, now or later.",
+        "required": [
+          "source_incident_id",
+          "description"
+        ],
+        "properties": {
+          "attachment_file_upload_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "source_incident_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CreateIncidentRequest": {
         "type": "object",
         "required": [
@@ -3192,6 +3261,14 @@
           "org_unit": {
             "type": "string",
             "format": "uuid"
+          },
+          "related_incident_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "An existing incident this one is related to but independent of\n(written as a `related` incident link). The caller needs read\naccess at the related incident's org unit."
           },
           "sub_location": {
             "type": [
@@ -4139,6 +4216,9 @@
           },
           "with_involved_parties": {
             "type": "boolean"
+          },
+          "with_linked_incidents": {
+            "type": "boolean"
           }
         }
       },
@@ -4233,6 +4313,14 @@
               "$ref": "#/components/schemas/ExternalLinkResponse"
             }
           },
+          "followup_of": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Set when this incident is a follow-up: the id of the incident it\nwas created from. Follow-ups never carry bans or trespasses."
+          },
           "id": {
             "type": "integer",
             "format": "int32"
@@ -4254,6 +4342,16 @@
               "string",
               "null"
             ]
+          },
+          "linked_incidents": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LinkedIncidentResponse"
+            },
+            "description": "Incidents linked to this one in either direction, oldest\noccurrence first. Deleted incidents and those at org units the\ncaller cannot read are left out. Returned when\n`options.with_linked_incidents = true`."
           },
           "metadata": {},
           "occurred_at": {
@@ -4590,6 +4688,63 @@
             "items": {
               "$ref": "#/components/schemas/LabelCountRow"
             }
+          }
+        }
+      },
+      "LinkDirection": {
+        "type": "string",
+        "description": "Which end of the link the viewed incident sits on. A link's\n`incident_id` is the newer incident, `linked_incident_id` the one it\nrefers back to.",
+        "enum": [
+          "references",
+          "referenced_by"
+        ]
+      },
+      "LinkedIncidentResponse": {
+        "type": "object",
+        "required": [
+          "incident_id",
+          "link_type",
+          "direction",
+          "title",
+          "org_unit",
+          "occurred_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/LinkDirection"
+          },
+          "incident_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "link_type": {
+            "type": "string",
+            "description": "`related` or `followup`."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string"
           }
         }
       },

@@ -48,6 +48,7 @@ use utoipa::OpenApi;
         incidents::search_incidents,
         incidents::get_activity,
         incidents::create_incident,
+        incidents::create_followup,
         incidents::update_incident,
         bans::list_ban_letter_templates,
         bans::get_ban_details,
@@ -127,6 +128,9 @@ use utoipa::OpenApi;
         incidents::GetActivityResponse,
         incidents::CreateIncidentRequest,
         incidents::CreateIncidentResponse,
+        incidents::CreateFollowupRequest,
+        incidents::LinkedIncidentResponse,
+        incidents::LinkDirection,
         incidents::CreateInvolvedParty,
         incidents::AttachmentResponse,
         incidents::CreateExternalLink,
@@ -390,6 +394,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/v1/current/incident/create",
             post(incidents::create_incident),
+        )
+        .route(
+            "/api/v1/current/incident/followup/create",
+            post(incidents::create_followup),
         )
         .route(
             "/api/v1/current/incident/update",

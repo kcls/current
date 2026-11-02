@@ -5,7 +5,8 @@ use odo_client::error::{ApiResult, LocalError, LocalResult};
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::{
-    ActiveValue, ExprTrait, Order, PaginatorTrait, QueryOrder, QuerySelect, Set, TransactionTrait,
+    ActiveValue, Condition, ExprTrait, Order, PaginatorTrait, QueryOrder, QuerySelect, Set,
+    TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -14,8 +15,8 @@ use utoipa::ToSchema;
 
 use crate::AppState;
 use crate::entity::{
-    activity_log, attachments, external_link, external_link_type, incident_template_map, incidents,
-    involved_parties, patron_ban, patrons, sub_locations,
+    activity_log, attachments, external_link, external_link_type, incident_links,
+    incident_template_map, incidents, involved_parties, patron_ban, patrons, sub_locations,
 };
 use crate::review::{self, ReviewActionFlags};
 
@@ -31,6 +32,8 @@ pub struct IncidentGetOptions {
     pub with_external_links: bool,
     #[serde(default)]
     pub with_attachments: bool,
+    #[serde(default)]
+    pub with_linked_incidents: bool,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -75,6 +78,38 @@ pub struct ExternalLinkResponse {
     pub link_type_display_order: Option<i32>,
 }
 
+/// `incident_links.link_type` values this service writes. The table's check
+/// constraint also allows `duplicate` and `pattern`, which nothing creates.
+pub const LINK_TYPE_RELATED: &str = "related";
+pub const LINK_TYPE_FOLLOWUP: &str = "followup";
+
+/// Which end of the link the viewed incident sits on. A link's
+/// `incident_id` is the newer incident, `linked_incident_id` the one it
+/// refers back to.
+#[derive(Debug, Clone, Copy, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LinkDirection {
+    /// The viewed incident refers back to this one (e.g. it is a
+    /// follow-up of it).
+    References,
+    /// This one refers back to the viewed incident (e.g. it is a
+    /// follow-up created from it).
+    ReferencedBy,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LinkedIncidentResponse {
+    pub incident_id: i32,
+    /// `related` or `followup`.
+    pub link_type: String,
+    pub direction: LinkDirection,
+    pub title: String,
+    pub org_unit: Uuid,
+    pub occurred_at: chrono::DateTime<chrono::FixedOffset>,
+    pub resolved_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    pub created_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct IncidentResponse {
     pub id: i32,
@@ -113,6 +148,10 @@ pub struct IncidentResponse {
     pub is_final_review: bool,
     pub can_review: bool,
 
+    /// Set when this incident is a follow-up: the id of the incident it
+    /// was created from. Follow-ups never carry bans or trespasses.
+    pub followup_of: Option<i32>,
+
     // Optional includes
     #[serde(skip_serializing_if = "Option::is_none")]
     pub involved_parties: Option<Vec<InvolvedPartyResponse>>,
@@ -124,6 +163,12 @@ pub struct IncidentResponse {
     /// ask, not that there are no attachments.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<AttachmentResponse>>,
+    /// Incidents linked to this one in either direction, oldest
+    /// occurrence first. Deleted incidents and those at org units the
+    /// caller cannot read are left out. Returned when
+    /// `options.with_linked_incidents = true`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub linked_incidents: Option<Vec<LinkedIncidentResponse>>,
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +228,14 @@ pub async fn get_incident(
         None
     };
 
+    let followup_of = followup_source_id(&state.db, incident.id).await?;
+
+    let linked_incidents = if options.with_linked_incidents {
+        Some(load_linked_incidents(&state, &incident).await?)
+    } else {
+        None
+    };
+
     // Flatten the optional org address into the response's five
     // address fields. None means the org-unit lookup returned no
     // address — leave every component null.
@@ -223,9 +276,11 @@ pub async fn get_incident(
         user_review_level: review_state.user_review_level,
         is_final_review: review_state.is_final_review,
         can_review: review_state.can_review,
+        followup_of,
         involved_parties: involved,
         external_links: external,
         attachments,
+        linked_incidents,
     }))
 }
 
@@ -239,6 +294,109 @@ async fn load_incident(db: &DatabaseConnection, incident_id: i32) -> LocalResult
         .one(db)
         .await?
         .ok_or_else(|| LocalError::not_found("incident"))
+}
+
+/// The incident this one is a follow-up of, if any.
+async fn followup_source_id<C: ConnectionTrait>(
+    db: &C,
+    incident_id: i32,
+) -> LocalResult<Option<i32>> {
+    Ok(incident_links::Entity::find()
+        .filter(incident_links::Column::IncidentId.eq(incident_id))
+        .filter(incident_links::Column::LinkType.eq(LINK_TYPE_FOLLOWUP))
+        .one(db)
+        .await?
+        .map(|l| l.linked_incident_id))
+}
+
+/// Bans and trespasses are never attached to a follow-up incident; the
+/// ban endpoints call this for any incident they are about to tie a ban
+/// action to.
+pub async fn ensure_not_followup<C: ConnectionTrait>(db: &C, incident_id: i32) -> LocalResult<()> {
+    if followup_source_id(db, incident_id).await?.is_some() {
+        return Err(LocalError::invalid_input(format!(
+            "incident {incident_id} is a follow-up; bans and trespasses cannot be attached to it"
+        )));
+    }
+    Ok(())
+}
+
+async fn load_linked_incidents(
+    state: &AppState,
+    incident: &incidents::Model,
+) -> LocalResult<Vec<LinkedIncidentResponse>> {
+    let links = incident_links::Entity::find()
+        .filter(
+            Condition::any()
+                .add(incident_links::Column::IncidentId.eq(incident.id))
+                .add(incident_links::Column::LinkedIncidentId.eq(incident.id)),
+        )
+        .all(&state.db)
+        .await?;
+    if links.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let other_ids: Vec<i32> = links
+        .iter()
+        .map(|l| {
+            if l.incident_id == incident.id {
+                l.linked_incident_id
+            } else {
+                l.incident_id
+            }
+        })
+        .collect();
+    let others: HashMap<i32, incidents::Model> = incidents::Entity::find()
+        .filter(incidents::Column::Id.is_in(other_ids))
+        .filter(incidents::Column::DeletedAt.is_null())
+        .all(&state.db)
+        .await?
+        .into_iter()
+        .map(|i| (i.id, i))
+        .collect();
+
+    // Related incidents can sit at other org units. The caller already
+    // passed the read check at this incident's org; check each other org
+    // once.
+    let mut readable: HashMap<Uuid, bool> = HashMap::from([(incident.org_unit, true)]);
+    for org in others.values().map(|i| i.org_unit) {
+        if readable.contains_key(&org) {
+            continue;
+        }
+        let ok = state
+            .auth_client
+            .user_has_permission_uuid("current.incident.read", Some(&org))
+            .await?;
+        readable.insert(org, ok);
+    }
+
+    let mut result: Vec<LinkedIncidentResponse> = links
+        .into_iter()
+        .filter_map(|l| {
+            let (other_id, direction) = if l.incident_id == incident.id {
+                (l.linked_incident_id, LinkDirection::References)
+            } else {
+                (l.incident_id, LinkDirection::ReferencedBy)
+            };
+            let other = others.get(&other_id)?;
+            if !readable.get(&other.org_unit).copied().unwrap_or(false) {
+                return None;
+            }
+            Some(LinkedIncidentResponse {
+                incident_id: other.id,
+                link_type: l.link_type,
+                direction,
+                title: other.title.clone(),
+                org_unit: other.org_unit,
+                occurred_at: other.occurred_at,
+                resolved_at: other.resolved_at,
+                created_at: other.created_at,
+            })
+        })
+        .collect();
+    result.sort_by_key(|r| (r.occurred_at, r.incident_id));
+    Ok(result)
 }
 
 async fn load_template_ids(db: &DatabaseConnection, incident_id: i32) -> LocalResult<Vec<i32>> {
@@ -952,6 +1110,9 @@ const INCIDENT_ACTIVITY_EVENT_TYPES: &[&str] = &[
     "incident.review.deleted",
     "incident.review.resolved",
     "incident.review.reopened",
+    // Logged on the source by `insert_incident_link`.
+    "incident.related_created",
+    "incident.followup_created",
     // Ban events otherwise live on the ban's own activity view, but a
     // purged ban has no surviving row — the originating incident is the
     // only place its purge audit entry can surface.
@@ -1164,6 +1325,12 @@ pub struct CreateIncidentRequest {
     /// double-wrote the file row and is gone.
     #[serde(default)]
     pub attachment_file_upload_ids: Option<Vec<Uuid>>,
+
+    /// An existing incident this one is related to but independent of
+    /// (written as a `related` incident link). The caller needs read
+    /// access at the related incident's org unit.
+    #[serde(default)]
+    pub related_incident_id: Option<i32>,
 }
 
 /// Accept either a JSON object or a JSON-encoded string (the latter is what
@@ -1230,6 +1397,18 @@ pub async fn create_incident(
         validate_attachment_ids(&state, user_id, ids).await?;
     }
 
+    let related = match params.related_incident_id {
+        Some(related_id) => {
+            let related = load_incident(&state.db, related_id).await?;
+            state
+                .auth_client
+                .permission_required_uuid("current.incident.read", Some(&related.org_unit))
+                .await?;
+            Some(related)
+        }
+        None => None,
+    };
+
     // Pull out the special metadata fields so they don't end up persisted
     // twice (once on the incident row, once via their proper tables).
     let (clean_metadata, external_links_param) = extract_special_metadata(params.metadata.as_ref());
@@ -1247,6 +1426,9 @@ pub async fn create_incident(
     insert_external_links(&txn, incident.id, user_id, &external_links_param).await?;
     if let Some(ids) = params.attachment_file_upload_ids.as_ref() {
         insert_attachments(&txn, incident.id, ids).await?;
+    }
+    if let Some(related) = related.as_ref() {
+        insert_incident_link(&txn, incident.id, related, LINK_TYPE_RELATED, user_id).await?;
     }
 
     // Inline ban creates/extends from the New Incident form. The
@@ -1557,6 +1739,163 @@ async fn insert_attachments<C: ConnectionTrait>(
         .collect();
     attachments::Entity::insert_many(rows).exec(txn).await?;
     Ok(())
+}
+
+/// Write the link from a newly created incident back to `source`, and log
+/// it on the source so its history shows the new incident.
+async fn insert_incident_link<C: ConnectionTrait>(
+    txn: &C,
+    incident_id: i32,
+    source: &incidents::Model,
+    link_type: &str,
+    user_id: Uuid,
+) -> LocalResult<()> {
+    incident_links::ActiveModel {
+        incident_id: Set(incident_id),
+        linked_incident_id: Set(source.id),
+        link_type: Set(link_type.to_string()),
+        created_by: Set(Some(user_id)),
+        ..Default::default()
+    }
+    .insert(txn)
+    .await?;
+
+    activity_log::ActiveModel {
+        event_type: Set(format!("incident.{link_type}_created")),
+        actor_id: Set(user_id),
+        org_unit: Set(Some(source.org_unit)),
+        incident_id: Set(Some(source.id)),
+        event_data: Set(serde_json::json!({ "linked_incident_id": incident_id })),
+        ..Default::default()
+    }
+    .insert(txn)
+    .await?;
+    Ok(())
+}
+
+// ===========================================================================
+// create_followup
+// ===========================================================================
+
+/// A follow-up is a full incident (own review cycle) that continues an
+/// earlier one. Everything but the narrative, occurrence time and
+/// attachments is taken from the source: org unit, title, templates and
+/// involved parties. Sub-location is left empty, and no bans or
+/// trespasses can be attached to it, now or later.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateFollowupRequest {
+    pub source_incident_id: i32,
+    pub description: String,
+    #[serde(default)]
+    pub occurred_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    #[serde(default)]
+    pub attachment_file_upload_ids: Option<Vec<Uuid>>,
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/current/incident/followup/create",
+    request_body = CreateFollowupRequest,
+    responses((status = 200, body = CreateIncidentResponse, description = "Newly created follow-up incident's identifiers")),
+    security(("bearer" = [])),
+    tag = "incidents"
+)]
+pub async fn create_followup(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<CreateFollowupRequest>,
+) -> ApiResult<Json<CreateIncidentResponse>> {
+    let user_id = RequestContext::user_uuid().ok_or(LocalError::unauthenticated())?;
+
+    if params.description.trim().is_empty() {
+        return Err(LocalError::invalid_input("description is required").into());
+    }
+
+    let source = load_incident(&state.db, params.source_incident_id).await?;
+
+    // The follow-up lands at the source's org unit, so that is where the
+    // caller needs write access.
+    state
+        .auth_client
+        .permission_required_uuid("current.incident.write", Some(&source.org_unit))
+        .await?;
+
+    tracing::info!(source_incident_id = source.id, "CreateFollowup");
+
+    if let Some(ids) = params.attachment_file_upload_ids.as_ref() {
+        validate_attachment_ids(&state, user_id, ids).await?;
+    }
+
+    let txn = state.db.begin().await?;
+
+    let mut model = incidents::ActiveModel {
+        org_unit: Set(source.org_unit),
+        title: Set(source.title.clone()),
+        description: Set(Some(params.description.clone())),
+        created_by: Set(user_id),
+        ..Default::default()
+    };
+    if let Some(occurred) = params.occurred_at {
+        model.occurred_at = Set(occurred);
+    }
+    let incident = model.insert(&txn).await?;
+    log_incident_created(&txn, incident.id, source.org_unit, user_id, &source.title).await?;
+
+    let template_ids: Vec<i32> = incident_template_map::Entity::find()
+        .filter(incident_template_map::Column::Incident.eq(source.id))
+        .all(&txn)
+        .await?
+        .into_iter()
+        .map(|m| m.template)
+        .collect();
+    insert_template_mappings(&txn, incident.id, &template_ids).await?;
+
+    // Copy the parties as they stand on the source. These point at the
+    // same patron / staff records (an unknown patron included), so the
+    // follow-up shows up in each patron's history.
+    let parties: Vec<involved_parties::ActiveModel> = involved_parties::Entity::find()
+        .filter(involved_parties::Column::IncidentId.eq(source.id))
+        .all(&txn)
+        .await?
+        .into_iter()
+        .map(|p| involved_parties::ActiveModel {
+            incident_id: Set(incident.id),
+            party_type: Set(p.party_type),
+            patron_id: Set(p.patron_id),
+            staff_id: Set(p.staff_id),
+            external_name: Set(p.external_name),
+            external_contact: Set(p.external_contact),
+            role: Set(p.role),
+            notes: Set(p.notes),
+            ..Default::default()
+        })
+        .collect();
+    if !parties.is_empty() {
+        involved_parties::Entity::insert_many(parties)
+            .exec(&txn)
+            .await?;
+    }
+
+    if let Some(ids) = params.attachment_file_upload_ids.as_ref() {
+        insert_attachments(&txn, incident.id, ids).await?;
+    }
+    insert_incident_link(&txn, incident.id, &source, LINK_TYPE_FOLLOWUP, user_id).await?;
+
+    txn.commit().await?;
+
+    tracing::info!(
+        incident_id = incident.id,
+        source_incident_id = source.id,
+        "follow-up created"
+    );
+
+    Ok(Json(CreateIncidentResponse {
+        id: incident.id,
+        created_at: incident.created_at,
+        updated_at: incident.updated_at,
+        occurred_at: incident.occurred_at,
+        created_ban_ids: Vec::new(),
+        extended_ban_ids: Vec::new(),
+    }))
 }
 
 // ===========================================================================
