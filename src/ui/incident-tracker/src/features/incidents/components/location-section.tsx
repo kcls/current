@@ -32,6 +32,8 @@ interface LocationSectionProps {
   subLocations: SubLocation[];
   isLoadingSubLocations: boolean;
   isEditMode: boolean;
+  /** Follow-ups never have a sub-location. */
+  subLocationLocked?: boolean;
   errors: Record<string, string>;
   onInputChange: (field: 'org_unit' | 'sub_location', value: any) => void;
   clearError: (field: string) => void;
@@ -45,6 +47,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
   subLocations,
   isLoadingSubLocations,
   isEditMode,
+  subLocationLocked = false,
   errors,
   onInputChange,
   clearError,
@@ -139,7 +142,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
             onInputChange('sub_location', !val || val === '' ? null : Number(val));
           }}
           label="Sub-Location"
-          disabled={!orgUnit}
+          disabled={!orgUnit || subLocationLocked}
         >
           {isLoadingSubLocations && orgUnit && subLocations.length === 0 ? (
             <MenuItem disabled>Loading sub-locations...</MenuItem>

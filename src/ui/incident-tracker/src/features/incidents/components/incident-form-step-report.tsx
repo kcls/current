@@ -104,6 +104,8 @@ interface StepReportProps {
   onInputChange: (field: keyof IncidentFormState, value: any) => void;
   clearError: (field: string) => void;
   isEditMode: boolean;
+  /** Templates and sub-location are inherited from the source incident. */
+  isFollowup?: boolean;
   isSubmitting: boolean;
   templates: IncidentTemplate[];
   locations: OrgUnit[];
@@ -129,6 +131,7 @@ export const StepReport: React.FC<StepReportProps> = ({
   onInputChange,
   clearError,
   isEditMode,
+  isFollowup = false,
   isSubmitting,
   templates,
   locations,
@@ -166,6 +169,7 @@ export const StepReport: React.FC<StepReportProps> = ({
           <Autocomplete
             multiple
             fullWidth
+            disabled={isFollowup}
             options={templates
               .filter((t) => t.is_active !== false)
               .sort((a, b) => a.name.localeCompare(b.name))}
@@ -189,10 +193,15 @@ export const StepReport: React.FC<StepReportProps> = ({
               <TextField
                 {...params}
                 label="Incident Templates"
-                required
-                placeholder="Select one or more templates"
+                required={!isFollowup}
+                placeholder={isFollowup ? undefined : 'Select one or more templates'}
                 error={!!errors.template_ids}
-                helperText={errors.template_ids || 'Select all incident types that apply to this incident'}
+                helperText={
+                  errors.template_ids ||
+                  (isFollowup
+                    ? 'A follow-up keeps the templates of the original incident'
+                    : 'Select all incident types that apply to this incident')
+                }
               />
             )}
           />
@@ -207,6 +216,7 @@ export const StepReport: React.FC<StepReportProps> = ({
           subLocations={subLocations}
           isLoadingSubLocations={isLoadingSubLocations}
           isEditMode={isEditMode}
+          subLocationLocked={isFollowup}
           errors={errors}
           onInputChange={onInputChange}
           clearError={clearError}

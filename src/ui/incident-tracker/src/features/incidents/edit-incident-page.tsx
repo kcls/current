@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
 import { ROUTES } from '../../constants';
-import { Paper, Typography, Box } from '@mui/material';
+import { Paper, Typography, Box, Alert, Link } from '@mui/material';
 import { PageContainer } from '../../shared/components/layout';
 import { useToast } from '../../contexts/toast-context';
 import { useTemplates } from '../../contexts/templates-context';
@@ -33,7 +33,16 @@ const EditIncidentPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileUpload = useFileUpload({ entityId: id, showError, showSuccess });
-  const form = useIncidentFormState({ isEditMode: true, templateId: null, fileUpload });
+  // The context can still hold the previously viewed incident until the
+  // fetch below lands; only trust it once the ids match.
+  const loadedIncident = currentIncident && String(currentIncident.id) === id ? currentIncident : null;
+  const followupOf = loadedIncident?.followup_of ?? null;
+  const isFollowup = followupOf != null;
+  const relatedIds = (loadedIncident?.linked_incidents ?? [])
+    .filter((l) => l.link_type === 'related')
+    .map((l) => l.incident_id);
+
+  const form = useIncidentFormState({ isEditMode: true, templateId: null, isFollowup, fileUpload });
 
   useEditModePrefill({
     isEditMode: true,
@@ -158,8 +167,32 @@ const EditIncidentPage: React.FC = () => {
       <Paper sx={{ p: 4 }}>
         <Box mb={3}>
           <Typography variant="h5" gutterBottom>
-            Edit Incident
+            {isFollowup ? 'Edit Follow-up Incident' : 'Edit Incident'}
           </Typography>
+          {isFollowup && (
+            <Alert severity="info" sx={{ mb: 1 }}>
+              This is a follow-up to{' '}
+              <Link component={RouterLink} to={`/incidents/${followupOf}`}>
+                Incident #{followupOf}
+              </Link>
+              . Its location, templates and sub-location come from the original incident and
+              cannot be changed, and bans or trespasses cannot be added to it.
+            </Alert>
+          )}
+          {relatedIds.length > 0 && (
+            <Alert severity="info">
+              Related to{' '}
+              {relatedIds.map((rid, i) => (
+                <React.Fragment key={rid}>
+                  {i > 0 && ', '}
+                  <Link component={RouterLink} to={`/incidents/${rid}`}>
+                    Incident #{rid}
+                  </Link>
+                </React.Fragment>
+              ))}
+              .
+            </Alert>
+          )}
         </Box>
 
         <StepReport
@@ -168,6 +201,7 @@ const EditIncidentPage: React.FC = () => {
           onInputChange={form.handleInputChange}
           clearError={form.clearError}
           isEditMode
+          isFollowup={isFollowup}
           isSubmitting={isSubmitting}
           templates={form.templates}
           locations={form.locations}
@@ -184,7 +218,7 @@ const EditIncidentPage: React.FC = () => {
           onSaveReport={handleSaveDraft}
           hasReviewChain={form.hasReviewChain}
           onSubmitForReview={handleSubmitForReview}
-          onSaveAndBan={handleSaveAndBan}
+          onSaveAndBan={isFollowup ? undefined : handleSaveAndBan}
         />
       </Paper>
     </PageContainer>

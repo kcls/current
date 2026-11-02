@@ -27,6 +27,9 @@ import type { PatronDetails } from '../../../types/patron';
 interface UseIncidentFormStateOptions {
   isEditMode: boolean;
   templateId: string | null;
+  /** Editing a follow-up: templates are inherited from the source and not
+   * editable, so they are not required either (the source may have none). */
+  isFollowup?: boolean;
   fileUpload: {
     uploadedFiles: FileUploadResponse[];
     uploadProgress: Record<string, number>;
@@ -72,7 +75,7 @@ function computeBanStepErrors(
 }
 
 export function useIncidentFormState(options: UseIncidentFormStateOptions) {
-  const { isEditMode, templateId, fileUpload } = options;
+  const { isEditMode, templateId, isFollowup = false, fileUpload } = options;
   const { user } = useAuth();
   const { templates } = useTemplates();
   const { locations, subLocations, isLoadingSubLocations, fetchSubLocationsByOrgUnit } = useLocations();
@@ -355,7 +358,7 @@ export function useIncidentFormState(options: UseIncidentFormStateOptions) {
   const validateStepReport = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.template_ids || formData.template_ids.length === 0) {
+    if (!isFollowup && (!formData.template_ids || formData.template_ids.length === 0)) {
       newErrors.template_ids = 'Please select at least one incident template';
     }
     if (!formData.description) newErrors.description = 'Incident Narrative is required';
@@ -372,7 +375,7 @@ export function useIncidentFormState(options: UseIncidentFormStateOptions) {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, templates, selectedPatrons]);
+  }, [formData, templates, selectedPatrons, isFollowup]);
 
   // Clear step-2 errors as soon as edits resolve them; new errors only surface on Next
   useEffect(() => {
