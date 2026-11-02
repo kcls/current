@@ -1003,7 +1003,10 @@ const IncidentDetail: React.FC = () => {
                           )}
                           {party.patron_id && (() => {
                             const pid = parseInt(party.patron_id!, 10);
-                            const patronBans = bans.bansByPatron.get(pid) || [];
+                            // Only this incident's bans; the patron's bans
+                            // from other incidents belong on the patron page.
+                            const patronBans = (bans.bansByPatron.get(pid) || [])
+                              .filter((b) => b.incident === incident.id);
                             const isRelevant = (b: typeof patronBans[0]) => {
                               const s = getBanStatus(b);
                               return s.color === 'error' || s.color === 'warning';
