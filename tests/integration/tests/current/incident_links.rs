@@ -386,3 +386,106 @@ async fn linked_incidents_omitted_unless_requested() {
     let data = post_ok(&c, &token, "incident/get", json!({"id": source_id})).await;
     assert!(data.get("linked_incidents").is_none());
 }
+
+// --- incident.update: a follow-up's templates and sub-location are fixed ---
+
+#[tokio::test]
+async fn update_followup_accepts_unchanged_templates() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let source_id = create_source(&c, &token, "followup-update-same source").await;
+    let followup_id = create_followup(&c, &token, source_id).await;
+    let template_ids = get_full(&c, &token, followup_id).await["template_ids"].clone();
+
+    // What the edit form sends on every save.
+    post_ok(
+        &c,
+        &token,
+        "incident/update",
+        json!({"id": followup_id, "description": "edited", "template_ids": template_ids}),
+    )
+    .await;
+    let data = get_full(&c, &token, followup_id).await;
+    assert_eq!(data["description"], "edited");
+    assert_eq!(data["template_ids"], template_ids);
+}
+
+#[tokio::test]
+async fn update_followup_rejects_template_change() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let source_id = create_source(&c, &token, "followup-update-tpl source").await;
+    let followup_id = create_followup(&c, &token, source_id).await;
+    let before = get_full(&c, &token, followup_id).await["template_ids"].clone();
+
+    let templates = post_ok(&c, &token, "template/list", json!({})).await;
+    let other = templates
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|t| t["id"].as_i64())
+        .find(|id| !before.as_array().unwrap().contains(&json!(id)))
+        .expect("a second template");
+
+    for template_ids in [json!([other]), json!([])] {
+        let resp = post(
+            &c,
+            &token,
+            "incident/update",
+            json!({"id": followup_id, "template_ids": template_ids}),
+        )
+        .await;
+        assert_eq!(resp.status(), 400, "template_ids {template_ids}");
+    }
+    assert_eq!(get_full(&c, &token, followup_id).await["template_ids"], before);
+}
+
+#[tokio::test]
+async fn update_followup_rejects_sub_location() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let source_id = create_source(&c, &token, "followup-update-subloc source").await;
+    let followup_id = create_followup(&c, &token, source_id).await;
+    let sub_locations = post_ok(&c, &token, "sub-location/list", json!({})).await;
+    let sub_location = sub_locations[0]["id"].as_i64().expect("a sub-location");
+
+    let resp = post(
+        &c,
+        &token,
+        "incident/update",
+        json!({"id": followup_id, "sub_location": sub_location}),
+    )
+    .await;
+    assert_eq!(resp.status(), 400);
+    assert!(get_full(&c, &token, followup_id).await["sub_location"].is_null());
+}
+
+#[tokio::test]
+async fn update_related_incident_may_change_templates() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let source_id = create_source(&c, &token, "related-update source").await;
+    let data = post_ok(
+        &c,
+        &token,
+        "incident/create",
+        json!({
+            "org_unit": unit_by_code("MAIN").await,
+            "title": "related, editable",
+            "description": "x",
+            "related_incident_id": source_id,
+        }),
+    )
+    .await;
+    let related_id = data["id"].as_i64().unwrap();
+    let template_id = first_template_id(&c, &token).await;
+
+    post_ok(
+        &c,
+        &token,
+        "incident/update",
+        json!({"id": related_id, "template_ids": [template_id]}),
+    )
+    .await;
+    assert_eq!(get_full(&c, &token, related_id).await["template_ids"], json!([template_id]));
+}

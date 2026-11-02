@@ -7542,7 +7542,7 @@
               "type": "integer",
               "format": "int32"
             },
-            "description": "Full-replace semantics: passing `Some([..])` clears the\nincident's existing `incident_template_map` rows and inserts a\nnew mapping for each id. Passing `Some([])` clears all\ntemplates. `None` (the field omitted from the payload) leaves\nthe existing mapping untouched — \"no change\" rather than\n\"clear\", same shape as the legacy port (CRT-88)."
+            "description": "Full-replace semantics: passing `Some([..])` clears the\nincident's existing `incident_template_map` rows and inserts a\nnew mapping for each id. Passing `Some([])` clears all\ntemplates. `None` (the field omitted from the payload) leaves\nthe existing mapping untouched — \"no change\" rather than\n\"clear\", same shape as the legacy port (CRT-88).\n\nRefused for a follow-up unless it matches the current mapping, as\nis any `sub_location`: both are inherited from the source."
           },
           "title": {
             "type": [

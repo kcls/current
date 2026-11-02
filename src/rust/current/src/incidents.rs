@@ -1773,6 +1773,45 @@ async fn insert_incident_link<C: ConnectionTrait>(
     Ok(())
 }
 
+/// A follow-up's templates and sub-location (always empty) come from its
+/// source and cannot be edited. Values equal to the current ones are
+/// accepted, since the edit form sends them back on every save.
+async fn ensure_followup_fields_unchanged<C: ConnectionTrait>(
+    db: &C,
+    existing: &incidents::Model,
+    params: &UpdateIncidentRequest,
+) -> LocalResult<()> {
+    if params.template_ids.is_none() && params.sub_location.is_none() {
+        return Ok(());
+    }
+    if followup_source_id(db, existing.id).await?.is_none() {
+        return Ok(());
+    }
+
+    if params.sub_location.is_some() && params.sub_location != existing.sub_location {
+        return Err(LocalError::invalid_input(
+            "a follow-up incident's sub-location cannot be changed",
+        ));
+    }
+
+    if let Some(requested) = params.template_ids.as_ref() {
+        let requested: HashSet<i32> = requested.iter().copied().collect();
+        let current: HashSet<i32> = incident_template_map::Entity::find()
+            .filter(incident_template_map::Column::Incident.eq(existing.id))
+            .all(db)
+            .await?
+            .into_iter()
+            .map(|m| m.template)
+            .collect();
+        if requested != current {
+            return Err(LocalError::invalid_input(
+                "a follow-up incident's templates cannot be changed",
+            ));
+        }
+    }
+    Ok(())
+}
+
 // ===========================================================================
 // create_followup
 // ===========================================================================
@@ -1953,6 +1992,9 @@ pub struct UpdateIncidentRequest {
     /// templates. `None` (the field omitted from the payload) leaves
     /// the existing mapping untouched — "no change" rather than
     /// "clear", same shape as the legacy port (CRT-88).
+    ///
+    /// Refused for a follow-up unless it matches the current mapping, as
+    /// is any `sub_location`: both are inherited from the source.
     #[serde(default)]
     pub template_ids: Option<Vec<i32>>,
 
@@ -2059,6 +2101,8 @@ pub async fn update_incident(
     if let Some(ids) = params.add_attachment_file_upload_ids.as_ref() {
         validate_attachment_ids(&state, user_id, ids).await?;
     }
+
+    ensure_followup_fields_unchanged(&state.db, &existing, &params).await?;
 
     let now: chrono::DateTime<chrono::FixedOffset> = chrono::Utc::now().into();
     let was_resolved = existing.resolved_at.is_some();
