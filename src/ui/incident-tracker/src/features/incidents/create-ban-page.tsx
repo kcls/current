@@ -341,6 +341,21 @@ const CreateBanPage: React.FC = () => {
     );
   }
 
+  // The server refuses these too; say so up front instead of after the form.
+  if (incident?.followup_of != null) {
+    return (
+      <PageContainer maxWidth="lg">
+        <Alert severity="warning">
+          Incident #{incident.id} is a follow-up of{' '}
+          <Link component={RouterLink} to={`/incidents/${incident.followup_of}`}>
+            Incident #{incident.followup_of}
+          </Link>
+          . Bans and trespasses cannot be added to a follow-up incident.
+        </Alert>
+      </PageContainer>
+    );
+  }
+
   const currentBanStatus = patronBanAtLocation[form.currentPatronId ?? ''] ?? null;
   const hasActiveTrespass = !!currentBanStatus?.hasTrespass;
   const hasActiveBanAtLocation = !!currentBanStatus?.hasBan;

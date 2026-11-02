@@ -52,6 +52,9 @@ import {
   SearchOff as SearchOffIcon,
   Group as GroupIcon,
   Gavel as GavelIcon,
+  Reply as ReplyIcon,
+  AddLink as AddLinkIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import { PageContainer } from '../../shared/components/layout';
 import { NameAvatar } from '../../shared/components/name-avatar';
@@ -65,6 +68,7 @@ import { SignedVideo } from '../../shared/components/signed-video';
 import ReviewHistory from './components/review-history';
 import { ReviewDialog, type ReviewResult } from './components/review-dialog';
 import { ReviewProceduresDialog } from './components/review-procedures-dialog';
+import { FollowupDialog } from './components/followup-dialog';
 import { useIncidentBans } from './hooks/use-incident-bans';
 import { ActivityLogPaper } from '../../shared/components/activity-log';
 import { getIncidentActivity } from '../../api/activity';
@@ -98,6 +102,7 @@ const IncidentDetail: React.FC = () => {
   const { locations } = useLocations();
 
   const [showPhotos, setShowPhotos] = useState(false);
+  const [followupOpen, setFollowupOpen] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [isSubmittingForReview, setIsSubmittingForReview] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -511,6 +516,8 @@ const IncidentDetail: React.FC = () => {
     ? incident.template_ids.map(tid => templates.find(t => t.id === tid)).filter((t): t is IncidentTemplate => t !== undefined)
     : [];
   const locationInfo = locations.find(l => l.uuid === incident.org_unit);
+  const isFollowup = incident.followup_of != null;
+  const linkedIncidents = incident.linked_incidents || [];
 
   return (
     <PageContainer maxWidth="lg">
@@ -531,11 +538,25 @@ const IncidentDetail: React.FC = () => {
           noMargin
         />
         <Box display="flex" gap={1}>
-          <Tooltip title="Create ban / trespass">
-            <IconButton onClick={() => navigate(`/incidents/${id}/create-ban`)}>
-              <GavelIcon />
+          <Tooltip title="Create follow-up incident">
+            <IconButton onClick={() => setFollowupOpen(true)}>
+              <ReplyIcon />
             </IconButton>
           </Tooltip>
+
+          <Tooltip title="Create related incident">
+            <IconButton onClick={() => navigate(`${ROUTES.INCIDENTS_NEW}?related_to=${id}`)}>
+              <AddLinkIcon />
+            </IconButton>
+          </Tooltip>
+
+          {!isFollowup && (
+            <Tooltip title="Create ban / trespass">
+              <IconButton onClick={() => navigate(`/incidents/${id}/create-ban`)}>
+                <GavelIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
           <Tooltip title="Print incident report">
             <IconButton onClick={handlePrint}>
@@ -586,6 +607,16 @@ const IncidentDetail: React.FC = () => {
               />
               {incident.called_emergency && (
                 <Chip label="Called 911/988" color="info" variant="outlined" size="small" />
+              )}
+              {isFollowup && (
+                <Chip
+                  label={`Follow-up of #${incident.followup_of}`}
+                  variant="outlined"
+                  size="small"
+                  clickable
+                  component={RouterLink}
+                  to={`/incidents/${incident.followup_of}`}
+                />
               )}
             </Box>
             <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
@@ -1279,6 +1310,54 @@ const IncidentDetail: React.FC = () => {
             </CardContent>
           </Card>
 
+          {linkedIncidents.length > 0 && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                  <LinkIcon sx={{ mr: 1 }} />
+                  Linked Incidents
+                </Typography>
+                <List dense disablePadding>
+                  {linkedIncidents.map((linked) => {
+                    const relation =
+                      linked.link_type === 'followup'
+                        ? linked.direction === 'references' ? 'Follow-up of' : 'Follow-up'
+                        : 'Related';
+                    const linkedStatus = getIncidentStatus({ resolved_at: linked.resolved_at ?? undefined });
+                    const linkedLocation =
+                      linked.org_unit !== incident.org_unit
+                        ? locations.find(l => l.uuid === linked.org_unit)?.label
+                        : undefined;
+                    return (
+                      <ListItem key={`${linked.link_type}-${linked.incident_id}`} disableGutters>
+                        <ListItemText
+                          primary={
+                            <>
+                              {relation}{' '}
+                              <Link component={RouterLink} to={`/incidents/${linked.incident_id}`}>
+                                #{linked.incident_id}
+                              </Link>
+                              {' · '}
+                              {linked.title}
+                            </>
+                          }
+                          secondary={
+                            <>
+                              {formatDate(linked.occurred_at)}
+                              {linkedLocation && <> · {linkedLocation}</>}
+                              {' · '}
+                              {getStatusLabel(linkedStatus)}
+                            </>
+                          }
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Notes */}
           {incident.notes && (
             <Card>
@@ -1331,6 +1410,19 @@ const IncidentDetail: React.FC = () => {
           // isResubmission is derived the same way the button does; a
           // trespass being submitted for the first time is a fresh submit.
           void submitForReview(false, proceduresByBan);
+        }}
+      />
+
+      <FollowupDialog
+        open={followupOpen}
+        sourceIncidentId={incident.id}
+        sourceTitle={incident.title}
+        hasReviewChain={hasReviewChain}
+        onClose={() => setFollowupOpen(false)}
+        onCreated={(newId, message) => {
+          setFollowupOpen(false);
+          showSuccess(message);
+          navigate(`/incidents/${newId}`);
         }}
       />
 

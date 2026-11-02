@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import { ROUTES } from '../../constants';
-import { Paper, Typography, Box } from '@mui/material';
+import { Paper, Typography, Box, Alert, Link } from '@mui/material';
 import { PageContainer } from '../../shared/components/layout';
 import { useToast } from '../../contexts/toast-context';
 import { useTemplates } from '../../contexts/templates-context';
@@ -38,6 +38,8 @@ const CreateIncidentPage: React.FC = () => {
   const templateId = searchParams.get('template');
   const prefillBanId = searchParams.get('ban_id');
   const prefillPatronId = searchParams.get('patron_id');
+  const relatedToParam = searchParams.get('related_to');
+  const relatedIncidentId = relatedToParam ? parseInt(relatedToParam, 10) || undefined : undefined;
 
   const fileUpload = useFileUpload({ showError, showSuccess });
   const form = useIncidentFormState({ isEditMode: false, templateId, fileUpload });
@@ -196,6 +198,7 @@ const CreateIncidentPage: React.FC = () => {
         externalLinks: form.externalLinks,
         user: form.user,
         locationName: form.locationName,
+        relatedIncidentId,
         createIncident,
         updateIncident,
         showError,
@@ -230,6 +233,7 @@ const CreateIncidentPage: React.FC = () => {
         externalLinks: form.externalLinks,
         user: form.user,
         locationName: form.locationName,
+        relatedIncidentId,
         createIncident,
         updateIncident,
         showError,
@@ -309,6 +313,15 @@ const CreateIncidentPage: React.FC = () => {
           <Typography variant="h5" gutterBottom>
             Report New Incident
           </Typography>
+          {relatedIncidentId && (
+            <Alert severity="info">
+              This incident will be linked as related to{' '}
+              <Link component={RouterLink} to={`/incidents/${relatedIncidentId}`}>
+                Incident #{relatedIncidentId}
+              </Link>
+              .
+            </Alert>
+          )}
         </Box>
 
         <IncidentFormStepper activeStep={activeStep} steps={steps} />

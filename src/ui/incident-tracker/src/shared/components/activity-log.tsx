@@ -26,6 +26,8 @@ import {
   StickyNote2Outlined as NoteIcon,
   History as HistoryIcon,
   OpenInNew as OpenInNewIcon,
+  Reply as FollowupIcon,
+  Link as LinkedIcon,
 } from '@mui/icons-material';
 import { useFileUrl } from '../hooks/use-file-url';
 import type { ActivityLogEntry } from '../../types';
@@ -78,6 +80,8 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
   'ban.note':                            { label: 'Note Added',              icon: <NoteIcon sx={{ fontSize: 16 }} />,                 color: 'info'    },
   'incident.created':                    { label: 'Incident Report Created', icon: <IncidentCreatedIcon sx={{ fontSize: 16 }} />,      color: 'primary' },
   'incident.updated':                    { label: 'Incident Report Updated', icon: <IncidentUpdatedIcon sx={{ fontSize: 16 }} />,      color: 'grey'    },
+  'incident.followup_created':           { label: 'Follow-up Incident Created', icon: <FollowupIcon sx={{ fontSize: 16 }} />,     color: 'secondary' },
+  'incident.related_created':            { label: 'Related Incident Created', icon: <LinkedIcon sx={{ fontSize: 16 }} />,         color: 'secondary' },
   'incident.review.submitted':           { label: 'Review Submitted',    icon: <ReviewIcon sx={{ fontSize: 16 }} />,               color: 'info'    },
   'incident.review.approved':            { label: 'Review Approved',     icon: <ApprovedIcon sx={{ fontSize: 16 }} />,             color: 'success' },
   'incident.review.returned':            { label: 'Review Returned',     icon: <ReturnedIcon sx={{ fontSize: 16 }} />,             color: 'error'   },
@@ -101,6 +105,7 @@ const FIELD_LABELS: Record<string, string> = {
   case_number:            'Case #',
   law_enforcement_agency: 'Agency',
   comments:               'Comments',
+  linked_incident_id:     'Incident #',
 };
 
 const DATE_FIELDS = new Set(['starts_at', 'lifts_at', 'archives_at']);
@@ -166,7 +171,17 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
     }
   } else if (!SKIP_FLAT_DISPLAY.has(entry.event_type)) {
     for (const [field, fieldLabel] of Object.entries(FIELD_LABELS)) {
-      if (data[field]) {
+      if (!data[field]) continue;
+      if (field === 'linked_incident_id') {
+        metaItems.push({
+          label: fieldLabel,
+          value: (
+            <Link component={RouterLink} to={`/incidents/${data[field]}`}>
+              {String(data[field])}
+            </Link>
+          ),
+        });
+      } else {
         metaItems.push({ label: fieldLabel, value: formatFieldValue(field, String(data[field])) });
       }
     }
