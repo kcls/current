@@ -489,3 +489,57 @@ async fn update_related_incident_may_change_templates() {
     .await;
     assert_eq!(get_full(&c, &token, related_id).await["template_ids"], json!([template_id]));
 }
+
+// --- incident.search: per-row link summary ---
+
+#[tokio::test]
+async fn search_rows_summarize_links() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    // Follow-ups inherit the title, so one unique token finds the group.
+    let needle = format!("LINKSUMMARY{}", chrono::Utc::now().timestamp_micros());
+    let source_id = create_source(&c, &token, &format!("{needle} source")).await;
+    let followup_a = create_followup(&c, &token, source_id).await;
+    let followup_b = create_followup(&c, &token, source_id).await;
+    let related = post_ok(
+        &c,
+        &token,
+        "incident/create",
+        json!({
+            "org_unit": unit_by_code("MAIN").await,
+            "title": format!("{needle} related"),
+            "description": "x",
+            "related_incident_id": source_id,
+        }),
+    )
+    .await["id"]
+        .as_i64()
+        .unwrap();
+    // A deleted follow-up no longer counts.
+    let deleted = create_followup(&c, &token, source_id).await;
+    post_ok(&c, &token, "incident/update", json!({"id": deleted, "is_deleted": true})).await;
+
+    let data = post_ok(&c, &token, "incident/search", json!({"query": needle, "limit": 50})).await;
+    let rows = data["incidents"].as_array().unwrap();
+    let row = |id: i64| {
+        rows.iter()
+            .find(|r| r["id"] == id)
+            .unwrap_or_else(|| panic!("incident {id} in search results"))
+    };
+
+    let s = row(source_id);
+    assert!(s["followup_of"].is_null());
+    assert_eq!(s["followup_count"], 2);
+    assert_eq!(s["related_count"], 1);
+
+    for id in [followup_a, followup_b] {
+        let f = row(id);
+        assert_eq!(f["followup_of"], source_id);
+        assert_eq!(f["followup_count"], 0);
+        assert_eq!(f["related_count"], 0);
+    }
+
+    let r = row(related);
+    assert!(r["followup_of"].is_null());
+    assert_eq!(r["related_count"], 1);
+}

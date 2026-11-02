@@ -4457,7 +4457,9 @@
           "title",
           "org_unit",
           "occurred_at",
-          "created_by"
+          "created_by",
+          "followup_count",
+          "related_count"
         ],
         "properties": {
           "called_emergency": {
@@ -4496,6 +4498,20 @@
               "null"
             ]
           },
+          "followup_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Follow-ups created from this incident.",
+            "minimum": 0
+          },
+          "followup_of": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Set when this incident is a follow-up: the incident it was created\nfrom."
+          },
           "id": {
             "type": "integer",
             "format": "int32"
@@ -4522,6 +4538,12 @@
               "string",
               "null"
             ]
+          },
+          "related_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Related incidents, in either direction.",
+            "minimum": 0
           },
           "resolved_at": {
             "type": [

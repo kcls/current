@@ -356,20 +356,9 @@ async fn load_linked_incidents(
         .map(|i| (i.id, i))
         .collect();
 
-    // Related incidents can sit at other org units. The caller already
-    // passed the read check at this incident's org; check each other org
-    // once.
-    let mut readable: HashMap<Uuid, bool> = HashMap::from([(incident.org_unit, true)]);
-    for org in others.values().map(|i| i.org_unit) {
-        if readable.contains_key(&org) {
-            continue;
-        }
-        let ok = state
-            .auth_client
-            .user_has_permission_uuid("current.incident.read", Some(&org))
-            .await?;
-        readable.insert(org, ok);
-    }
+    // The caller already passed the read check at this incident's org.
+    let other_orgs: Vec<Uuid> = others.values().map(|i| i.org_unit).collect();
+    let readable = readable_org_units(state, &other_orgs, &[incident.org_unit]).await?;
 
     let mut result: Vec<LinkedIncidentResponse> = links
         .into_iter()
@@ -380,7 +369,7 @@ async fn load_linked_incidents(
                 (l.incident_id, LinkDirection::ReferencedBy)
             };
             let other = others.get(&other_id)?;
-            if !readable.get(&other.org_unit).copied().unwrap_or(false) {
+            if !readable.contains(&other.org_unit) {
                 return None;
             }
             Some(LinkedIncidentResponse {
@@ -397,6 +386,107 @@ async fn load_linked_incidents(
         .collect();
     result.sort_by_key(|r| (r.occurred_at, r.incident_id));
     Ok(result)
+}
+
+/// The subset of `orgs` where the caller may read incidents. Related
+/// incidents can sit at other org units than the one being viewed, so
+/// links are filtered through this. `known_readable` orgs skip the check.
+async fn readable_org_units(
+    state: &AppState,
+    orgs: &[Uuid],
+    known_readable: &[Uuid],
+) -> LocalResult<HashSet<Uuid>> {
+    let mut readable: HashSet<Uuid> = known_readable.iter().copied().collect();
+    let mut denied: HashSet<Uuid> = HashSet::new();
+    for &org in orgs {
+        if readable.contains(&org) || denied.contains(&org) {
+            continue;
+        }
+        let ok = state
+            .auth_client
+            .user_has_permission_uuid("current.incident.read", Some(&org))
+            .await?;
+        if ok {
+            readable.insert(org);
+        } else {
+            denied.insert(org);
+        }
+    }
+    Ok(readable)
+}
+
+/// Per-incident link counts for the search list.
+#[derive(Debug, Default)]
+struct LinkSummary {
+    followup_of: Option<i32>,
+    followup_count: u32,
+    related_count: u32,
+}
+
+/// Link summaries for a page of search rows. Links to deleted incidents or
+/// to incidents at org units the caller cannot read are not counted, the
+/// same rule `load_linked_incidents` applies on the detail page.
+async fn load_link_summaries(
+    state: &AppState,
+    rows: &[incidents::Model],
+) -> LocalResult<HashMap<i32, LinkSummary>> {
+    let ids: HashSet<i32> = rows.iter().map(|r| r.id).collect();
+    if ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let links = incident_links::Entity::find()
+        .filter(
+            Condition::any()
+                .add(incident_links::Column::IncidentId.is_in(ids.iter().copied()))
+                .add(incident_links::Column::LinkedIncidentId.is_in(ids.iter().copied())),
+        )
+        .all(&state.db)
+        .await?;
+    if links.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let endpoint_ids: HashSet<i32> = links
+        .iter()
+        .flat_map(|l| [l.incident_id, l.linked_incident_id])
+        .collect();
+    let live_orgs: HashMap<i32, Uuid> = incidents::Entity::find()
+        .filter(incidents::Column::Id.is_in(endpoint_ids))
+        .filter(incidents::Column::DeletedAt.is_null())
+        .all(&state.db)
+        .await?
+        .into_iter()
+        .map(|i| (i.id, i.org_unit))
+        .collect();
+    // Search already checked read access over the rows' own org units.
+    let link_orgs: Vec<Uuid> = live_orgs.values().copied().collect();
+    let row_orgs: Vec<Uuid> = rows.iter().map(|r| r.org_unit).collect();
+    let readable = readable_org_units(state, &link_orgs, &row_orgs).await?;
+    let visible = |id: i32| live_orgs.get(&id).is_some_and(|org| readable.contains(org));
+
+    let mut summaries: HashMap<i32, LinkSummary> = HashMap::new();
+    // Both ends of a link can be on the page, so each end is handled on
+    // its own rather than as either/or.
+    for l in &links {
+        if ids.contains(&l.incident_id) && visible(l.linked_incident_id) {
+            let s = summaries.entry(l.incident_id).or_default();
+            if l.link_type == LINK_TYPE_FOLLOWUP {
+                s.followup_of = Some(l.linked_incident_id);
+            } else {
+                s.related_count += 1;
+            }
+        }
+        if ids.contains(&l.linked_incident_id) && visible(l.incident_id) {
+            let s = summaries.entry(l.linked_incident_id).or_default();
+            if l.link_type == LINK_TYPE_FOLLOWUP {
+                s.followup_count += 1;
+            } else {
+                s.related_count += 1;
+            }
+        }
+    }
+    Ok(summaries)
 }
 
 async fn load_template_ids(db: &DatabaseConnection, incident_id: i32) -> LocalResult<Vec<i32>> {
@@ -725,6 +815,13 @@ pub struct IncidentSearchRow {
     pub created_by: Uuid,
     pub created_by_name: Option<String>,
     pub org_unit_name: Option<String>,
+    /// Set when this incident is a follow-up: the incident it was created
+    /// from.
+    pub followup_of: Option<i32>,
+    /// Follow-ups created from this incident.
+    pub followup_count: u32,
+    /// Related incidents, in either direction.
+    pub related_count: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub involved_parties: Option<Vec<InvolvedPartyResponse>>,
 }
@@ -770,6 +867,7 @@ pub async fn search_incidents(
     let rows = run_search(&state.db, &base_filters, &params, limit, offset).await?;
 
     let (creator_names, org_names) = fetch_display_names(&state, &rows).await;
+    let mut link_summaries = load_link_summaries(&state, &rows).await?;
 
     let involved_by_incident = if params
         .options
@@ -792,25 +890,31 @@ pub async fn search_incidents(
 
     let incidents = rows
         .into_iter()
-        .map(|m| IncidentSearchRow {
-            id: m.id,
-            title: m.title,
-            description: m.description,
-            org_unit: m.org_unit,
-            called_emergency: m.called_emergency,
-            created_at: m.created_at,
-            occurred_at: m.occurred_at,
-            updated_at: m.updated_at,
-            resolved_at: m.resolved_at,
-            deleted_at: m.deleted_at,
-            created_by: m.created_by,
-            created_by_name: creator_names.get(&m.created_by).cloned(),
-            org_unit_name: org_names.get(&m.org_unit).cloned(),
-            involved_parties: if with_parties {
-                Some(involved_by_incident.get(&m.id).cloned().unwrap_or_default())
-            } else {
-                None
-            },
+        .map(|m| {
+            let links = link_summaries.remove(&m.id).unwrap_or_default();
+            IncidentSearchRow {
+                id: m.id,
+                title: m.title,
+                description: m.description,
+                org_unit: m.org_unit,
+                called_emergency: m.called_emergency,
+                created_at: m.created_at,
+                occurred_at: m.occurred_at,
+                updated_at: m.updated_at,
+                resolved_at: m.resolved_at,
+                deleted_at: m.deleted_at,
+                created_by: m.created_by,
+                created_by_name: creator_names.get(&m.created_by).cloned(),
+                org_unit_name: org_names.get(&m.org_unit).cloned(),
+                followup_of: links.followup_of,
+                followup_count: links.followup_count,
+                related_count: links.related_count,
+                involved_parties: if with_parties {
+                    Some(involved_by_incident.get(&m.id).cloned().unwrap_or_default())
+                } else {
+                    None
+                },
+            }
         })
         .collect();
 
