@@ -23,6 +23,29 @@ import { getIncidentStatus, getStatusColor, getStatusLabel } from '../../shared/
 import { formatDisplayTime } from '../../shared/utils/date-utils';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
 import { SortableHeadCell } from '../../shared/components/data-table/sortable-head-cell';
+import type { Incident } from '../../types';
+
+/** What an incident is, or has, by way of linked incidents. Plain chips:
+ * every cell is already a link to the incident itself. */
+const LinksCell: React.FC<{ incident: Incident }> = ({ incident }) => {
+  const followups = incident.followup_count ?? 0;
+  const related = incident.related_count ?? 0;
+  const chips: string[] = [];
+  if (incident.followup_of != null) chips.push(`Follow-up of #${incident.followup_of}`);
+  if (followups > 0) chips.push(`${followups} follow-up${followups === 1 ? '' : 's'}`);
+  if (related > 0) chips.push(`${related} related`);
+
+  if (chips.length === 0) {
+    return <Typography variant="body2" color="text.disabled">—</Typography>;
+  }
+  return (
+    <Box display="flex" gap={0.5} flexWrap="wrap">
+      {chips.map((label) => (
+        <Chip key={label} label={label} size="small" variant="outlined" />
+      ))}
+    </Box>
+  );
+};
 
 const IncidentList: React.FC = () => {
   const {
@@ -134,12 +157,13 @@ const IncidentList: React.FC = () => {
                 onSort={toggleSort}
               />
               <TableCell sx={{ minWidth: 100 }}>Reporter</TableCell>
+              <TableCell sx={{ minWidth: 120 }}>Linked</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {incidents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography color="text.secondary" py={3}>
                     No incidents found
                   </Typography>
@@ -184,6 +208,9 @@ const IncidentList: React.FC = () => {
                     </Typography>
                   </LinkTableCell>
                   <LinkTableCell>{incident.created_by_name || 'System'}</LinkTableCell>
+                  <LinkTableCell>
+                    <LinksCell incident={incident} />
+                  </LinkTableCell>
                 </LinkTableRow>
               ))
             )}

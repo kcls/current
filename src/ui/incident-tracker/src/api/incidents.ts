@@ -136,6 +136,8 @@ const transformToIncident = (instance: ModelInstance): Incident => {
     can_resubmit: instance.can_resubmit,
     followup_of: instance.followup_of ?? null,
     linked_incidents: Array.isArray(instance.linked_incidents) ? instance.linked_incidents : [],
+    followup_count: instance.followup_count ?? 0,
+    related_count: instance.related_count ?? 0,
 
     // Org unit address fields (for ban/trespass letters)
     org_address_line1: instance.org_address_line1,

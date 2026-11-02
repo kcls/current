@@ -152,6 +152,10 @@ export interface Incident {
    * created from. Follow-ups never carry bans or trespasses. */
   followup_of?: number | null;
   linked_incidents?: LinkedIncident[];
+  /** Search rows only: follow-ups created from this incident, and related
+   * incidents in either direction. */
+  followup_count?: number;
+  related_count?: number;
 }
 
 /**
