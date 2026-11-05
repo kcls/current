@@ -78,14 +78,15 @@ is the reference implementation for Odo applications.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
 - Releases: `.github/workflows/release-build.yml` publishes images to
-  `ghcr.io/<owner>/<repo>/<service>` from `release/**` pushes (`:<short-sha>`)
-  and `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`; a suffixed
-  prerelease tag like `vX.Y.Z-rc1` publishes no `:vX.Y`). This repo publishes
-  only — it holds no credential for, and never writes to, any deployment
-  repository, and ships no release artifacts: deployment repos consume `k8s/`
-  as a kustomize remote base pinned to the tag. Current versions independently
-  of odo, so each release must state the odo range it works against. The
-  scheme lives in odo: `docs/tech-docs/release-management.md`.
+  `ghcr.io/<owner>/<repo>/<service>` from `release/**` and `build/**` pushes
+  (`:<short-sha>`) and `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`; a
+  suffixed prerelease tag like `vX.Y.Z-rc1` publishes no `:vX.Y`). This repo
+  publishes only — it holds no credential for, and never writes to, any
+  deployment repository, and ships no release artifacts: deployment repos
+  consume `k8s/` as a kustomize remote base pinned to the tag. Current
+  versions independently of odo, so each release must state the odo range it
+  works against. The scheme lives in odo:
+  `docs/tech-docs/release-management.md`.
 - Fresh install order: create the `current` role and an empty database it
   owns on the PostgreSQL server by hand (Current does not own the server
   and no script creates them) → `manage-database.sh deploy` →
