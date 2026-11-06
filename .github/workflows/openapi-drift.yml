@@ -22,6 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     # The service Dockerfile's build image; bump it with the Dockerfile.
     container: rust:1.99-bookworm
+    # A container job's default shell is sh (dash here), not the runner's bash.
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
