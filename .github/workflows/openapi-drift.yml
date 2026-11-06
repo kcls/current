@@ -20,14 +20,13 @@ jobs:
   openapi-drift:
     name: Check the committed OpenAPI spec is current
     runs-on: ubuntu-latest
+    # The service Dockerfile's build image; bump it with the Dockerfile.
+    container: rust:1.99-bookworm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
