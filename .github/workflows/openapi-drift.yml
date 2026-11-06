@@ -28,6 +28,11 @@ jobs:
         with:
           fetch-depth: 1
 
+      # The job runs as root in the container, but the checkout is owned by
+      # the runner user, so git refuses it after actions/checkout's own step.
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
         with:
