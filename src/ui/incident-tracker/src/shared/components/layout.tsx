@@ -43,6 +43,8 @@ import {
   STAFF_ROLES,
   COORDINATOR_ROLES,
   MANAGER_ROLES,
+  VIEW_ROLES,
+  SYSTEM_WIDE_ROLES,
 } from '../utils/roles';
 import { ROUTES } from '../../constants';
 
@@ -97,31 +99,31 @@ const Layout: React.FC = () => {
       text: 'Dashboard',
       icon: <DashboardIcon />,
       path: ROUTES.DASHBOARD,
-      show: hasAnyRole(STAFF_ROLES)
+      show: hasAnyRole(VIEW_ROLES)
     },
     {
       text: 'Incidents',
       icon: <IncidentIcon />,
       path: ROUTES.INCIDENTS,
-      show: hasAnyRole(STAFF_ROLES)
+      show: hasAnyRole(VIEW_ROLES)
     },
     {
       text: 'Reviews',
       icon: <ReviewIcon />,
       path: ROUTES.INCIDENT_REVIEWS,
-      show: hasAnyRole(STAFF_ROLES)
+      show: hasAnyRole(VIEW_ROLES)
     },
     {
       text: 'Patrons',
       icon: <PatronIcon />,
       path: ROUTES.PATRONS,
-      show: hasAnyRole(STAFF_ROLES)
+      show: hasAnyRole(VIEW_ROLES)
     },
     {
       text: 'Communication Log',
       icon: <ShiftNotesIcon />,
       path: ROUTES.SHIFT_NOTES,
-      show: hasAnyRole(STAFF_ROLES)
+      show: hasAnyRole(VIEW_ROLES)
     },
     {
       text: 'Notifications',
@@ -151,7 +153,7 @@ const Layout: React.FC = () => {
       text: 'Reports',
       icon: <BarChartIcon />,
       path: ROUTES.REPORTS,
-      show: hasAnyRole(COORDINATOR_ROLES)
+      show: hasAnyRole(SYSTEM_WIDE_ROLES)
     },
     {
       text: 'Review Process',

@@ -27,9 +27,19 @@ export const MANAGER_ROLES = [
   INCIDENT_ROLES.ADMIN,
 ] as const;
 
-// TODO: Add data analytics support for incident-data role
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DATA_ROLES = [
+// Pages that show incident data. Opening one does not imply being able to
+// change anything on it: write controls check the user's permissions with
+// usePerm, which is what lets incident-data (read-only) share these pages.
+export const VIEW_ROLES = [
+  INCIDENT_ROLES.STAFF,
+  INCIDENT_ROLES.DATA,
+  INCIDENT_ROLES.ADMIN,
+] as const;
+
+// Views across every location: Reports, and a patron's history at all
+// branches rather than just the working location.
+export const SYSTEM_WIDE_ROLES = [
+  INCIDENT_ROLES.COORDINATOR,
   INCIDENT_ROLES.DATA,
   INCIDENT_ROLES.ADMIN,
 ] as const;

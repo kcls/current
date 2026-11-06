@@ -59,6 +59,8 @@ vi.mock('@core', async () => {
       refreshToken: vi.fn().mockResolvedValue({ token: 'test-token' }),
       clearTokens: vi.fn(),
       getOrgUnit: vi.fn().mockReturnValue(null),
+      // Deny by default: a test that needs a write control shown grants it.
+      userHasPerm: vi.fn().mockResolvedValue(false),
     },
   };
 });

@@ -30,6 +30,7 @@ import { Incident } from '../../types';
 import { authApi as coreAuthApi } from '@core';
 import { getPatronNames } from '../../shared/utils/patron-utils';
 import { getRegionOrgUnit } from '../../shared/utils/location-utils';
+import { useWorkingLocationPerm } from '../../shared/hooks/use-perm';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
 
 const Dashboard: React.FC = () => {
@@ -47,6 +48,7 @@ const Dashboard: React.FC = () => {
   };
 
   const userOrgUnitId = coreAuthApi.getOrgUnit();
+  const canCreateIncident = useWorkingLocationPerm('current.incident.write');
   const orgUnitName = getOrgUnitName(userOrgUnitId);
   const regionOrgUnitId = useMemo(() => {
     if (!userOrgUnitId || locations.length === 0) return null;
@@ -104,14 +106,16 @@ const Dashboard: React.FC = () => {
             {orgUnitName}
           </Typography>
         </Box>
-        <Button
-          component={RouterLink}
-          to={ROUTES.INCIDENTS_NEW}
-          variant="contained"
-          startIcon={<AddIcon />}
-        >
-          New Incident
-        </Button>
+        {canCreateIncident && (
+          <Button
+            component={RouterLink}
+            to={ROUTES.INCIDENTS_NEW}
+            variant="contained"
+            startIcon={<AddIcon />}
+          >
+            New Incident
+          </Button>
+        )}
       </Box>
 
       <Grid container spacing={3}>

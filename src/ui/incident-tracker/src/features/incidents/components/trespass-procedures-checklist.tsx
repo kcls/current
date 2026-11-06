@@ -17,6 +17,8 @@ interface TrespassProceduresChecklistProps {
   onChange: (state: ProcedureState) => void;
   error?: string;
   embedded?: boolean;
+  /** Shown but not editable, for a viewer who cannot change the ban. */
+  readOnly?: boolean;
 }
 
 export const TrespassProceduresChecklist: React.FC<TrespassProceduresChecklistProps> = ({
@@ -25,6 +27,7 @@ export const TrespassProceduresChecklist: React.FC<TrespassProceduresChecklistPr
   onChange,
   error,
   embedded = false,
+  readOnly = false,
 }) => {
   if (items.length === 0) return null;
 
@@ -62,6 +65,7 @@ export const TrespassProceduresChecklist: React.FC<TrespassProceduresChecklistPr
             size="small"
             checked={checked}
             color={missing ? 'error' : 'primary'}
+            disabled={readOnly}
             onChange={(e) => setItem(item.code, e.target.checked)}
           />
         }
@@ -124,6 +128,7 @@ export const TrespassProceduresChecklist: React.FC<TrespassProceduresChecklistPr
                 <Checkbox
                   size="small"
                   checked={escapeChecked}
+                  disabled={readOnly}
                   onChange={(e) => setItem(escapeItem.code, e.target.checked, true)}
                 />
               }

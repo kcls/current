@@ -31,6 +31,8 @@ import {
   STAFF_ROLES,
   COORDINATOR_ROLES,
   MANAGER_ROLES,
+  VIEW_ROLES,
+  SYSTEM_WIDE_ROLES,
 } from './shared/utils/roles';
 import { ROUTES } from './constants';
 
@@ -55,12 +57,12 @@ function App() {
                     }
                   >
                     <Route index element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]} showAccessDenied>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]} showAccessDenied>
                         <Dashboard />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.INCIDENTS} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]}>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]}>
                         <IncidentList />
                       </RoleGuard>
                     } />
@@ -70,7 +72,7 @@ function App() {
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.INCIDENT_DETAIL} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]}>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]}>
                         <IncidentDetail />
                       </RoleGuard>
                     } />
@@ -100,32 +102,32 @@ function App() {
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.REPORTS} element={
-                      <RoleGuard allowedRoles={[...COORDINATOR_ROLES]}>
+                      <RoleGuard allowedRoles={[...SYSTEM_WIDE_ROLES]}>
                         <Reports />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.SHIFT_NOTES} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]} showAccessDenied>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]} showAccessDenied>
                         <ShiftNotes />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.PATRONS} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]}>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]}>
                         <PatronList />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.PATRON_DETAIL} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]}>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]}>
                         <PatronDetail />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.INCIDENT_REVIEWS} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]}>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]}>
                         <IncidentReviews />
                       </RoleGuard>
                     } />
                     <Route path={ROUTES.BANS} element={
-                      <RoleGuard allowedRoles={[...STAFF_ROLES]}>
+                      <RoleGuard allowedRoles={[...VIEW_ROLES]}>
                         <PatronBanDetail />
                       </RoleGuard>
                     } />

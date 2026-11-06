@@ -23,6 +23,7 @@ import { getIncidentStatus, getStatusColor, getStatusLabel } from '../../shared/
 import { formatDisplayTime } from '../../shared/utils/date-utils';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
 import { SortableHeadCell } from '../../shared/components/data-table/sortable-head-cell';
+import { useWorkingLocationPerm } from '../../shared/hooks/use-perm';
 import type { Incident } from '../../types';
 
 /** What an incident is, or has, by way of linked incidents. Plain chips:
@@ -72,6 +73,7 @@ const IncidentList: React.FC = () => {
     handleRowsPerPageChange,
     handleClearFilters,
   } = useIncidentList();
+  const canCreateIncident = useWorkingLocationPerm('current.incident.write');
 
   if (isInitialLoad && isLoading) {
     return (
@@ -86,14 +88,16 @@ const IncidentList: React.FC = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">Incidents</Typography>
         <Box display="flex" gap={1}>
-          <Button
-            component={RouterLink}
-            to={ROUTES.INCIDENTS_NEW}
-            variant="contained"
-            startIcon={<AddIcon />}
-          >
-            New Incident
-          </Button>
+          {canCreateIncident && (
+            <Button
+              component={RouterLink}
+              to={ROUTES.INCIDENTS_NEW}
+              variant="contained"
+              startIcon={<AddIcon />}
+            >
+              New Incident
+            </Button>
+          )}
         </Box>
       </Box>
 

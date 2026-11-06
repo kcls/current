@@ -55,7 +55,8 @@ import { useLocations } from '../../contexts/location-context';
 import { uploadService, authApi as coreAuthApi } from '@core';
 import { useFileUrl } from '../../shared/hooks/use-file-url';
 import { getIncidentStatus, getStatusColor as getIncidentStatusColor } from '../../shared/utils/incident-status';
-import { COORDINATOR_ROLES, hasAnyRole } from '../../shared/utils/roles';
+import { SYSTEM_WIDE_ROLES, hasAnyRole } from '../../shared/utils/roles';
+import { usePerm, useWorkingLocationPerm } from '../../shared/hooks/use-perm';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
 import { printHtmlContent } from '../../shared/utils/print-service';
 import { formatDisplayTime } from '../../shared/utils/date-utils';
@@ -69,7 +70,10 @@ const PatronDetail: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
   const { user } = useAuth();
-  const canSeeSummary = useMemo(() => hasAnyRole(user, COORDINATOR_ROLES), [user]);
+  const canSeeSummary = useMemo(() => hasAnyRole(user, SYSTEM_WIDE_ROLES), [user]);
+  // Patron writes are checked with no org unit, matching the API.
+  const canWritePatron = usePerm('current.patron.write', null);
+  const canCreateIncident = useWorkingLocationPerm('current.incident.write');
   const { locations } = useLocations();
   const locationLabel = useMemo(() => {
     const orgUnitId = coreAuthApi.getOrgUnit();
@@ -446,21 +450,27 @@ const PatronDetail: React.FC = () => {
               <PrintIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Report Incident">
-            <IconButton onClick={() => navigate(`/incidents/new?patron_id=${id}`)}>
-              <AddIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Merge">
-            <IconButton onClick={() => setMergeWizardOpen(true)}>
-              <MergeIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete Patron">
-            <IconButton onClick={() => setDeleteDialogOpen(true)} sx={{ color: 'error.main' }}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
+          {canCreateIncident && (
+            <Tooltip title="Report Incident">
+              <IconButton onClick={() => navigate(`/incidents/new?patron_id=${id}`)}>
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canWritePatron && (
+            <>
+              <Tooltip title="Merge">
+                <IconButton onClick={() => setMergeWizardOpen(true)}>
+                  <MergeIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete Patron">
+                <IconButton onClick={() => setDeleteDialogOpen(true)} sx={{ color: 'error.main' }}>
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
         </Box>
       </Box>
 
@@ -484,30 +494,34 @@ const PatronDetail: React.FC = () => {
                     <PersonIcon sx={{ width: 60, height: 60 }} />
                   </Avatar>
                 )}
-                <input
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  id="photo-upload-input"
-                  type="file"
-                  onChange={handlePhotoUpload}
-                  disabled={uploading}
-                />
-                <label htmlFor="photo-upload-input">
-                  <IconButton
-                    component="span"
-                    sx={{
-                      position: 'absolute',
-                      bottom: 0,
-                      right: 0,
-                      bgcolor: 'background.paper',
-                      '&:hover': { bgcolor: 'background.default' }
-                    }}
-                    disabled={uploading}
-                    size="small"
-                  >
-                    <PhotoCameraIcon fontSize="small" />
-                  </IconButton>
-                </label>
+                {canWritePatron && (
+                  <>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="photo-upload-input"
+                      type="file"
+                      onChange={handlePhotoUpload}
+                      disabled={uploading}
+                    />
+                    <label htmlFor="photo-upload-input">
+                      <IconButton
+                        component="span"
+                        sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          bgcolor: 'background.paper',
+                          '&:hover': { bgcolor: 'background.default' }
+                        }}
+                        disabled={uploading}
+                        size="small"
+                      >
+                        <PhotoCameraIcon fontSize="small" />
+                      </IconButton>
+                    </label>
+                  </>
+                )}
                 {uploading && (
                   <CircularProgress
                     variant="determinate"
@@ -591,7 +605,7 @@ const PatronDetail: React.FC = () => {
             <InfoIcon />
             <Typography variant="h6">Patron Information</Typography>
           </Box>
-          {!isEditingPatronInfo && (
+          {canWritePatron && !isEditingPatronInfo && (
             <Tooltip title="Edit patron information">
               <IconButton
                 onClick={() => setIsEditingPatronInfo(true)}
@@ -641,7 +655,7 @@ const PatronDetail: React.FC = () => {
                 />
                 <ImageListItemBar
                   title={photo.is_primary ? 'Primary Photo' : ''}
-                  actionIcon={
+                  actionIcon={canWritePatron ? (
                     <Box>
                       {!photo.is_primary && (
                         <Tooltip title="Set as primary">
@@ -664,7 +678,7 @@ const PatronDetail: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                     </Box>
-                  }
+                  ) : undefined}
                 />
               </ImageListItem>
             ))}
