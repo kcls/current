@@ -382,6 +382,61 @@
     },
     {
       "role": "incident-data",
+      "perm": "current.ban.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.incident.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.incident_template.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.review.chain.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.review.group.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.review.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.shift_note.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "current.shift_note.read_archived",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "odo.asset.current.patron.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
+      "perm": "odo.asset.current.read",
+      "min_depth": 0
+    },
+    {
+      "role": "incident-data",
       "perm": "odo.auth.session",
       "min_depth": 0
     },
