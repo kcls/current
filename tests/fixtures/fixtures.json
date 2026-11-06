@@ -32,6 +32,14 @@
       "family_name": "Staff",
       "uuid": "e2e00000-0000-4000-a000-000000000204",
       "password": "test123!"
+    },
+    {
+      "username": "e2e.current.data",
+      "email": "e2e.current.data@current.example.org",
+      "first_given_name": "E2E",
+      "family_name": "Data",
+      "uuid": "e2e00000-0000-4000-a000-000000000205",
+      "password": "test123!"
     }
   ],
   "user_role_assignments": [
@@ -68,6 +76,11 @@
     {
       "usr_uuid": "e2e00000-0000-4000-a000-000000000203",
       "role": "incident-admin",
+      "org_unit_code": "OLS"
+    },
+    {
+      "usr_uuid": "e2e00000-0000-4000-a000-000000000205",
+      "role": "incident-data",
       "org_unit_code": "OLS"
     }
   ]

@@ -14,6 +14,7 @@ type AuthFixtures = {
   coordinatorUser: TestUser;
   managerUser: TestUser;
   adminUser: TestUser;
+  dataUser: TestUser;
 };
 
 export const test = base.extend<AuthFixtures>({
@@ -28,6 +29,9 @@ export const test = base.extend<AuthFixtures>({
   },
   adminUser: async ({}, use) => {
     await use(TEST_USERS.admin);
+  },
+  dataUser: async ({}, use) => {
+    await use(TEST_USERS.data);
   },
 });
 
