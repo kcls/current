@@ -49,6 +49,7 @@ import { patronApi } from '../../api/patrons';
 import { TrespassProceduresChecklist } from '../incidents/components/trespass-procedures-checklist';
 import { authApi } from '@core';
 import { useFileUrl } from '../../shared/hooks/use-file-url';
+import { usePerm, useWorkingLocationPerm } from '../../shared/hooks/use-perm';
 import { useToast } from '../../contexts/toast-context';
 import { ActivityLogPaper } from '../../shared/components/activity-log';
 import type { ActivityLogEntry } from '../../types';
@@ -73,6 +74,8 @@ const PatronBanDetail: React.FC = () => {
   const [purgeDialogOpen, setPurgeDialogOpen] = useState(false);
   const [canPurge, setCanPurge] = useState(false);
   const [canArchive, setCanArchive] = useState(false);
+  const canWriteBan = usePerm('current.ban.write', data?.ban.org_unit);
+  const canCreateIncident = useWorkingLocationPerm('current.incident.write');
 const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [viewLetterContent, setViewLetterContent] = useState<string | null>(null);
   const [viewLetterDialogOpen, setViewLetterDialogOpen] = useState(false);
@@ -266,14 +269,14 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
           noMargin
         />
         <Box display="flex" gap={0.5}>
-          {isActive && (
+          {canCreateIncident && isActive && (
             <Tooltip title="Report Incident">
               <IconButton component={RouterLink} to={`/incidents/new?ban_id=${ban.id}`}>
                 <AddIcon />
               </IconButton>
             </Tooltip>
           )}
-          {!ban.archived_by && (
+          {canWriteBan && !ban.archived_by && (
             <Tooltip title={`Edit ${typeLabel}`}>
               <IconButton component={RouterLink} to={`/bans/${ban.id}/edit`}>
                 <EditIcon />
@@ -387,14 +390,16 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
             )}
 
             <Box display="flex" gap={1} mt={3.5} flexWrap="wrap" alignItems="center">
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<AttachNoteIcon />}
-                onClick={() => setAddNoteDialogOpen(true)}
-              >
-                Attach / Note
-              </Button>
+              {canWriteBan && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<AttachNoteIcon />}
+                  onClick={() => setAddNoteDialogOpen(true)}
+                >
+                  Attach / Note
+                </Button>
+              )}
               {showArchiveButton && (
                 <Button
                   variant="contained"
@@ -428,17 +433,20 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
                 state={procState}
                 onChange={setProcState}
                 embedded
+                readOnly={!canWriteBan}
               />
-              <Box display="flex" justifyContent="flex-end" mt={1.5}>
-                <Button
-                  variant="contained"
-                  size="small"
-                  disabled={!proceduresDirty || procSaving}
-                  onClick={handleSaveProcedures}
-                >
-                  {procSaving ? 'Saving…' : 'Save procedures'}
-                </Button>
-              </Box>
+              {canWriteBan && (
+                <Box display="flex" justifyContent="flex-end" mt={1.5}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={!proceduresDirty || procSaving}
+                    onClick={handleSaveProcedures}
+                  >
+                    {procSaving ? 'Saving…' : 'Save procedures'}
+                  </Button>
+                </Box>
+              )}
             </Paper>
           )}
 

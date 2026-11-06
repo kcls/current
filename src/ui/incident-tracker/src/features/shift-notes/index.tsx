@@ -44,6 +44,7 @@ import { shiftNotesApi } from '../../api/shift-notes';
 import { useShiftNotes } from './hooks/use-shift-notes';
 import ShiftNoteDialog from './shift-note-dialog';
 import ShiftNoteViewDialog from './shift-note-view-dialog';
+import { useWorkingLocationPerm } from '../../shared/hooks/use-perm';
 import type { ShiftNote } from '../../types';
 
 /**
@@ -116,6 +117,7 @@ const ShiftNotes: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
 
   const workingOrgUnitId = authApi.getOrgUnit() ?? null;
+  const canCreateNote = useWorkingLocationPerm('current.shift_note.write');
   const workingOrgUnitCode = useMemo(() => {
     if (!workingOrgUnitId) return null;
     return locations.find(l => l.uuid === workingOrgUnitId)?.code ?? null;
@@ -168,9 +170,11 @@ const ShiftNotes: React.FC = () => {
             </Typography>
           )}
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
-          New Entry
-        </Button>
+        {canCreateNote && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
+            New Entry
+          </Button>
+        )}
       </Box>
 
       {newCount > 0 && (

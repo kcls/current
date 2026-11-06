@@ -64,6 +64,7 @@ import EmptyStateCard from '../../shared/components/empty-state-card';
 import { Breadcrumbs } from '../../shared/components/breadcrumbs';
 import { uploadService } from '@core/api/upload';
 import { useFileUrl } from '../../shared/hooks/use-file-url';
+import { usePerm, useWorkingLocationPerm } from '../../shared/hooks/use-perm';
 import { SignedVideo } from '../../shared/components/signed-video';
 import ReviewHistory from './components/review-history';
 import { ReviewDialog, type ReviewResult } from './components/review-dialog';
@@ -203,6 +204,12 @@ const IncidentDetail: React.FC = () => {
   const isReturned = latestReview?.result === 'returned';
   const isCreator = Boolean(user?.uuid && incident?.created_by === user.uuid);
   const canReopen = Boolean(user && isFinalReviewer);
+
+  // Whether the write controls are shown at all; canEdit and canDelete
+  // below still decide whether a shown control is enabled.
+  const canWriteIncident = usePerm('current.incident.write', incident?.org_unit);
+  const canCreateBan = usePerm('current.ban.write', incident?.org_unit);
+  const canCreateIncident = useWorkingLocationPerm('current.incident.write');
 
   const canEdit = useMemo(() => {
     if (!incident) return false;
@@ -538,19 +545,23 @@ const IncidentDetail: React.FC = () => {
           noMargin
         />
         <Box display="flex" gap={1}>
-          <Tooltip title="Create follow-up incident">
-            <IconButton onClick={() => setFollowupOpen(true)}>
-              <ReplyIcon />
-            </IconButton>
-          </Tooltip>
+          {canWriteIncident && (
+            <Tooltip title="Create follow-up incident">
+              <IconButton onClick={() => setFollowupOpen(true)}>
+                <ReplyIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
-          <Tooltip title="Create related incident">
-            <IconButton onClick={() => navigate(`${ROUTES.INCIDENTS_NEW}?related_to=${id}`)}>
-              <AddLinkIcon />
-            </IconButton>
-          </Tooltip>
+          {canCreateIncident && (
+            <Tooltip title="Create related incident">
+              <IconButton onClick={() => navigate(`${ROUTES.INCIDENTS_NEW}?related_to=${id}`)}>
+                <AddLinkIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
-          {!isFollowup && (
+          {canCreateBan && !isFollowup && (
             <Tooltip title="Create ban / trespass">
               <IconButton onClick={() => navigate(`/incidents/${id}/create-ban`)}>
                 <GavelIcon />
@@ -564,29 +575,33 @@ const IncidentDetail: React.FC = () => {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title={getEditTooltip()}>
-            <span>
-              <IconButton
-                component={RouterLink}
-                to={`/incidents/${id}/edit`}
-                disabled={!canEdit}
-              >
-                <EditIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          {canWriteIncident && (
+            <>
+              <Tooltip title={getEditTooltip()}>
+                <span>
+                  <IconButton
+                    component={RouterLink}
+                    to={`/incidents/${id}/edit`}
+                    disabled={!canEdit}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
 
-          <Tooltip title={getDeleteTooltip()}>
-            <span>
-              <IconButton
-                color="error"
-                onClick={handleDelete}
-                disabled={!canDelete}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+              <Tooltip title={getDeleteTooltip()}>
+                <span>
+                  <IconButton
+                    color="error"
+                    onClick={handleDelete}
+                    disabled={!canDelete}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
+          )}
         </Box>
       </Box>
 

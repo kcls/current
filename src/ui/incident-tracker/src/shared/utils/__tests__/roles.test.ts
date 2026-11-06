@@ -4,6 +4,8 @@ import {
   STAFF_ROLES,
   COORDINATOR_ROLES,
   MANAGER_ROLES,
+  VIEW_ROLES,
+  SYSTEM_WIDE_ROLES,
   hasAnyRole,
   hasRole,
   canReviewIncident,
@@ -55,6 +57,20 @@ describe('Role Constants', () => {
     expect(MANAGER_ROLES).toContain('incident-manager');
     expect(MANAGER_ROLES).toContain('incident-admin');
     expect(MANAGER_ROLES).toHaveLength(2);
+  });
+
+  it('should open the read pages to staff, data analysts and admins', () => {
+    expect([...VIEW_ROLES].sort()).toEqual(['incident-admin', 'incident-data', 'incident-staff']);
+  });
+
+  it('should keep the data analyst role out of the write-page roles', () => {
+    expect(STAFF_ROLES).not.toContain('incident-data');
+    expect(COORDINATOR_ROLES).not.toContain('incident-data');
+    expect(MANAGER_ROLES).not.toContain('incident-data');
+  });
+
+  it('should give system-wide views to coordinators, data analysts and admins', () => {
+    expect([...SYSTEM_WIDE_ROLES].sort()).toEqual(['incident-admin', 'incident-coordinator', 'incident-data']);
   });
 });
 

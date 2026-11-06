@@ -6,18 +6,18 @@ Whether you can *approve* an incident is decided separately, by the
 
 | Role | What it unlocks |
 |------|-----------------|
-| `incident-staff` | Dashboard, create/view incidents, Reviews page |
-| `incident-coordinator` | Operations center, patron directory, bans, ban letter templates, incident templates |
-| `incident-manager` | Reports, sub-locations, review process configuration |
+| `incident-staff` | Dashboard, incidents, Reviews, patrons, bans, Communication Log, Notifications |
+| `incident-coordinator` | Reports, incident categories and templates, a patron's history across all branches |
+| `incident-manager` | Review process configuration |
 | `incident-admin` | Everything above, at every location it's scoped to |
-| `incident-data` | Read-only access to incident data, for analytics and reporting |
+| `incident-data` | Read-only: the staff pages except Notifications, plus Reports and a patron's history across all branches |
 
 ## Independent flags, not a ladder
 
 Except for `incident-admin` — which includes all the others — roles do
-**not** build on each other. A coordinator can't see Reports; a manager
-can't manage bans. Someone who needs both sets of features is simply
-assigned both roles.
+**not** build on each other. A coordinator can't configure the review
+process; a manager can't see Reports. Someone who needs both sets of
+features is simply assigned both roles.
 
 Think of each role as a feature flag with its own scope. Coordinators
 work system-wide on patron matters, managers work per-location on
@@ -29,7 +29,10 @@ A few notes on individual roles:
 - `incident-staff` is the base role every staff account receives; new
   hires who can't create incidents are usually missing it.
 - `incident-data` does *not* include `incident-staff` — a user with
-  only this role can view data but not create incidents.
+  only this role can view data but not create or change anything. The
+  pages it shares with staff hide each write control (New Incident,
+  edit, merge, attach, and so on) unless the user holds the matching
+  write permission, so an analyst sees a read-only version of them.
 - A user with **no** incident roles at all cannot log in to Current;
   the login page shows an error.
 
@@ -59,7 +62,7 @@ or manually by a platform administrator.
 
 | Question | Answer |
 |----------|--------|
-| I'm a coordinator — why can't I see Reports or Sub-locations? | Those are `incident-manager` features, and the roles are independent. You'd need `incident-manager` at the relevant location (or root) as well. |
+| I'm a manager — why can't I see Reports? | Reports belongs to `incident-coordinator` (and the read-only `incident-data`), and the roles are independent. You'd need one of those as well. |
 | I can see the Reviews page but can't approve anything | Page access comes from the role; approval rights come from being in that location's [review chain](incident-review-chain.md). |
 | A new hire can't create incidents | They need the `incident-staff` role. |
 | A user can't log in at all | They have no incident roles assigned — every role grants login; none means no access. |

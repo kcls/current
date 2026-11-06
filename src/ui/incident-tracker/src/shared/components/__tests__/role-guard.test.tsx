@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../../tests/test-utils';
 import RoleGuard from '../role-guard';
 import * as authContext from '../../../contexts/auth-context';
+import { STAFF_ROLES, VIEW_ROLES } from '../../utils/roles';
 
 // Mock useAuth hook
 vi.mock('../../../contexts/auth-context', async () => {
@@ -127,6 +128,35 @@ describe('RoleGuard', () => {
       );
 
       expect(screen.getByText('Protected Content')).toBeInTheDocument();
+    });
+  });
+
+  describe('incident-data (read-only analyst)', () => {
+    const user = createMockUser([{ role: 'incident-data' }]);
+
+    it('should render the read pages', () => {
+      mockUseAuth.mockReturnValue(createAuthState({ isAuthenticated: true, user }));
+
+      renderWithProviders(
+        <RoleGuard allowedRoles={[...VIEW_ROLES]}>
+          <div>Protected Content</div>
+        </RoleGuard>
+      );
+
+      expect(screen.getByText('Protected Content')).toBeInTheDocument();
+    });
+
+    it('should keep the staff-only (write) pages closed', () => {
+      mockUseAuth.mockReturnValue(createAuthState({ isAuthenticated: true, user }));
+
+      renderWithProviders(
+        <RoleGuard allowedRoles={[...STAFF_ROLES]} showAccessDenied>
+          <div>Protected Content</div>
+        </RoleGuard>
+      );
+
+      expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+      expect(screen.getByText('Access Denied')).toBeInTheDocument();
     });
   });
 
