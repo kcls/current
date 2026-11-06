@@ -16,14 +16,15 @@ jobs:
   rust:
     name: Rust lint and unit tests
     runs-on: ubuntu-latest
+    # The service Dockerfile's build image, so CI compiles with the same Rust
+    # and system libraries as the image does; bump it with the Dockerfile.
+    container: rust:1.99-bookworm
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
+      - name: Install clippy
+        run: rustup component add clippy
 
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2

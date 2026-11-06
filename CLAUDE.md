@@ -77,6 +77,8 @@ is the reference implementation for Odo applications.
 - e2e locally: `cd tests/e2e && BASE_URL=http://localhost:30080 npm test`.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
+- CI's Rust jobs (`ci.yml`, `openapi-drift.yml`) run in the Dockerfile's
+  build image (`rust:<ver>-bookworm`): a Rust bump changes all three.
 - Releases: `.github/workflows/release-build.yml` publishes images to
   `ghcr.io/<owner>/<repo>/<service>` from `build/**` pushes (`:<short-sha>`)
   and `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`; a suffixed
