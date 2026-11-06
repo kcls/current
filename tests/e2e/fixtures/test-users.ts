@@ -7,12 +7,12 @@
  *
  * Setup: Run `./scripts/manage-database.sh deploy-test` to deploy test data.
  *
- * Valid incident-tracker roles (from docs/incident-roles.md):
- * - incident-staff: Dashboard, create/view incidents, Reviews page
- * - incident-coordinator: Operations center, patron management, bans, templates
- * - incident-manager: Reports, sub-locations, review process config
+ * Valid incident-tracker roles (see docs/incident-roles.md):
+ * - incident-staff: Dashboard, incidents, Reviews, patrons, bans, Communication Log
+ * - incident-coordinator: Reports, incident categories and templates
+ * - incident-manager: review process configuration
  * - incident-admin: Full access (super admin at root, or scoped to org_unit)
- * - incident-data: Read-only access to all data (analytics/reporting)
+ * - incident-data: Read-only view of the staff pages, plus Reports
  */
 
 export interface TestUser {
@@ -32,6 +32,7 @@ export interface TestUser {
  * - e2e.current.coord: incident-coordinator, incident-staff @ root (Odo Library System)
  * - e2e.current.manager: incident-manager, incident-staff @ Main Street Branch
  * - e2e.current.admin: incident-admin @ root (Odo Library System)
+ * - e2e.current.data: incident-data @ root (Odo Library System)
  */
 export const TEST_USERS = {
   /**
@@ -82,6 +83,19 @@ export const TEST_USERS = {
     password: 'test123!',
     roles: ['incident-admin'],
     displayName: 'E2E Admin',
+    orgUnit: 'Odo Library System',
+    authMethod: 'local',
+  } as TestUser,
+
+  /**
+   * Data analyst - read-only access, no write permissions
+   * Assigned incident-data @ root (Odo Library System)
+   */
+  data: {
+    username: 'e2e.current.data',
+    password: 'test123!',
+    roles: ['incident-data'],
+    displayName: 'E2E Data',
     orgUnit: 'Odo Library System',
     authMethod: 'local',
   } as TestUser,

@@ -107,7 +107,8 @@ is the reference implementation for Odo applications.
   (root `OLS`, branch-with-review-chain `MAIN`, no-chain branch `HILL`),
   users by pinned uuid (`e2e00000-…`). Current owns ALL of its test
   users — `…-0201` e2e.current.coord / `…-0202` e2e.current.manager / `…-0203`
-  e2e.current.admin / `…-0204` e2e.current.staff, defined in
+  e2e.current.admin / `…-0204` e2e.current.staff / `…-0205` e2e.current.data
+  (read-only), defined in
   `tests/fixtures/fixtures.json` — and grants nothing on the platform's
   `e2e.*` users, so the odo and current suites never interact.
 - Anything Current needs installed in the platform goes in the
