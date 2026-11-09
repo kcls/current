@@ -73,9 +73,9 @@ for dev/demo servers only.
 $ODO_HOME/scripts/load-data-manifest.sh tests/fixtures/fixtures.json
 
 # Load Current's local test data
-./scripts/manage-database.sh deploy-test
+$ODO_HOME/scripts/manage-database.sh deploy-test
 
-# Optional: Install e2e dependencies
+# Install e2e dependencies
 cd tests/e2e
 npm install
 npx playwright install-deps
