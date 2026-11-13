@@ -18,6 +18,7 @@ export type {
 // Export local API adapters
 export { incidentApi } from './incidents';
 export { templateApi } from './templates';
+export { categoryApi } from './categories';
 export { locationApi } from './locations';
 export { patronApi } from './patrons';
 export { staffApi } from './staff';

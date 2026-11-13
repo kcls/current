@@ -53,6 +53,7 @@ import { useToast } from '../../contexts/toast-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useLocations } from '../../contexts/location-context';
 import { uploadService, authApi as coreAuthApi } from '@core';
+import { useFileUrl } from '../../shared/hooks/use-file-url';
 import { getIncidentStatus, getStatusColor as getIncidentStatusColor } from '../../shared/utils/incident-status';
 import { COORDINATOR_ROLES, hasAnyRole } from '../../shared/utils/roles';
 import { LinkTableRow, LinkTableCell } from '../../shared/components/link-table-row';
@@ -63,6 +64,7 @@ import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import EmptyStateCard from '../../shared/components/empty-state-card';
 
 const PatronDetail: React.FC = () => {
+  const fileUrl = useFileUrl();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
@@ -377,7 +379,7 @@ const PatronDetail: React.FC = () => {
 
     const primaryPhoto = photos.find(p => p.is_primary);
     const photoUrl = primaryPhoto?.file_upload_data
-      ? uploadService.getFileUrl(primaryPhoto.file_upload_data.relative_path)
+      ? fileUrl(primaryPhoto.file_upload_data.relative_path) ?? null
       : null;
 
     const content = generatePatronReportHtml({
@@ -470,7 +472,7 @@ const PatronDetail: React.FC = () => {
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 {photos.find(p => p.is_primary)?.file_upload_data ? (
                   <Avatar
-                    src={uploadService.getFileUrl(photos.find(p => p.is_primary)!.file_upload_data!.relative_path)}
+                    src={fileUrl(photos.find(p => p.is_primary)!.file_upload_data!.relative_path)}
                     sx={{ width: 120, height: 120 }}
                   >
                     <PersonIcon sx={{ width: 60, height: 60 }} />
@@ -632,7 +634,7 @@ const PatronDetail: React.FC = () => {
             {photos.map((photo) => (
               <ImageListItem key={photo.id}>
                 <img
-                  src={uploadService.getFileUrl(photo.file_upload_data!.relative_path)}
+                  src={fileUrl(photo.file_upload_data!.relative_path)}
                   alt={photo.file_upload_data!.file_name}
                   loading="lazy"
                   style={{ height: 200, objectFit: 'cover' }}

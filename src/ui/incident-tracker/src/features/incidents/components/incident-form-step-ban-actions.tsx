@@ -23,7 +23,7 @@ import {
   NavigateNext as NextIcon,
 } from '@mui/icons-material';
 import { addDays, parseISO, format } from 'date-fns';
-import { uploadService } from '@core/api/upload';
+import { useFileUrl } from '../../../shared/hooks/use-file-url';
 import { BanOptionsPanel, getDefaultBanIntent, type BanIntentData } from './ban-options-panel';
 import {
   formatBanDate,
@@ -217,6 +217,7 @@ export const StepBanActions: React.FC<StepBanActionsProps> = ({
   onNext,
   onBack,
 }) => {
+  const fileUrl = useFileUrl();
   // Derive patron details for temporary patrons from their search result data
   // so letter templates can resolve names instead of showing placeholders
   const resolvedDetailsMap = useMemo(() => {
@@ -286,7 +287,7 @@ export const StepBanActions: React.FC<StepBanActionsProps> = ({
                   <Avatar
                     src={
                       patron.primary_photo_url
-                        ? uploadService.getFileUrl(patron.primary_photo_url)
+                        ? fileUrl(patron.primary_photo_url)
                         : undefined
                     }
                     sx={{ width: 36, height: 36, bgcolor: 'action.disabledBackground' }}

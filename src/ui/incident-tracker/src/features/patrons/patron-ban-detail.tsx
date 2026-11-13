@@ -47,7 +47,8 @@ import { trespassProceduresApi } from '../../api/trespass-procedures';
 import { getBanActivity } from '../../api/activity';
 import { patronApi } from '../../api/patrons';
 import { TrespassProceduresChecklist } from '../incidents/components/trespass-procedures-checklist';
-import { uploadService, authApi } from '@core';
+import { authApi } from '@core';
+import { useFileUrl } from '../../shared/hooks/use-file-url';
 import { useToast } from '../../contexts/toast-context';
 import { ActivityLogPaper } from '../../shared/components/activity-log';
 import type { ActivityLogEntry } from '../../types';
@@ -61,6 +62,7 @@ import type { ProcedureState } from '../../shared/utils/trespass-procedures';
 import { getBanStatus } from '../../shared/utils/ban-status';
 
 const PatronBanDetail: React.FC = () => {
+  const fileUrl = useFileUrl();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
@@ -74,7 +76,7 @@ const PatronBanDetail: React.FC = () => {
 const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [viewLetterContent, setViewLetterContent] = useState<string | null>(null);
   const [viewLetterDialogOpen, setViewLetterDialogOpen] = useState(false);
-  const [patronPhotoUrl, setPatronPhotoUrl] = useState<string | undefined>();
+  const [patronPhotoPath, setPatronPhotoPath] = useState<string | undefined>();
   const [activityEntries, setActivityEntries] = useState<ActivityLogEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
@@ -168,7 +170,7 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
       if (cancelled) return;
       const primaryPhoto = result.photos?.find((p: any) => p.is_primary);
       if (primaryPhoto?.file_upload_data?.relative_path) {
-        setPatronPhotoUrl(uploadService.getFileUrl(primaryPhoto.file_upload_data.relative_path));
+        setPatronPhotoPath(primaryPhoto.file_upload_data.relative_path);
       }
     }).catch(() => { /* ignore — avatar will just show default */ });
     return () => { cancelled = true; };
@@ -286,7 +288,7 @@ const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
           <Paper sx={{ p: 3, mb: 3 }}>
             <Box display="flex" alignItems="center" gap={2} mb={3} flexWrap="wrap">
               <Avatar
-                src={patronPhotoUrl}
+                src={fileUrl(patronPhotoPath)}
                 sx={{ width: 48, height: 48, bgcolor: 'grey.300' }}
               >
                 <PersonIcon />

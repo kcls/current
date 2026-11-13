@@ -22,6 +22,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import { uploadService, type FileUploadResponse } from '@core/api/upload';
+import { useFileUrl } from '../../shared/hooks/use-file-url';
 import { bansApi } from '../../api/bans';
 import { useToast } from '../../contexts/toast-context';
 import ExternalLinkDialog, { type ExternalLinkFormData } from '../incidents/components/external-link-dialog';
@@ -45,6 +46,7 @@ export const AddBanNoteDialog: React.FC<AddBanNoteDialogProps> = ({
   onSuccess,
   onExited,
 }) => {
+  const fileUrl = useFileUrl();
   const { showSuccess, showError } = useToast();
 
   const [comments, setComments] = useState('');
@@ -243,7 +245,7 @@ export const AddBanNoteDialog: React.FC<AddBanNoteDialogProps> = ({
                       <Box key={`photo-${index}`} position="relative">
                         <Box
                           component="img"
-                          src={uploadService.getFileUrl(file.relative_path)}
+                          src={fileUrl(file.relative_path)}
                           alt={file.original_name}
                           sx={{
                             width: 120,

@@ -12,10 +12,14 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/common.sh"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Shared helpers live in the odo checkout ($ODO_HOME; see lib/odo-home.sh).
+source "$SCRIPT_DIR/lib/odo-home.sh"
+source "$ODO_HOME/scripts/common.sh"
+load_db_config "$PROJECT_ROOT" || exit 1
 
-SECRET_NAMESPACE=${NAMESPACE:-odo-pub}
-SECRET_NAME="current-api"
+SECRET_NAMESPACE=$DB_SECRET_NAMESPACE
+SECRET_NAME=$DB_SECRET_NAME
 
 COMMAND=${1:-help}
 
@@ -83,7 +87,7 @@ update_db_url() {
 
     echo -e "\n${BLUE}Host tooling picks this up straight from the secret.${NC}"
     echo -e "${YELLOW}Restart the service to pick it up there too:${NC}"
-    echo "  ./scripts/deploy-service.sh current"
+    echo '  $ODO_HOME/scripts/deploy-service.sh current'  # literal: shown as typed
 }
 
 case "$COMMAND" in

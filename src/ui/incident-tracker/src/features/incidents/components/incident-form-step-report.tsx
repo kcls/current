@@ -104,6 +104,8 @@ interface StepReportProps {
   onInputChange: (field: keyof IncidentFormState, value: any) => void;
   clearError: (field: string) => void;
   isEditMode: boolean;
+  /** Templates and sub-location are inherited from the source incident. */
+  isFollowup?: boolean;
   isSubmitting: boolean;
   templates: IncidentTemplate[];
   locations: OrgUnit[];
@@ -129,6 +131,7 @@ export const StepReport: React.FC<StepReportProps> = ({
   onInputChange,
   clearError,
   isEditMode,
+  isFollowup = false,
   isSubmitting,
   templates,
   locations,
@@ -166,6 +169,7 @@ export const StepReport: React.FC<StepReportProps> = ({
           <Autocomplete
             multiple
             fullWidth
+            disabled={isFollowup}
             options={templates
               .filter((t) => t.is_active !== false)
               .sort((a, b) => a.name.localeCompare(b.name))}
@@ -189,10 +193,15 @@ export const StepReport: React.FC<StepReportProps> = ({
               <TextField
                 {...params}
                 label="Incident Templates"
-                required
-                placeholder="Select one or more templates"
+                required={!isFollowup}
+                placeholder={isFollowup ? undefined : 'Select one or more templates'}
                 error={!!errors.template_ids}
-                helperText={errors.template_ids || 'Select all incident types that apply to this incident'}
+                helperText={
+                  errors.template_ids ||
+                  (isFollowup
+                    ? 'A follow-up keeps the templates of the original incident'
+                    : 'Select all incident types that apply to this incident')
+                }
               />
             )}
           />
@@ -207,6 +216,7 @@ export const StepReport: React.FC<StepReportProps> = ({
           subLocations={subLocations}
           isLoadingSubLocations={isLoadingSubLocations}
           isEditMode={isEditMode}
+          subLocationLocked={isFollowup}
           errors={errors}
           onInputChange={onInputChange}
           clearError={clearError}
@@ -260,26 +270,6 @@ export const StepReport: React.FC<StepReportProps> = ({
               }
               noOptionsText="No staff found"
             />
-
-            {staff.selected.length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                {staff.selected.map((s) => (
-                  <TextField
-                    key={s.uuid}
-                    fullWidth
-                    multiline
-                    rows={2}
-                    label={`Notes for ${s.display_name}`}
-                    value={staff.notes[s.uuid] || ''}
-                    onChange={(e) =>
-                      staff.setNotes((prev) => ({ ...prev, [s.uuid]: e.target.value }))
-                    }
-                    sx={{ mb: 2 }}
-                    placeholder="Add any notes about this staff member's involvement..."
-                  />
-                ))}
-              </Box>
-            )}
           </Box>
         </Box>
 

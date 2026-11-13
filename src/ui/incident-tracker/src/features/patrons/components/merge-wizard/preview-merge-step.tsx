@@ -26,7 +26,7 @@ import {
   PhotoCamera as PhotoIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
-import { uploadService } from '@core';
+import { useFileUrl } from '../../../../shared/hooks/use-file-url';
 import type { PatronSearchResult } from '../../../../types';
 import type {
   PatronMergePreview,
@@ -57,6 +57,7 @@ export const PreviewMergeStep: React.FC<PreviewMergeStepProps> = ({
   confirmText,
   setConfirmText,
 }) => {
+  const fileUrl = useFileUrl();
   const isConfirmed = confirmText === 'MERGE';
 
   const emptyItems = { incidents: [], photos: [], bans: [] };
@@ -126,7 +127,7 @@ export const PreviewMergeStep: React.FC<PreviewMergeStepProps> = ({
         <CardContent>
           <Box display="flex" alignItems="center" gap={2} mb={2}>
             <Avatar
-              src={mergedPhotoUrl ? uploadService.getFileUrl(mergedPhotoUrl) : undefined}
+              src={mergedPhotoUrl ? fileUrl(mergedPhotoUrl) : undefined}
               sx={{ width: 48, height: 48 }}
             >
               <PersonIcon />
@@ -263,7 +264,7 @@ export const PreviewMergeStep: React.FC<PreviewMergeStepProps> = ({
                 {allPhotos.map((photo, idx) => (
                   <Box key={`${photo.source}-${photo.id}-${idx}`} textAlign="center">
                     <Avatar
-                      src={photo.file_path ? uploadService.getFileUrl(photo.file_path) : undefined}
+                      src={photo.file_path ? fileUrl(photo.file_path) : undefined}
                       variant="rounded"
                       sx={{ width: 64, height: 64, mb: 0.5 }}
                     >

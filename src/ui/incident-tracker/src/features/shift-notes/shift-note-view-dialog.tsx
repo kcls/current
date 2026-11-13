@@ -22,6 +22,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { uploadService } from '@core/api/upload';
+import { useFileUrl } from '../../shared/hooks/use-file-url';
 import { formatDisplayDateTime } from '../../shared/utils/date-utils';
 import type { ShiftNote, ShiftNoteConductArea } from '../../types';
 
@@ -66,6 +67,7 @@ const ShiftNoteViewDialog: React.FC<ShiftNoteViewDialogProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const fileUrl = useFileUrl();
   if (!note) return null;
 
   const images = note.attachments.filter(a => isImage(a.file_type));
@@ -191,11 +193,11 @@ const ShiftNoteViewDialog: React.FC<ShiftNoteViewDialogProps> = ({
                 {images.length > 0 && (
                   <Box display="flex" gap={1.5} flexWrap="wrap" sx={{ mb: others.length ? 2 : 0 }}>
                     {images.map(a => {
-                      const url = uploadService.getFileUrl(a.relative_path);
+                      const url = fileUrl(a.relative_path);
                       return (
                         <Box
                           key={a.file_upload}
-                          onClick={() => window.open(url, '_blank')}
+                          onClick={() => url && window.open(url, '_blank')}
                           sx={{
                             position: 'relative',
                             width: 200,
@@ -237,7 +239,7 @@ const ShiftNoteViewDialog: React.FC<ShiftNoteViewDialogProps> = ({
                 )}
 
                 {others.map(a => {
-                  const url = uploadService.getFileUrl(a.relative_path);
+                  const url = fileUrl(a.relative_path);
                   return (
                     <Box
                       key={a.file_upload}

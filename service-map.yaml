@@ -3,6 +3,14 @@
 # language:
 #   - the programming language/framework of the service (rust, node, etc.)
 #
+# Current's own database, for odo's shared database scripts (common.sh
+# load_db_config, run-db-tests.sh, manage-database.sh); keys are described
+# in odo's service-map.yaml. Current's role does not own the server: it
+# and its database are created by hand (see the README).
+database:
+  namespace: odo-pub
+  secret: current-api
+
 services:
 
   # API service for Current
@@ -19,4 +27,16 @@ services:
     namespace: odo-pub
     build:
       dockerfile: src/ui/incident-tracker/Dockerfile
+      context: .
+
+# Images published by release-build.yml alongside the services, but which
+# are not services: nothing here is built or deployed by build-service.sh
+# or deploy-service.sh, which read only `services`.
+images:
+
+  # Schema migrations: the core sqitch project at this release, for a
+  # deployment repository to run before rolling out the services.
+  current-migrate:
+    build:
+      dockerfile: src/sqitch/Dockerfile
       context: .

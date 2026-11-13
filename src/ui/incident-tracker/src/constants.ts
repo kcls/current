@@ -31,6 +31,7 @@ export const ROUTES = {
   // Reviews
   INCIDENT_REVIEWS: '/incident-reviews',
 
+  CATEGORIES: '/categories',
   TEMPLATES: '/templates',
   TEMPLATES_NEW: '/templates/new',
   REPORTS: '/reports',

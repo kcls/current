@@ -455,6 +455,115 @@
         ]
       }
     },
+    "/api/v1/current/category/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_category",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/category/list": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "list_categories",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListCategoriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Incident template categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/category/update": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Replace a category's values; `code` selects the row and cannot change.",
+        "operationId": "update_category",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCategoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/incident/activity": {
       "post": {
         "tags": [
@@ -509,6 +618,41 @@
         "responses": {
           "200": {
             "description": "Newly created incident's identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateIncidentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/incident/followup/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_followup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFollowupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Newly created follow-up incident's identifiers",
             "content": {
               "application/json": {
                 "schema": {
@@ -1816,6 +1960,77 @@
         ]
       }
     },
+    "/api/v1/current/template/create": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "create_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTemplateFields"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Created template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/template/delete": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Soft-delete a template. Incidents already filed against it keep their\nmapping; the template just stops being offered.",
+        "operationId": "delete_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/template/list": {
       "post": {
         "tags": [
@@ -1842,6 +2057,42 @@
                   "items": {
                     "$ref": "#/components/schemas/TemplateResponse"
                   }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/current/template/update": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Replace a template's editable values. `version` is bumped whenever\n`fields` changes, so it tracks revisions of the form definition.",
+        "operationId": "update_template",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
                 }
               }
             }
@@ -2673,6 +2924,60 @@
           }
         }
       },
+      "CategoryResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "label"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_order": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "CreateBanLetterRequest": {
         "type": "object",
         "required": [
@@ -2875,6 +3180,40 @@
           }
         }
       },
+      "CreateFollowupRequest": {
+        "type": "object",
+        "description": "A follow-up is a full incident (own review cycle) that continues an\nearlier one. Everything but the narrative, occurrence time and\nattachments is taken from the source: org unit, title, templates and\ninvolved parties. Sub-location is left empty, and no bans or\ntrespasses can be attached to it, now or later.",
+        "required": [
+          "source_incident_id",
+          "description"
+        ],
+        "properties": {
+          "attachment_file_upload_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "source_incident_id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CreateIncidentRequest": {
         "type": "object",
         "required": [
@@ -2922,6 +3261,14 @@
           "org_unit": {
             "type": "string",
             "format": "uuid"
+          },
+          "related_incident_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "An existing incident this one is related to but independent of\n(written as a `related` incident link). The caller needs read\naccess at the related incident's org unit."
           },
           "sub_location": {
             "type": [
@@ -3360,6 +3707,18 @@
           "deleted": {
             "type": "boolean"
           },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeleteTemplateRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
           "id": {
             "type": "integer",
             "format": "int32"
@@ -3857,6 +4216,9 @@
           },
           "with_involved_parties": {
             "type": "boolean"
+          },
+          "with_linked_incidents": {
+            "type": "boolean"
           }
         }
       },
@@ -3951,6 +4313,14 @@
               "$ref": "#/components/schemas/ExternalLinkResponse"
             }
           },
+          "followup_of": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Set when this incident is a follow-up: the id of the incident it\nwas created from. Follow-ups never carry bans or trespasses."
+          },
           "id": {
             "type": "integer",
             "format": "int32"
@@ -3972,6 +4342,16 @@
               "string",
               "null"
             ]
+          },
+          "linked_incidents": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LinkedIncidentResponse"
+            },
+            "description": "Incidents linked to this one in either direction, oldest\noccurrence first. Deleted incidents and those at org units the\ncaller cannot read are left out. Returned when\n`options.with_linked_incidents = true`."
           },
           "metadata": {},
           "occurred_at": {
@@ -4077,7 +4457,9 @@
           "title",
           "org_unit",
           "occurred_at",
-          "created_by"
+          "created_by",
+          "followup_count",
+          "related_count"
         ],
         "properties": {
           "called_emergency": {
@@ -4116,6 +4498,20 @@
               "null"
             ]
           },
+          "followup_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Follow-ups created from this incident.",
+            "minimum": 0
+          },
+          "followup_of": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Set when this incident is a follow-up: the incident it was created\nfrom."
+          },
           "id": {
             "type": "integer",
             "format": "int32"
@@ -4142,6 +4538,12 @@
               "string",
               "null"
             ]
+          },
+          "related_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Related incidents, in either direction.",
+            "minimum": 0
           },
           "resolved_at": {
             "type": [
@@ -4311,6 +4713,63 @@
           }
         }
       },
+      "LinkDirection": {
+        "type": "string",
+        "description": "Which end of the link the viewed incident sits on. A link's\n`incident_id` is the newer incident, `linked_incident_id` the one it\nrefers back to.",
+        "enum": [
+          "references",
+          "referenced_by"
+        ]
+      },
+      "LinkedIncidentResponse": {
+        "type": "object",
+        "required": [
+          "incident_id",
+          "link_type",
+          "direction",
+          "title",
+          "org_unit",
+          "occurred_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/LinkDirection"
+          },
+          "incident_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "link_type": {
+            "type": "string",
+            "description": "`related` or `followup`."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
       "ListBanLetterTemplatesResponse": {
         "type": "object",
         "required": [
@@ -4375,6 +4834,17 @@
             "items": {
               "$ref": "#/components/schemas/BanListRow"
             }
+          }
+        }
+      },
+      "ListCategoriesRequest": {
+        "type": "object",
+        "properties": {
+          "is_active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         }
       },
@@ -4574,6 +5044,10 @@
               "null"
             ],
             "format": "int32"
+          },
+          "include_deleted": {
+            "type": "boolean",
+            "description": "Also return soft-deleted templates; requires\n`current.incident_template.read`."
           },
           "is_active": {
             "type": [
@@ -6197,6 +6671,41 @@
           }
         }
       },
+      "SaveCategoryRequest": {
+        "type": "object",
+        "required": [
+          "code",
+          "label"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Natural key; set on create and fixed afterwards"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
       "SaveReviewChainLevel": {
         "type": "object",
         "properties": {
@@ -6274,6 +6783,42 @@
             "minimum": 0
           },
           "saved": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SaveTemplateFields": {
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "requires_patron": {
+            "type": "boolean"
+          },
+          "show_called_emergency": {
             "type": "boolean"
           }
         }
@@ -6768,6 +7313,13 @@
             ],
             "format": "date-time"
           },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
           "description": {
             "type": [
               "string",
@@ -7012,7 +7564,7 @@
               "type": "integer",
               "format": "int32"
             },
-            "description": "Full-replace semantics: passing `Some([..])` clears the\nincident's existing `incident_template_map` rows and inserts a\nnew mapping for each id. Passing `Some([])` clears all\ntemplates. `None` (the field omitted from the payload) leaves\nthe existing mapping untouched — \"no change\" rather than\n\"clear\", same shape as the legacy port (CRT-88)."
+            "description": "Full-replace semantics: passing `Some([..])` clears the\nincident's existing `incident_template_map` rows and inserts a\nnew mapping for each id. Passing `Some([])` clears all\ntemplates. `None` (the field omitted from the payload) leaves\nthe existing mapping untouched — \"no change\" rather than\n\"clear\", same shape as the legacy port (CRT-88).\n\nRefused for a follow-up unless it matches the current mapping, as\nis any `sub_location`: both are inherited from the source."
           },
           "title": {
             "type": [
@@ -7296,6 +7848,25 @@
             "format": "int32"
           }
         }
+      },
+      "UpdateTemplateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SaveTemplateFields"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ]
       },
       "UpdateTrespassProceduresRequest": {
         "type": "object",

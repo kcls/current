@@ -2,10 +2,19 @@ name: Release Build
 
 # Publishes container images for every service in service-map.yaml.
 #
-#   push to release/X.Y   -> :<short-sha>
+#   push to build/<name>  -> :<short-sha>
 #   push of tag vX.Y.Z    -> :<short-sha>, :vX.Y.Z, :vX.Y
 #   push of tag vX.Y.Z-rc1 -> :<short-sha>, :vX.Y.Z-rc1  (no line tag)
 #   workflow_dispatch     -> :<short-sha>, optionally a subset of services
+#
+# build/** is for working branches that need deployable images without a
+# release: name the branch build/<anything> and every push publishes the
+# full set at that commit. Only ever the sha tag -- never a moving branch
+# tag, which would change what a pod runs on its next restart without a
+# manifest change saying so.
+#
+# release/** branches publish nothing: a release is its vX.Y.Z tag, and
+# CI already builds and tests every push to them.
 #
 # A published vX.Y.Z tag is never re-pointed; a bad release is superseded by
 # the next patch.
@@ -24,7 +33,7 @@ name: Release Build
 on:
   push:
     branches:
-      - 'release/**'
+      - 'build/**'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -114,16 +123,16 @@ jobs:
 
             # Fail loudly on a typo rather than silently building nothing.
             for service in $(echo "$SERVICES" | jq -r '.[]'); do
-              if [[ "$(yq eval ".services | has(\"$service\")" service-map.yaml)" != "true" ]]; then
+              if [[ "$(yq eval "(.services + (.images // {})) | has(\"$service\")" service-map.yaml)" != "true" ]]; then
                 echo "::error::Unknown service '$service' (not in service-map.yaml)"
                 exit 1
               fi
             done
           else
-            SERVICES=$(yq eval '.services | keys' service-map.yaml -o json | jq -c .)
+            SERVICES=$(yq eval '(.services + (.images // {})) | keys' service-map.yaml -o json | jq -c .)
           fi
 
-          MATRIX=$(yq eval -o json '.services' service-map.yaml \
+          MATRIX=$(yq eval -o json '.services + (.images // {})' service-map.yaml \
             | jq -c --argjson want "$SERVICES" '
                 to_entries
                 | map(select(.key as $k | $want | index($k)))

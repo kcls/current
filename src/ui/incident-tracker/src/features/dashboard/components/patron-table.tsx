@@ -17,7 +17,7 @@ import {
 import {
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { uploadService } from '@core';
+import { useFileUrl } from '../../../shared/hooks/use-file-url';
 import type { PatronSearchResult } from '../../../types/patron';
 import { LinkTableRow, LinkTableCell } from '../../../shared/components/link-table-row';
 import { SortableHeadCell } from '../../../shared/components/data-table/sortable-head-cell';
@@ -62,6 +62,7 @@ export const PatronTable: React.FC<PatronTableProps> = ({
   sort,
   onSort,
 }) => {
+  const fileUrl = useFileUrl();
   const initialLoading = loading && patrons.length === 0;
 
   return (
@@ -116,7 +117,7 @@ export const PatronTable: React.FC<PatronTableProps> = ({
                   <LinkTableCell>
                     <Box display="flex" alignItems="center" gap={1.5}>
                       <Avatar
-                        src={patron.primary_photo_url ? uploadService.getFileUrl(patron.primary_photo_url) : undefined}
+                        src={patron.primary_photo_url ? fileUrl(patron.primary_photo_url) : undefined}
                         sx={{ width: 40, height: 40 }}
                       >
                         <PersonIcon />

@@ -1,4 +1,4 @@
-import type { IncidentTemplate } from '../types';
+import type { IncidentTemplate, TemplateField } from '../types';
 import { currentPost } from './client';
 
 /**
@@ -21,6 +21,16 @@ const transformToTemplate = (instance: any): IncidentTemplate => {
     resolution_checklist: instance.resolution_checklist
   };
 };
+
+export interface TemplateInput {
+  name: string;
+  description: string;
+  category: string;
+  fields?: TemplateField[];
+  is_active: boolean;
+  requires_patron: boolean;
+  show_called_emergency: boolean;
+}
 
 async function listTemplates(params: {
   id?: number;
@@ -63,31 +73,28 @@ export const templateApi = {
     return listTemplates({ category: [category], is_active: true });
   },
 
-  // ------------------------------------------------------------------
-  // Write operations — not yet supported by the backend.
-  // Commented out to prevent accidental use until backend CUD endpoints
-  // are implemented.
-  // ------------------------------------------------------------------
-
-  /*
-  async create(template: Omit<IncidentTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<IncidentTemplate> {
-    throw new Error('templates.create not yet implemented');
+  /**
+   * Create a template
+   */
+  async create(input: TemplateInput): Promise<IncidentTemplate> {
+    const response = await currentPost<IncidentTemplate>('/template/create', input);
+    return transformToTemplate(response);
   },
 
-  async update(id: string | number, updates: Partial<IncidentTemplate>): Promise<IncidentTemplate> {
-    throw new Error('templates.update not yet implemented');
+  /**
+   * Replace a template's values. The server overwrites every field it is
+   * sent, so `fields` must carry the template's existing form definition
+   * or it is reset to empty.
+   */
+  async update(id: number, input: TemplateInput): Promise<IncidentTemplate> {
+    const response = await currentPost<IncidentTemplate>('/template/update', { id, ...input });
+    return transformToTemplate(response);
   },
 
-  async delete(id: string | number): Promise<void> {
-    throw new Error('templates.delete not yet implemented');
+  /**
+   * Soft-delete a template
+   */
+  async delete(id: number): Promise<void> {
+    await currentPost('/template/delete', { id });
   },
-
-  async toggleActive(id: string | number): Promise<IncidentTemplate> {
-    throw new Error('templates.toggleActive not yet implemented');
-  },
-
-  async incrementUsage(id: string | number): Promise<void> {
-    throw new Error('templates.incrementUsage not yet implemented');
-  },
-  */
 };

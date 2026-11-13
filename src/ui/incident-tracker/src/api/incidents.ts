@@ -134,6 +134,10 @@ const transformToIncident = (instance: ModelInstance): Incident => {
     is_final_review: instance.is_final_review,
     can_review: instance.can_review,
     can_resubmit: instance.can_resubmit,
+    followup_of: instance.followup_of ?? null,
+    linked_incidents: Array.isArray(instance.linked_incidents) ? instance.linked_incidents : [],
+    followup_count: instance.followup_count ?? 0,
+    related_count: instance.related_count ?? 0,
 
     // Org unit address fields (for ban/trespass letters)
     org_address_line1: instance.org_address_line1,
@@ -207,6 +211,10 @@ const transformToData = (incident: Partial<IncidentFormData | Incident>): Record
     Array.isArray((incident as any).attachment_file_upload_ids)
   ) {
     data.attachment_file_upload_ids = (incident as any).attachment_file_upload_ids;
+  }
+
+  if ('related_incident_id' in incident && (incident as any).related_incident_id) {
+    data.related_incident_id = Number((incident as any).related_incident_id);
   }
 
   // Note: external_links are passed through metadata
@@ -302,6 +310,20 @@ export const incidentApi = {
   },
 
   /**
+   * Create a follow-up to an existing incident. The server copies the
+   * source's org unit, title, templates and involved parties; only the
+   * narrative, occurrence time and attachments come from the caller.
+   */
+  async createFollowup(params: {
+    source_incident_id: number;
+    description: string;
+    occurred_at?: string;
+    attachment_file_upload_ids?: string[];
+  }): Promise<{ id: number }> {
+    return currentPost<{ id: number }>('/incident/followup/create', params);
+  },
+
+  /**
    * Get a single incident by ID with related data
    */
   async get(id: string | number): Promise<Incident> {
@@ -311,6 +333,7 @@ export const incidentApi = {
         with_involved_parties: true,
         with_external_links: true,
         with_attachments: true,
+        with_linked_incidents: true,
       },
     });
 

@@ -147,6 +147,31 @@ export interface Incident {
   org_city?: string;
   org_state?: string;
   org_postal_code?: string;
+
+  /** Set when this incident is a follow-up: the id of the incident it was
+   * created from. Follow-ups never carry bans or trespasses. */
+  followup_of?: number | null;
+  linked_incidents?: LinkedIncident[];
+  /** Search rows only: follow-ups created from this incident, and related
+   * incidents in either direction. */
+  followup_count?: number;
+  related_count?: number;
+}
+
+/**
+ * An incident linked to the one being viewed. `references`: the viewed
+ * incident refers back to this one (e.g. is a follow-up of it);
+ * `referenced_by`: this one refers back to the viewed incident.
+ */
+export interface LinkedIncident {
+  incident_id: number;
+  link_type: 'related' | 'followup';
+  direction: 'references' | 'referenced_by';
+  title: string;
+  org_unit: string;
+  occurred_at: string;
+  resolved_at?: string | null;
+  created_at?: string | null;
 }
 
 export interface IncidentPhoto {
@@ -314,10 +339,10 @@ export interface PaginatedResponse<T> {
 export interface Category {
   code: string;
   label: string;
-  description: string;
-  icon: string;
-  display_order: number;
-  is_active: boolean;
+  description: string | null;
+  icon: string | null;
+  display_order: number | null;
+  is_active: boolean | null;
 }
 
 // Settings types

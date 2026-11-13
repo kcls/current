@@ -32,6 +32,9 @@ export type {
   UploadOptions
 } from './api/upload';
 
+export { signedUrls, SignedUrlStore, canonicalAssetPath } from './api/signed-urls';
+export type { SignedUrlResult, SignFn } from './api/signed-urls';
+
 export { samlApi, SamlApi } from './api/saml';
 export type {
   SamlIdP,

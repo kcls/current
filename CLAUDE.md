@@ -57,8 +57,20 @@ is the reference implementation for Odo applications.
 ## Build / deploy / test (dev k3s cluster)
 
 - `cargo check` from `src/rust/current/`.
-- `./scripts/build-and-deploy-service.sh <name>` (`current`,
-  `ui-incident-tracker`, or `--all`). Wait ~20s after a deploy.
+- `$ODO_HOME/scripts/build-and-deploy-service.sh <name>` (`current`,
+  `ui-incident-tracker`, or `--all`), run from this checkout: odo's
+  build/deploy scripts act on the nearest `service-map.yaml`, so this
+  repo keeps no copies of them. Wait ~20s after a deploy.
+- The scripts here build on an odo checkout: `ODO_HOME`, else `odo/`
+  next to this checkout (`scripts/lib/odo-home.sh`; that sibling layout
+  is also what odo-deploy's site scripts use, without exporting
+  ODO_HOME). `manage-database.sh` is a thin wrapper around odo's shared
+  one; `manage-secrets.sh` and `run-tests.sh` source odo's `common.sh`.
+  All read Current's database settings (secret) from the
+  `database:` block in `service-map.yaml`. pgTAP tests run via
+  `$ODO_HOME/scripts/run-db-tests.sh`. Keep the `manage-database.sh`
+  wrapper: odo-deploy runs `./scripts/manage-database.sh` in this
+  checkout.
 - `./scripts/run-tests.sh --db --integration --e2e --unit` — DB
   connection resolves from the `current-api` secret's single
   `DATABASE_URL`; PG* env vars are overrides only.
@@ -66,14 +78,15 @@ is the reference implementation for Odo applications.
 - UI checks: `npx tsc --noEmit` and `npx vitest run` must both be fully
   clean. The UIs need a recent Node (>= 20).
 - Releases: `.github/workflows/release-build.yml` publishes images to
-  `ghcr.io/<owner>/<repo>/<service>` from `release/**` pushes (`:<short-sha>`)
+  `ghcr.io/<owner>/<repo>/<service>` from `build/**` pushes (`:<short-sha>`)
   and `vX.Y.Z` tags (`:<short-sha>`, `:vX.Y.Z`, `:vX.Y`; a suffixed
-  prerelease tag like `vX.Y.Z-rc1` publishes no `:vX.Y`). This repo publishes
-  only — it holds no credential for, and never writes to, any deployment
-  repository, and ships no release artifacts: deployment repos consume `k8s/`
-  as a kustomize remote base pinned to the tag. Current versions independently
-  of odo, so each release must state the odo range it works against. The
-  scheme lives in odo: `docs/tech-docs/release-management.md`.
+  prerelease tag like `vX.Y.Z-rc1` publishes no `:vX.Y`). This repo
+  publishes only — it holds no credential for, and never writes to, any
+  deployment repository, and ships no release artifacts: deployment repos
+  consume `k8s/` as a kustomize remote base pinned to the tag. Current
+  versions independently of odo, so each release must state the odo range it
+  works against. The scheme lives in odo:
+  `docs/tech-docs/release-management.md`.
 - Fresh install order: create the `current` role and an empty database it
   owns on the PostgreSQL server by hand (Current does not own the server
   and no script creates them) → `manage-database.sh deploy` →

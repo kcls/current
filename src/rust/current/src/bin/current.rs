@@ -3,6 +3,7 @@ use axum::middleware;
 use axum::routing::{get, post};
 use current::AppState;
 use current::bans;
+use current::categories;
 use current::draft_reminder;
 use current::incidents;
 use current::patrons;
@@ -36,11 +37,18 @@ use utoipa::OpenApi;
         review::get_pending_reviews,
         review::create_incident_review,
         templates::list_templates,
+        templates::create_template,
+        templates::update_template,
+        templates::delete_template,
+        categories::list_categories,
+        categories::create_category,
+        categories::update_category,
         sub_locations::list_sub_locations,
         incidents::get_incident,
         incidents::search_incidents,
         incidents::get_activity,
         incidents::create_incident,
+        incidents::create_followup,
         incidents::update_incident,
         bans::list_ban_letter_templates,
         bans::get_ban_details,
@@ -98,6 +106,12 @@ use utoipa::OpenApi;
         review::CreateReviewResponse,
         templates::ListTemplatesRequest,
         templates::TemplateResponse,
+        templates::SaveTemplateFields,
+        templates::UpdateTemplateRequest,
+        templates::DeleteTemplateRequest,
+        categories::ListCategoriesRequest,
+        categories::CategoryResponse,
+        categories::SaveCategoryRequest,
         sub_locations::ListSubLocationsRequest,
         sub_locations::SubLocationResponse,
         incidents::GetIncidentRequest,
@@ -114,6 +128,9 @@ use utoipa::OpenApi;
         incidents::GetActivityResponse,
         incidents::CreateIncidentRequest,
         incidents::CreateIncidentResponse,
+        incidents::CreateFollowupRequest,
+        incidents::LinkedIncidentResponse,
+        incidents::LinkDirection,
         incidents::CreateInvolvedParty,
         incidents::AttachmentResponse,
         incidents::CreateExternalLink,
@@ -335,6 +352,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             post(templates::list_templates),
         )
         .route(
+            "/api/v1/current/template/create",
+            post(templates::create_template),
+        )
+        .route(
+            "/api/v1/current/template/update",
+            post(templates::update_template),
+        )
+        .route(
+            "/api/v1/current/template/delete",
+            post(templates::delete_template),
+        )
+        .route(
+            "/api/v1/current/category/list",
+            post(categories::list_categories),
+        )
+        .route(
+            "/api/v1/current/category/create",
+            post(categories::create_category),
+        )
+        .route(
+            "/api/v1/current/category/update",
+            post(categories::update_category),
+        )
+        .route(
             "/api/v1/current/sub-location/list",
             post(sub_locations::list_sub_locations),
         )
@@ -353,6 +394,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/v1/current/incident/create",
             post(incidents::create_incident),
+        )
+        .route(
+            "/api/v1/current/incident/followup/create",
+            post(incidents::create_followup),
         )
         .route(
             "/api/v1/current/incident/update",

@@ -108,6 +108,8 @@ export interface SubmitIncidentParams {
   user: { id?: number; display_name?: string; username?: string } | null;
   locationName: string | undefined;
   currentIncident?: Incident;
+  /** Create only: an existing incident the new one is related to. */
+  relatedIncidentId?: number;
   createIncident: (data: any) => Promise<any>;
   updateIncident: (id: number, data: any, parties?: any) => Promise<any>;
   showError: (msg: string) => void;
@@ -157,7 +159,7 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
     formData, selectedPatrons, selectedStaff, patronNotes, staffNotes,
     patronBanIntents, patronExtendIntents, uploadedFiles, externalLinks,
     user, locationName,
-    currentIncident, createIncident, updateIncident, showError,
+    currentIncident, relatedIncidentId, createIncident, updateIncident, showError,
   } = params;
 
   const { finalPatrons, originalIdMap } = await preparePatronsForSubmit(selectedPatrons);
@@ -239,7 +241,9 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
     metadata,
     attachment_file_upload_ids,
   });
-  const result = await createIncident(createData);
+  const result = await createIncident(
+    relatedIncidentId ? { ...createData, related_incident_id: relatedIncidentId } : createData,
+  );
 
   await createPostSubmitLetters({
     incidentId: result.id,

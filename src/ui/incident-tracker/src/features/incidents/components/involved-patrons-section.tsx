@@ -21,7 +21,7 @@ import {
   PersonAdd as PersonAddIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { uploadService } from '@core/api/upload';
+import { useFileUrl } from '../../../shared/hooks/use-file-url';
 import type { PatronSearchResult } from '../../../types';
 import { createTempUnknownPatron, formatAlias } from '../../../shared/utils/patron-utils';
 import type { PatronProps } from './incident-form-step-report';
@@ -63,6 +63,7 @@ export const InvolvedPatronsSection: React.FC<InvolvedPatronsSectionProps> = ({
   errors,
   clearError,
 }) => {
+  const fileUrl = useFileUrl();
   const knownPatrons = useMemo(
     () => patron.selected.filter((p) => !(p.is_unknown && p.is_new_unsaved)),
     [patron.selected],
@@ -260,7 +261,7 @@ export const InvolvedPatronsSection: React.FC<InvolvedPatronsSectionProps> = ({
                       <Avatar
                         src={
                           p.primary_photo_url
-                            ? uploadService.getFileUrl(p.primary_photo_url)
+                            ? fileUrl(p.primary_photo_url)
                             : undefined
                         }
                         sx={{ width: 32, height: 32, bgcolor: 'action.disabledBackground' }}

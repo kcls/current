@@ -21,7 +21,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
-import { uploadService } from '@core';
+import { useFileUrl } from '../../../../shared/hooks/use-file-url';
 import { patronApi } from '../../../../api/patrons';
 import type { PatronSearchResult } from '../../../../types';
 import { formatAlias } from '../../../../shared/utils/patron-utils';
@@ -41,6 +41,7 @@ export const SearchPatronStep: React.FC<SearchPatronStepProps> = ({
   selectedPrimary,
   onSelectPrimary,
 }) => {
+  const fileUrl = useFileUrl();
   const currentPatronId = Number(initialPatron.id);
 
   const [inputValue, setInputValue] = useState('');
@@ -174,7 +175,7 @@ export const SearchPatronStep: React.FC<SearchPatronStepProps> = ({
           >
             <CardContent sx={{ p: 0.5, '&:last-child': { pb: 0.5 } }}>
               <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
-                <Avatar src={initialPatron.primary_photo_url ? uploadService.getFileUrl(initialPatron.primary_photo_url) : undefined} sx={{ width: 36, height: 36 }}>
+                <Avatar src={initialPatron.primary_photo_url ? fileUrl(initialPatron.primary_photo_url) : undefined} sx={{ width: 36, height: 36 }}>
                   <PersonIcon fontSize="small" />
                 </Avatar>
                 <Typography variant="subtitle2">
@@ -231,7 +232,7 @@ export const SearchPatronStep: React.FC<SearchPatronStepProps> = ({
                   </Tooltip>
 
                   <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
-                    <Avatar src={selectedPatron.primary_photo_url ? uploadService.getFileUrl(selectedPatron.primary_photo_url) : undefined} sx={{ width: 36, height: 36 }}>
+                    <Avatar src={selectedPatron.primary_photo_url ? fileUrl(selectedPatron.primary_photo_url) : undefined} sx={{ width: 36, height: 36 }}>
                       <PersonIcon fontSize="small" />
                     </Avatar>
                     <Typography
@@ -276,7 +277,7 @@ export const SearchPatronStep: React.FC<SearchPatronStepProps> = ({
                     return (
                       <li key={key} {...otherProps}>
                         <Box display="flex" alignItems="center" gap={1.5} width="100%">
-                          <Avatar src={option.primary_photo_url ? uploadService.getFileUrl(option.primary_photo_url) : undefined} sx={{ width: 32, height: 32 }}>
+                          <Avatar src={option.primary_photo_url ? fileUrl(option.primary_photo_url) : undefined} sx={{ width: 32, height: 32 }}>
                             <PersonIcon fontSize="small" />
                           </Avatar>
                           <Box flex={1} minWidth={0}>

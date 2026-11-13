@@ -974,6 +974,8 @@ pub async fn create_ban(
         .permission_required_uuid("current.ban.write", Some(&params.org_unit))
         .await?;
 
+    crate::incidents::ensure_not_followup(&state.db, params.incident).await?;
+
     let is_trespass = params.is_trespass.unwrap_or(false);
     let now: chrono::DateTime<chrono::FixedOffset> = chrono::Utc::now().into();
 
@@ -1903,6 +1905,10 @@ pub async fn extend_ban(
         .permission_required_uuid("current.ban.write", Some(&existing.org_unit))
         .await?;
 
+    if let Some(incident_id) = params.incident {
+        crate::incidents::ensure_not_followup(&state.db, incident_id).await?;
+    }
+
     let is_trespass = existing.is_trespass;
     let previous_lifts_at = existing.lifts_at;
     let org_unit = existing.org_unit;
@@ -2162,6 +2168,10 @@ pub async fn create_ban_letter(
         .auth_client
         .permission_required_uuid("current.ban.write", Some(&existing.org_unit))
         .await?;
+
+    if let Some(incident_id) = params.incident {
+        crate::incidents::ensure_not_followup(&state.db, incident_id).await?;
+    }
 
     let txn = state.db.begin().await?;
 

@@ -26,8 +26,10 @@ import {
   StickyNote2Outlined as NoteIcon,
   History as HistoryIcon,
   OpenInNew as OpenInNewIcon,
+  Reply as FollowupIcon,
+  Link as LinkedIcon,
 } from '@mui/icons-material';
-import { uploadService } from '@core';
+import { useFileUrl } from '../hooks/use-file-url';
 import type { ActivityLogEntry } from '../../types';
 import { formatTimestamp, formatBanDate } from '../utils/date-utils';
 
@@ -78,6 +80,8 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
   'ban.note':                            { label: 'Note Added',              icon: <NoteIcon sx={{ fontSize: 16 }} />,                 color: 'info'    },
   'incident.created':                    { label: 'Incident Report Created', icon: <IncidentCreatedIcon sx={{ fontSize: 16 }} />,      color: 'primary' },
   'incident.updated':                    { label: 'Incident Report Updated', icon: <IncidentUpdatedIcon sx={{ fontSize: 16 }} />,      color: 'grey'    },
+  'incident.followup_created':           { label: 'Follow-up Incident Created', icon: <FollowupIcon sx={{ fontSize: 16 }} />,     color: 'secondary' },
+  'incident.related_created':            { label: 'Related Incident Created', icon: <LinkedIcon sx={{ fontSize: 16 }} />,         color: 'secondary' },
   'incident.review.submitted':           { label: 'Review Submitted',    icon: <ReviewIcon sx={{ fontSize: 16 }} />,               color: 'info'    },
   'incident.review.approved':            { label: 'Review Approved',     icon: <ApprovedIcon sx={{ fontSize: 16 }} />,             color: 'success' },
   'incident.review.returned':            { label: 'Review Returned',     icon: <ReturnedIcon sx={{ fontSize: 16 }} />,             color: 'error'   },
@@ -101,6 +105,7 @@ const FIELD_LABELS: Record<string, string> = {
   case_number:            'Case #',
   law_enforcement_agency: 'Agency',
   comments:               'Comments',
+  linked_incident_id:     'Incident #',
 };
 
 const DATE_FIELDS = new Set(['starts_at', 'lifts_at', 'archives_at']);
@@ -141,6 +146,7 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
   showIncidentLink,
   onViewLetter,
 }) => {
+  const fileUrl = useFileUrl();
   const { label, icon, color } = getEventConfig(entry.event_type);
   const data = entry.event_data ?? {};
 
@@ -165,7 +171,17 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
     }
   } else if (!SKIP_FLAT_DISPLAY.has(entry.event_type)) {
     for (const [field, fieldLabel] of Object.entries(FIELD_LABELS)) {
-      if (data[field]) {
+      if (!data[field]) continue;
+      if (field === 'linked_incident_id') {
+        metaItems.push({
+          label: fieldLabel,
+          value: (
+            <Link component={RouterLink} to={`/incidents/${data[field]}`}>
+              {String(data[field])}
+            </Link>
+          ),
+        });
+      } else {
         metaItems.push({ label: fieldLabel, value: formatFieldValue(field, String(data[field])) });
       }
     }
@@ -263,11 +279,11 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
                         cursor: 'pointer',
                         '&:hover': { boxShadow: 3 },
                       }}
-                      onClick={() => window.open(uploadService.getFileUrl((file as any).relative_path), '_blank')}
+                      onClick={() => { const url = fileUrl((file as any).relative_path); if (url) window.open(url, '_blank'); }}
                     >
                       <Box
                         component="img"
-                        src={uploadService.getFileUrl((file as any).relative_path)}
+                        src={fileUrl((file as any).relative_path)}
                         alt={(file as any).original_name}
                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -283,7 +299,7 @@ const ActivityLogRow: React.FC<ActivityLogRowProps> = ({
                       sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, bgcolor: 'action.hover', borderRadius: 0.5 }}
                     >
                       <Chip label={(file as any).category} size="small" />
-                      <Link href={uploadService.getFileUrl((file as any).relative_path)} target="_blank" rel="noopener noreferrer" variant="caption">
+                      <Link href={fileUrl((file as any).relative_path)} target="_blank" rel="noopener noreferrer" variant="caption">
                         {(file as any).original_name}
                       </Link>
                     </Box>
