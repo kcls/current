@@ -2509,3 +2509,108 @@ async fn send_ban_notification(state: &AppState, params: BanNotificationParams) 
 
     Ok(())
 }
+
+/// Template sent when a ban or trespass follows its incident to another
+/// location. One template covers both kinds; `ban_type` says which.
+const BAN_MOVED_TEMPLATE: &str = "patron-ban-moved";
+
+pub(crate) struct BanMovedNotice<'a> {
+    pub ban: &'a patron_ban::Model,
+    /// The `ban.moved` activity row; keys the dedup so a later move of
+    /// the same ban is a new notice.
+    pub activity_log_id: i64,
+    pub from_org: Uuid,
+    pub to_org: Uuid,
+    pub from_label: &'a str,
+    pub to_label: &'a str,
+    pub moved_by: Option<&'a str>,
+}
+
+/// Tell the staff who hear about bans at the old location and at the new
+/// one that a ban moved. There's no routing of its own: recipients are
+/// the email groups routed for `patron-ban-created` (or
+/// `patron-trespass-created`) at either org, plus broadcast rows, each
+/// group once even when both orgs share a region group.
+pub(crate) async fn send_ban_moved_notification(
+    state: &AppState,
+    notice: BanMovedNotice<'_>,
+) -> LocalResult<()> {
+    let ban = notice.ban;
+    let (route_code, ban_type) = if ban.is_trespass {
+        ("patron-trespass-created", "Trespass")
+    } else {
+        ("patron-ban-created", "Ban")
+    };
+
+    let routes = notification_email_routing::Entity::find()
+        .filter(notification_email_routing::Column::TemplateCode.eq(route_code))
+        .filter(notification_email_routing::Column::IsActive.eq(true))
+        .filter(
+            Condition::any()
+                .add(
+                    notification_email_routing::Column::IncidentOrgUnit
+                        .is_in([notice.from_org, notice.to_org]),
+                )
+                .add(notification_email_routing::Column::IncidentOrgUnit.is_null()),
+        )
+        .all(&state.db)
+        .await?;
+    let groups: HashSet<Uuid> = routes.into_iter().map(|r| r.email_group).collect();
+
+    if groups.is_empty() {
+        tracing::warn!(
+            ban_id = ban.id,
+            "no email_groups configured for ban moved notification"
+        );
+        return Ok(());
+    }
+
+    let timezone = crate::review::fetch_org_label_and_timezone(state, notice.to_org)
+        .await
+        .1
+        .unwrap_or_else(|| "America/Los_Angeles".to_string());
+
+    let template_variables = serde_json::json!({
+        "ban_type": ban_type,
+        "ban_kind": ban_type.to_lowercase(),
+        "from_location": notice.from_label,
+        "to_location": notice.to_label,
+        "moved_by": notice.moved_by.unwrap_or("A staff member"),
+        "incident_id": ban.incident,
+        "lift_date": ban.lifts_at.to_rfc3339(),
+        "timezone": timezone,
+        "incident_url": format!("{}/incidents/{}", state.public_url, ban.incident),
+        "action_url": format!("/incidents/{}", ban.incident),
+    });
+
+    for group in groups {
+        let payload = serde_json::json!({
+            "recipients": [{
+                "type": "email_group",
+                "email_group_uuid": group,
+                "channels": ["email"],
+            }],
+            "template_code": BAN_MOVED_TEMPLATE,
+            "template_variables": template_variables,
+            "source_service": "current",
+            "source_entity_type": ban_type.to_lowercase(),
+            "source_entity_id": ban.id,
+            "dedup_key": format!("ban-moved:{}:{}:{group}", ban.id, notice.activity_log_id),
+        });
+
+        if let Err(e) = state
+            .notify_client
+            .post::<serde_json::Value, _>("/api/v1/odo/notify/enqueue", &payload)
+            .await
+        {
+            tracing::warn!(
+                ban_id = ban.id,
+                email_group = %group,
+                error = %e,
+                "ban moved notification enqueue failed",
+            );
+        }
+    }
+
+    Ok(())
+}

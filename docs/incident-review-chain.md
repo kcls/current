@@ -103,6 +103,24 @@ groups doesn't invalidate anything already in flight:
 | Empty out a level's group | Higher-level reviewers can still act on its incidents |
 | Remove levels | Blocked while incidents are waiting at those levels — resolve them first |
 
+## Moving an incident to another location
+
+Changing an incident's location on the edit page moves it into the new
+location's chain. Because review follows the level number and chains
+differ per location, what happens depends on where it stands:
+
+| State | Effect of the move |
+|-------|--------------------|
+| Draft or returned | Moves; nothing else changes |
+| In review | Returned to draft (a `returned` entry explains the move); the reporter is notified and resubmits at the new location |
+| Resolved | Stays resolved; only a final reviewer at the **new** location (or an `incident-admin`) can move it |
+
+Bans and trespasses created on the incident move with it. Their existing
+letters are kept, since patrons may hold a printed copy, but they name the
+old location, so staff are prompted to generate new ones. Staff routed for
+ban notices at both locations get a "location changed" email. Follow-ups
+stay where they are; each can be moved on its own.
+
 ## Common questions
 
 | Question | Answer |

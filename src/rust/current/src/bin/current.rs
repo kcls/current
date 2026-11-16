@@ -50,6 +50,7 @@ use utoipa::OpenApi;
         incidents::create_incident,
         incidents::create_followup,
         incidents::update_incident,
+        incidents::move_incident,
         bans::list_ban_letter_templates,
         bans::get_ban_details,
         bans::get_ban_activity,
@@ -402,6 +403,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/v1/current/incident/update",
             post(incidents::update_incident),
+        )
+        .route(
+            "/api/v1/current/incident/move",
+            post(incidents::move_incident),
         )
         .route(
             "/api/v1/current/ban/letter/template/list",

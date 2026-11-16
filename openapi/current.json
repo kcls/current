@@ -704,6 +704,41 @@
         ]
       }
     },
+    "/api/v1/current/incident/move": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "operationId": "move_incident",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveIncidentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Moved incident, whether it was returned to draft, and the bans moved with it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveIncidentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/current/incident/pending-reviews": {
       "post": {
         "tags": [
@@ -5379,6 +5414,88 @@
           "resolution": {
             "type": "string",
             "description": "\"primary\" or \"secondary\"; informational only — the actual\ntrespasses to lift are listed in `lift_ban_ids`."
+          }
+        }
+      },
+      "MoveIncidentRequest": {
+        "type": "object",
+        "description": "Moves an incident to another org unit. Kept out of `incident/update`\non purpose: a move needs write rights at both ends, interacts with the\nreview chain (chains are per location), and carries the incident's\nbans and trespasses along with it.",
+        "required": [
+          "id",
+          "org_unit"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "org_unit": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Destination org unit."
+          },
+          "sub_location": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Sub-location at the destination; must belong to `org_unit` or one\nof its ancestors. Omitted clears it, since sub-locations are per\norg unit."
+          }
+        }
+      },
+      "MoveIncidentResponse": {
+        "type": "object",
+        "required": [
+          "incident",
+          "previous_org_unit",
+          "returned_to_draft",
+          "moved_bans"
+        ],
+        "properties": {
+          "incident": {
+            "$ref": "#/components/schemas/UpdateIncidentResponse"
+          },
+          "moved_bans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovedBanResponse"
+            },
+            "description": "Bans and trespasses created on this incident, now at the new org\nunit. Their existing letters are untouched and still name the old\nlocation."
+          },
+          "previous_org_unit": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "returned_to_draft": {
+            "type": "boolean",
+            "description": "The incident was in review at the old location and has been\nreturned to draft; it must be resubmitted into the new location's\nreview chain."
+          }
+        }
+      },
+      "MovedBanResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "patron",
+          "is_trespass",
+          "is_archived"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "description": "Past its archive date. Archived bans move too, so the record stays\nconsistent, but nobody is notified and no new letter is suggested."
+          },
+          "is_trespass": {
+            "type": "boolean"
+          },
+          "patron": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

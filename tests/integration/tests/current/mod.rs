@@ -1,6 +1,7 @@
 mod bans;
 mod categories;
 mod incident_links;
+mod incident_move;
 mod incidents;
 mod patrons;
 mod reports;

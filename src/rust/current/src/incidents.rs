@@ -15,7 +15,7 @@ use utoipa::ToSchema;
 
 use crate::AppState;
 use crate::entity::{
-    activity_log, attachments, external_link, external_link_type, incident_links,
+    activity_log, attachments, external_link, external_link_type, incident_links, incident_review,
     incident_template_map, incidents, involved_parties, patron_ban, patrons, sub_locations,
 };
 use crate::review::{self, ReviewActionFlags};
@@ -1217,6 +1217,7 @@ const INCIDENT_ACTIVITY_EVENT_TYPES: &[&str] = &[
     // Logged on the source by `insert_incident_link`.
     "incident.related_created",
     "incident.followup_created",
+    "incident.moved",
     // Ban events otherwise live on the ban's own activity view, but a
     // purged ban has no surviving row — the originating incident is the
     // only place its purge audit entry can surface.
@@ -1877,6 +1878,29 @@ async fn insert_incident_link<C: ConnectionTrait>(
     Ok(())
 }
 
+/// Same visibility rule as sub-location/list: a sub-location defined on the
+/// org unit itself or on one of its ancestors, and not deleted.
+async fn ensure_sub_location_visible(
+    state: &AppState,
+    org_unit: Uuid,
+    sub_location: i32,
+) -> LocalResult<()> {
+    let visible_orgs = state.org_client.ancestor_uuids(&org_unit).await?;
+    let valid = sub_locations::Entity::find_by_id(sub_location)
+        .filter(sub_locations::Column::OrgUnit.is_in(visible_orgs))
+        .filter(sub_locations::Column::DeletedAt.is_null())
+        .one(&state.db)
+        .await?
+        .is_some();
+    if valid {
+        Ok(())
+    } else {
+        Err(LocalError::invalid_input(format!(
+            "sub-location {sub_location} does not belong to the incident's org unit"
+        )))
+    }
+}
+
 /// A follow-up's templates and sub-location (always empty) come from its
 /// source and cannot be edited. Values equal to the current ones are
 /// accepted, since the edit form sends them back on every save.
@@ -2075,8 +2099,8 @@ pub struct UpdateIncidentRequest {
     // incident to an org they had no write rights on — and any
     // subsequent reviewer/permission checks at the new org would then
     // pass or fail according to *that* org's rules. We drop the field
-    // entirely; org moves should require their own gated endpoint
-    // (currently none) rather than riding inside a generic edit.
+    // entirely; org moves go through `incident/move`, which checks both
+    // ends and handles review state and linked bans.
     /// One-way latch: setting `true` resolves an unresolved incident
     /// (sets `resolved_at` + `resolved_by`). `false` does nothing — to
     /// reopen, use `incident.review.create` with `result: "reopened"`,
@@ -2341,9 +2365,364 @@ pub async fn update_incident(
     Ok(Json(updated.into()))
 }
 
+// ===========================================================================
+// move_incident
+// ===========================================================================
+
+/// Moves an incident to another org unit. Kept out of `incident/update`
+/// on purpose: a move needs write rights at both ends, interacts with the
+/// review chain (chains are per location), and carries the incident's
+/// bans and trespasses along with it.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct MoveIncidentRequest {
+    pub id: i32,
+    /// Destination org unit.
+    pub org_unit: Uuid,
+    /// Sub-location at the destination; must belong to `org_unit` or one
+    /// of its ancestors. Omitted clears it, since sub-locations are per
+    /// org unit.
+    #[serde(default)]
+    pub sub_location: Option<i32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MovedBanResponse {
+    pub id: i32,
+    pub patron: i32,
+    pub is_trespass: bool,
+    /// Past its archive date. Archived bans move too, so the record stays
+    /// consistent, but nobody is notified and no new letter is suggested.
+    pub is_archived: bool,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MoveIncidentResponse {
+    pub incident: UpdateIncidentResponse,
+    pub previous_org_unit: Uuid,
+    /// The incident was in review at the old location and has been
+    /// returned to draft; it must be resubmitted into the new location's
+    /// review chain.
+    pub returned_to_draft: bool,
+    /// Bans and trespasses created on this incident, now at the new org
+    /// unit. Their existing letters are untouched and still name the old
+    /// location.
+    pub moved_bans: Vec<MovedBanResponse>,
+}
+
+/// Where an incident stands in review, as far as a move is concerned.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MoveReviewState {
+    /// Never submitted, or returned to the reporter: nothing to undo.
+    Draft,
+    /// Waiting somewhere in the old location's chain.
+    InReview,
+    Resolved,
+}
+
+fn move_review_state(
+    incident: &incidents::Model,
+    latest: Option<review::ReviewResult>,
+    latest_level: Option<i32>,
+) -> MoveReviewState {
+    if incident.resolved_at.is_some() {
+        return MoveReviewState::Resolved;
+    }
+    match latest {
+        None | Some(review::ReviewResult::Returned) => MoveReviewState::Draft,
+        Some(_) if latest_level.unwrap_or(0) == 0 => MoveReviewState::Draft,
+        Some(_) => MoveReviewState::InReview,
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/current/incident/move",
+    request_body = MoveIncidentRequest,
+    responses((
+        status = 200,
+        body = MoveIncidentResponse,
+        description = "Moved incident, whether it was returned to draft, and the bans moved with it"
+    )),
+    security(("bearer" = [])),
+    tag = "incidents"
+)]
+pub async fn move_incident(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<MoveIncidentRequest>,
+) -> ApiResult<Json<MoveIncidentResponse>> {
+    let user_id = RequestContext::user_uuid().ok_or(LocalError::unauthenticated())?;
+
+    let existing = load_incident(&state.db, params.id).await?;
+    let from_org = existing.org_unit;
+    let to_org = params.org_unit;
+
+    if from_org == to_org {
+        return Err(LocalError::invalid_input("incident is already at that location").into());
+    }
+
+    // Write rights at both ends: otherwise a source-only writer could push
+    // an incident into an org they have no rights at.
+    for org in [&from_org, &to_org] {
+        state
+            .auth_client
+            .permission_required_uuid("current.incident.write", Some(org))
+            .await?;
+    }
+
+    // Unlike the usual best-effort label lookups, the destination must
+    // resolve: an unknown uuid (or odo-org being down) fails the move.
+    let to_label = state
+        .org_client
+        .get_unit_detail_by_uuid(&to_org)
+        .await?
+        .get("org_unit")
+        .and_then(|u| u.get("label"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
+        .unwrap_or_else(|| to_org.to_string());
+    let from_label = fetch_org_label(&state, from_org)
+        .await
+        .unwrap_or_else(|| from_org.to_string());
+
+    if let Some(sl) = params.sub_location {
+        if followup_source_id(&state.db, params.id).await?.is_some() {
+            return Err(
+                LocalError::invalid_input("a follow-up incident has no sub-location").into(),
+            );
+        }
+        ensure_sub_location_visible(&state, to_org, sl).await?;
+    }
+
+    let (latest_level, latest_result) = review::current_review_level(&state.db, params.id).await?;
+    let review_state = move_review_state(&existing, latest_result, latest_level);
+
+    // A resolved incident was closed under the old location's chain. Moving
+    // it keeps it closed, so require closing authority at the destination.
+    if review_state == MoveReviewState::Resolved
+        && !review::is_user_final_reviewer(&state, to_org, user_id).await?
+    {
+        return Err(LocalError::permission_denied("current.review", None).into());
+    }
+
+    // Only bans created on this incident move. A ban that this incident
+    // merely extended belongs to another incident and stays put.
+    let bans = patron_ban::Entity::find()
+        .filter(patron_ban::Column::Incident.eq(params.id))
+        .all(&state.db)
+        .await?;
+    if !bans.is_empty() {
+        for org in [&from_org, &to_org] {
+            state
+                .auth_client
+                .permission_required_uuid("current.ban.write", Some(org))
+                .await?;
+        }
+    }
+
+    tracing::info!(
+        incident_id = params.id,
+        %from_org,
+        %to_org,
+        ?review_state,
+        bans = bans.len(),
+        "MoveIncident"
+    );
+
+    let now: chrono::DateTime<chrono::FixedOffset> = chrono::Utc::now().into();
+    let previous_sub_location = existing.sub_location;
+    let txn = state.db.begin().await?;
+
+    let mut active: incidents::ActiveModel = existing.into();
+    active.org_unit = Set(to_org);
+    active.sub_location = Set(params.sub_location);
+    active.updated_at = Set(Some(now));
+    let updated = active.update(&txn).await?;
+
+    // The old chain's level number means nothing in the new chain (it may
+    // have fewer levels, or none), so pull the incident back to draft.
+    let returned_review_id = if review_state == MoveReviewState::InReview {
+        let comment =
+            format!("Moved from {from_label} to {to_label}; resubmit for review at {to_label}.");
+        let row = incident_review::ActiveModel {
+            incident: Set(params.id),
+            reviewed_by: Set(user_id),
+            result: Set(review::ReviewResult::Returned.as_str().to_string()),
+            min_review_level: Set(0),
+            comments: Set(Some(comment.clone())),
+            ..Default::default()
+        }
+        .insert(&txn)
+        .await?;
+        activity_log::ActiveModel {
+            event_type: Set("incident.review.returned".to_string()),
+            actor_id: Set(user_id),
+            org_unit: Set(Some(to_org)),
+            incident_id: Set(Some(params.id)),
+            event_data: Set(serde_json::json!({ "comments": comment })),
+            ..Default::default()
+        }
+        .insert(&txn)
+        .await?;
+        Some(row.id)
+    } else {
+        None
+    };
+
+    activity_log::ActiveModel {
+        event_type: Set("incident.moved".to_string()),
+        actor_id: Set(user_id),
+        org_unit: Set(Some(to_org)),
+        incident_id: Set(Some(params.id)),
+        event_data: Set(serde_json::json!({
+            "from_location": from_label,
+            "to_location": to_label,
+            "from_org_unit": from_org,
+            "to_org_unit": to_org,
+            "from_sub_location": previous_sub_location,
+            "to_sub_location": params.sub_location,
+            "returned_to_draft": returned_review_id.is_some(),
+        })),
+        ..Default::default()
+    }
+    .insert(&txn)
+    .await?;
+
+    let mut moved = Vec::with_capacity(bans.len());
+    for ban in bans {
+        let ban_from = ban.org_unit;
+        let mut active: patron_ban::ActiveModel = ban.into();
+        active.org_unit = Set(to_org);
+        active.updated_by = Set(user_id);
+        active.updated_at = Set(now);
+        let ban = active.update(&txn).await?;
+        let log_id = activity_log::ActiveModel {
+            event_type: Set("ban.moved".to_string()),
+            actor_id: Set(user_id),
+            org_unit: Set(Some(to_org)),
+            incident_id: Set(Some(params.id)),
+            ban_id: Set(Some(ban.id)),
+            event_data: Set(serde_json::json!({
+                "from_location": from_label,
+                "to_location": to_label,
+                "from_org_unit": ban_from,
+                "to_org_unit": to_org,
+            })),
+            ..Default::default()
+        }
+        .insert(&txn)
+        .await?
+        .id;
+        moved.push((ban, log_id));
+    }
+
+    txn.commit().await?;
+
+    // Post-commit, best-effort fan-out, same as review and ban notices.
+    if let Some(review_id) = returned_review_id
+        && let Err(e) = review::send_review_notifications(
+            &state,
+            &updated,
+            0,
+            user_id,
+            review_id,
+            &review::ReviewResult::Returned,
+        )
+        .await
+    {
+        tracing::error!(incident_id = params.id, error = %e, "move: returned notification failed");
+    }
+
+    let moved_bans: Vec<MovedBanResponse> = moved
+        .iter()
+        .map(|(ban, _)| MovedBanResponse {
+            id: ban.id,
+            patron: ban.patron,
+            is_trespass: ban.is_trespass,
+            is_archived: ban.archives_at.is_some_and(|a| a <= now),
+        })
+        .collect();
+
+    let actor_name = fetch_user_display_name(&state, user_id).await;
+    for ((ban, log_id), summary) in moved.iter().zip(&moved_bans) {
+        if summary.is_archived {
+            continue;
+        }
+        let notice = crate::bans::BanMovedNotice {
+            ban,
+            activity_log_id: *log_id,
+            from_org,
+            to_org,
+            from_label: &from_label,
+            to_label: &to_label,
+            moved_by: actor_name.as_deref(),
+        };
+        if let Err(e) = crate::bans::send_ban_moved_notification(&state, notice).await {
+            tracing::error!(ban_id = ban.id, error = %e, "move: ban notification failed");
+        }
+    }
+
+    Ok(Json(MoveIncidentResponse {
+        incident: updated.into(),
+        previous_org_unit: from_org,
+        returned_to_draft: returned_review_id.is_some(),
+        moved_bans,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn incident(resolved: bool) -> incidents::Model {
+        let now: chrono::DateTime<chrono::FixedOffset> = chrono::Utc::now().into();
+        incidents::Model {
+            id: 1,
+            sub_location: None,
+            title: "t".into(),
+            description: None,
+            metadata: None,
+            custom_fields: None,
+            ai_analysis: None,
+            emergency_capture: None,
+            created_at: Some(now),
+            updated_at: Some(now),
+            resolved_at: resolved.then_some(now),
+            deleted_at: None,
+            called_emergency: None,
+            occurred_at: now,
+            org_unit: Uuid::nil(),
+            created_by: Uuid::nil(),
+            resolved_by: None,
+        }
+    }
+
+    #[test]
+    fn move_review_state_classifies_review_progress() {
+        use review::ReviewResult::*;
+        let open = incident(false);
+        assert_eq!(move_review_state(&open, None, None), MoveReviewState::Draft);
+        assert_eq!(
+            move_review_state(&open, Some(Returned), Some(0)),
+            MoveReviewState::Draft
+        );
+        for r in [Submitted, Approved, ApprovedWithEdits, Reopened] {
+            assert_eq!(
+                move_review_state(&open, Some(r), Some(1)),
+                MoveReviewState::InReview
+            );
+        }
+        assert_eq!(
+            move_review_state(&open, Some(Approved), Some(3)),
+            MoveReviewState::InReview
+        );
+        // A resolved incident is resolved whatever its last review row says
+        // (auto-resolution can leave "submitted" as the latest result).
+        let closed = incident(true);
+        assert_eq!(
+            move_review_state(&closed, Some(Submitted), Some(2)),
+            MoveReviewState::Resolved
+        );
+    }
 
     #[test]
     fn incident_sort_column_maps_to_orm_columns() {

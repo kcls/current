@@ -1967,7 +1967,7 @@ async fn log_review_activity<C: ConnectionTrait>(
 /// via the `dedup_key`. Failures fan out to a warning log per recipient
 /// rather than short-circuiting; one unreachable target shouldn't
 /// silence the rest.
-async fn send_review_notifications(
+pub(crate) async fn send_review_notifications(
     state: &AppState,
     incident: &incidents::Model,
     next_level: i32,
