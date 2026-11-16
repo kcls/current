@@ -122,6 +122,8 @@ interface StepReportProps {
   setExternalLinks: React.Dispatch<React.SetStateAction<ExternalLinkFormData[]>>;
   onNext: () => void;
   onSaveReport?: () => void;
+  /** Label for the Save Report button (default "Save Report"). */
+  saveReportLabel?: string;
   hasReviewChain: boolean | null;
   onSubmitForReview?: () => void;
   onSaveAndBan?: () => void;
@@ -149,6 +151,7 @@ export const StepReport: React.FC<StepReportProps> = ({
   setExternalLinks,
   onNext,
   onSaveReport,
+  saveReportLabel = 'Save Report',
   onSaveAndBan,
 }) => {
   return (
@@ -413,7 +416,7 @@ export const StepReport: React.FC<StepReportProps> = ({
             disabled={isSubmitting}
             startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />}
           >
-            {isSubmitting ? 'Saving...' : 'Save Report'}
+            {isSubmitting ? 'Saving...' : saveReportLabel}
           </Button>
         )}
         {/* In edit mode, show Save & Ban; otherwise show Next */}
