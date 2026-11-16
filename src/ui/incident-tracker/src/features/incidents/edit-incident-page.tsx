@@ -252,7 +252,7 @@ const EditIncidentPage: React.FC = () => {
         open={letterPrompt !== null}
         bans={letterPrompt?.bans ?? []}
         locationName={form.locationName || 'the new location'}
-        onGenerate={(banId) => navigate(`/bans/${banId}/edit`)}
+        onGenerate={(banId) => navigate(`/bans/${banId}/edit`, { state: { regenerateLetter: true } })}
         onSkip={() => letterPrompt && navigate(letterPrompt.navigateTo)}
       />
     </PageContainer>

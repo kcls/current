@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Paper } from '@mui/material';
+import { Alert, Paper } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import { PageContainer } from '../../shared/components/layout';
 import { Breadcrumbs } from '../../shared/components/breadcrumbs';
@@ -38,6 +38,14 @@ const EditBanPage: React.FC = () => {
   const [patronDetailsMap, setPatronDetailsMap] = useState<Record<string, PatronDetails>>({});
   const [availablePatrons, setAvailablePatrons] = useState<AvailablePatron[]>([]);
   const [existingBan, setExistingBan] = useState<any>(null);
+
+  // Set by the post-move letter prompt: the saved letter names the old
+  // location, so rebuild it from the template once the page has loaded.
+  const regenerateRequested = Boolean(
+    (location.state as { regenerateLetter?: boolean } | null)?.regenerateLetter,
+  );
+  const regenerateHandled = useRef(false);
+  const [regenerateOutcome, setRegenerateOutcome] = useState<'done' | 'no_letter' | null>(null);
 
   const form = useBanForm({
     templates,
@@ -132,6 +140,22 @@ const EditBanPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!regenerateRequested || regenerateHandled.current || loading || !incident) return;
+    const pid = form.currentPatronId;
+    if (!pid) return;
+    regenerateHandled.current = true;
+    const template = templates.find((t) => t.id === form.currentFormData.ban_letter_template);
+    if (!template) {
+      setRegenerateOutcome('no_letter');
+      return;
+    }
+    const content = form.buildLetterContent(template, incident, patronDetailsMap[pid]);
+    form.updatePatronData(pid, { ban_letter_content: content });
+    form.setHasEditedContentPerPatron((prev) => ({ ...prev, [pid]: false }));
+    setRegenerateOutcome('done');
+  }, [regenerateRequested, loading, incident, templates, patronDetailsMap, form]);
+
   const handleResetToTemplate = async () => {
     if (!form.currentPatronId || !form.currentFormData.ban_letter_template || !incident) return;
     const template = templates.find((t) => t.id === form.currentFormData.ban_letter_template);
@@ -210,6 +234,18 @@ const EditBanPage: React.FC = () => {
       />
 
       <Paper sx={{ p: 4 }}>
+        {regenerateOutcome === 'done' && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            The letter below was regenerated for {incident?.org_unit_name || 'the new location'}.
+            Review it, then save to file it alongside the earlier letter.
+          </Alert>
+        )}
+        {regenerateOutcome === 'no_letter' && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            This {existingBan?.is_trespass ? 'trespass' : 'ban'} has no letter on file to
+            regenerate.
+          </Alert>
+        )}
         <BanFormFields
           formData={form.currentFormData}
           errors={form.currentErrors}

@@ -44,8 +44,8 @@ export const BanLetterPromptDialog: React.FC<BanLetterPromptDialogProps> = ({
       <DialogContentText sx={{ mb: 1 }}>
         {bans.length === 1 ? 'This incident’s ban/trespass now applies' : 'This incident’s bans/trespasses now apply'}{' '}
         at {locationName}. Letters printed before the move are kept on file but still name the
-        previous location. For each patron, open the letter, click its refresh button
-        (<em>Regenerate letter from template</em>) to pick up the new location, then save.
+        previous location. Generating opens each letter rebuilt for the new location, ready to
+        review and save.
       </DialogContentText>
       <List dense>
         {bans.map((b) => (
