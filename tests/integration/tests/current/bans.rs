@@ -676,6 +676,53 @@ async fn edit_ban_updates_fields_and_logs_changes() {
     assert!(kinds.contains(&"ban.updated"));
 }
 
+/// The first letter issued through ban/edit is logged as generated; any
+/// later one as regenerated.
+#[tokio::test]
+async fn edit_ban_logs_first_letter_as_generated() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+    let (_inc, _patron, ban_id) = create_basic_ban(&c, &token, "ban-edit-first-letter", false).await;
+
+    let letter_events = async || -> Vec<String> {
+        let resp = c
+            .post(format!("{}/api/v1/current/ban/activity", current_base()))
+            .json(&json!({"ban_id": ban_id}))
+            .headers(auth_header(&token))
+            .send()
+            .await
+            .unwrap();
+        let body: serde_json::Value = resp.json().await.unwrap();
+        let mut kinds: Vec<String> = body["entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["event_type"].as_str())
+            .filter(|k| k.starts_with("ban.letter_"))
+            .map(str::to_string)
+            .collect();
+        kinds.sort();
+        kinds
+    };
+    assert!(letter_events().await.is_empty(), "fixture ban starts without a letter");
+
+    for content in ["<p>first</p>", "<p>second</p>"] {
+        let resp = c
+            .post(format!("{}/api/v1/current/ban/edit", current_base()))
+            .json(&json!({"ban_id": ban_id, "ban_letter_content": content}))
+            .headers(auth_header(&token))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), 200, "body: {:?}", resp.text().await);
+    }
+
+    assert_eq!(
+        letter_events().await,
+        vec!["ban.letter_generated", "ban.letter_regenerated"]
+    );
+}
+
 #[tokio::test]
 async fn edit_ban_ignores_org_unit_change() {
     // org_unit isn't a field on EditBanRequest; legacy payloads that

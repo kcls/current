@@ -1589,13 +1589,22 @@ pub async fn edit_ban(
         .await?;
     }
 
-    // Re-issue a ban letter against this ban: same activity-log linkage
-    // pattern as create, but tagged `ban.letter_regenerated` so the
-    // activity feed can distinguish "fresh ban" vs "letter reprint".
+    // Issue a letter against this ban: same activity-log linkage pattern as
+    // create. A reissue is tagged `ban.letter_regenerated` so the activity
+    // feed can tell a reprint from the ban's first letter.
     let ban_letter_id = if let Some(content) = params.ban_letter_content.as_ref() {
+        let has_letter = generated_ban_letter::Entity::find()
+            .filter(generated_ban_letter::Column::Ban.eq(params.ban_id))
+            .one(&txn)
+            .await?
+            .is_some();
         let letter_al_id = log_ban_activity(
             &txn,
-            "ban.letter_regenerated",
+            if has_letter {
+                "ban.letter_regenerated"
+            } else {
+                "ban.letter_generated"
+            },
             user_id,
             Some(org_unit_id),
             Some(incident_id),
