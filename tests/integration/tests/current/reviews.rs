@@ -1408,3 +1408,37 @@ async fn review_submit_escape_hatch_waives_account_steps() {
     .await;
     assert_eq!(resp.status(), 200, "escape hatch should waive account-dependent steps");
 }
+
+/// A trespass whose checklist was captured on first submission keeps that
+/// snapshot: after a return, resubmitting without procedures must not 400.
+#[tokio::test]
+async fn review_resubmit_keeps_captured_trespass_procedures() {
+    let c = client();
+    let staff_token = login_token(&c, &STAFF).await;
+    let manager_token = login_token(&c, &MANAGER).await;
+    let (incident_id, ban_id) =
+        create_incident_with_trespass(&c, &staff_token, "review-gate-resubmit").await;
+
+    let resp = submit_with_procedures(
+        &c,
+        &staff_token,
+        incident_id,
+        Some(json!({ ban_id.to_string(): completed_trespass_procedures() })),
+    )
+    .await;
+    assert_eq!(resp.status(), 200);
+    assert_eq!(
+        submit_review(&c, &manager_token, incident_id, "returned", None)
+            .await
+            .status(),
+        200
+    );
+
+    let resp = submit_with_procedures(&c, &staff_token, incident_id, None).await;
+    assert_eq!(
+        resp.status(),
+        200,
+        "resubmission should reuse the captured checklist; got {}",
+        resp.text().await.unwrap()
+    );
+}

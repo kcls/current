@@ -1621,10 +1621,11 @@ async fn batch_latest_reviews(
 ///
 /// Otherwise every active trespass ban on the incident must have a complete
 /// checklist in `params.trespass_procedures` (keyed by ban id); an incomplete
-/// or missing one is a 400 naming the gaps. Trespasses already past their
-/// first submission (their bans already carry a snapshot) are re-validated
-/// against whatever the caller sends -- the dialog only fires when a snapshot
-/// is absent, so in practice this bites once per trespass.
+/// or missing one is a 400 naming the gaps. A ban that already carries a
+/// snapshot (captured on an earlier submission) keeps it when the caller
+/// sends nothing for it -- the UI only prompts when the snapshot is absent,
+/// so a resubmission after a return would otherwise always 400. A checklist
+/// sent for such a ban is validated and replaces the snapshot.
 async fn gate_trespass_procedures(
     state: &AppState,
     incident: &incidents::Model,
@@ -1657,6 +1658,9 @@ async fn gate_trespass_procedures(
             .trespass_procedures
             .as_ref()
             .and_then(|m| m.get(&ban.id.to_string()));
+        if submitted.is_none() && ban.trespass_procedures.is_some() {
+            continue;
+        }
         // validate_and_snapshot 400s (naming missing steps) when submitted
         // is None or incomplete.
         let snapshot = crate::trespass_procedures::validate_and_snapshot(&state.db, submitted)
