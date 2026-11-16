@@ -7,6 +7,20 @@ import type { Incident, IncidentFormData } from '../types';
 import type { ExternalLinkFormData } from '../features/incidents/components/external-link-dialog';
 import { currentPost } from './client';
 
+/** A ban or trespass that moved along with its incident. */
+export interface MovedBan {
+  id: number;
+  patron: number;
+  is_trespass: boolean;
+  is_archived: boolean;
+}
+
+export interface MoveIncidentResult {
+  previous_org_unit: string;
+  returned_to_draft: boolean;
+  moved_bans: MovedBan[];
+}
+
 type ModelInstance = Record<string, any>;
 
 const getOrgUnitLabel = (instance: ModelInstance): string | undefined => {
@@ -383,11 +397,8 @@ export const incidentApi = {
   /**
    * Update an incident.
    *
-   * Note: org_unit is intentionally not editable through this endpoint.
-   * The `current` backend silently ignores any `org_unit` field on
-   * `updates` — moving an incident across orgs would otherwise let a
-   * caller relocate work under permissions checked at the source org
-   * (an issue in the legacy endpoint).
+   * Note: org_unit is intentionally not editable through this endpoint;
+   * the backend ignores any `org_unit` field on `updates`. Use `move`.
    */
   async update(
     id: string | number,
@@ -441,6 +452,24 @@ export const incidentApi = {
       throw new Error(`Failed to update incident ${id}`);
     }
     return transformToIncident(result);
+  },
+
+  /**
+   * Move an incident to another location. Separate from `update` because
+   * the backend checks write rights at both locations, returns an
+   * in-review incident to draft, and moves the incident's bans and
+   * trespasses with it.
+   */
+  async move(
+    id: string | number,
+    orgUnit: string,
+    subLocation: number | null,
+  ): Promise<MoveIncidentResult> {
+    return currentPost<MoveIncidentResult>('/incident/move', {
+      id: Number(id),
+      org_unit: orgUnit,
+      ...(subLocation != null && { sub_location: subLocation }),
+    });
   },
 
   /**

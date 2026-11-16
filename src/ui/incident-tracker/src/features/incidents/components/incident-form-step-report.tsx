@@ -104,6 +104,8 @@ interface StepReportProps {
   onInputChange: (field: keyof IncidentFormState, value: any) => void;
   clearError: (field: string) => void;
   isEditMode: boolean;
+  /** Edit mode: the incident's saved location (see LocationSection). */
+  originalOrgUnit?: string | null;
   /** Templates and sub-location are inherited from the source incident. */
   isFollowup?: boolean;
   isSubmitting: boolean;
@@ -131,6 +133,7 @@ export const StepReport: React.FC<StepReportProps> = ({
   onInputChange,
   clearError,
   isEditMode,
+  originalOrgUnit = null,
   isFollowup = false,
   isSubmitting,
   templates,
@@ -216,6 +219,7 @@ export const StepReport: React.FC<StepReportProps> = ({
           subLocations={subLocations}
           isLoadingSubLocations={isLoadingSubLocations}
           isEditMode={isEditMode}
+          originalOrgUnit={originalOrgUnit}
           subLocationLocked={isFollowup}
           errors={errors}
           onInputChange={onInputChange}

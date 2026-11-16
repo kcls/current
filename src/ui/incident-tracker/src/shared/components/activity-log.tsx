@@ -28,6 +28,7 @@ import {
   OpenInNew as OpenInNewIcon,
   Reply as FollowupIcon,
   Link as LinkedIcon,
+  MoveDown as MovedIcon,
 } from '@mui/icons-material';
 import { useFileUrl } from '../hooks/use-file-url';
 import type { ActivityLogEntry } from '../../types';
@@ -77,9 +78,11 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
   'ban.procedures_updated':              { label: 'Procedures Updated',       icon: <ProceduresIcon sx={{ fontSize: 16 }} />,           color: 'info'    },
   'ban.letter_generated':                { label: 'Letter Generated',         icon: <LetterIcon sx={{ fontSize: 16 }} />,               color: 'primary' },
   'ban.letter_regenerated':              { label: 'Letter Regenerated',       icon: <LetterIcon sx={{ fontSize: 16 }} />,               color: 'primary' },
+  'ban.moved':                           { label: 'Ban/Trespass Moved',       icon: <MovedIcon sx={{ fontSize: 16 }} />,                color: 'warning' },
   'ban.note':                            { label: 'Note Added',              icon: <NoteIcon sx={{ fontSize: 16 }} />,                 color: 'info'    },
   'incident.created':                    { label: 'Incident Report Created', icon: <IncidentCreatedIcon sx={{ fontSize: 16 }} />,      color: 'primary' },
   'incident.updated':                    { label: 'Incident Report Updated', icon: <IncidentUpdatedIcon sx={{ fontSize: 16 }} />,      color: 'grey'    },
+  'incident.moved':                      { label: 'Incident Location Changed', icon: <MovedIcon sx={{ fontSize: 16 }} />,              color: 'warning' },
   'incident.followup_created':           { label: 'Follow-up Incident Created', icon: <FollowupIcon sx={{ fontSize: 16 }} />,     color: 'secondary' },
   'incident.related_created':            { label: 'Related Incident Created', icon: <LinkedIcon sx={{ fontSize: 16 }} />,         color: 'secondary' },
   'incident.review.submitted':           { label: 'Review Submitted',    icon: <ReviewIcon sx={{ fontSize: 16 }} />,               color: 'info'    },
@@ -106,6 +109,8 @@ const FIELD_LABELS: Record<string, string> = {
   law_enforcement_agency: 'Agency',
   comments:               'Comments',
   linked_incident_id:     'Incident #',
+  from_location:          'From',
+  to_location:            'To',
 };
 
 const DATE_FIELDS = new Set(['starts_at', 'lifts_at', 'archives_at']);

@@ -8,6 +8,7 @@ import type { ExtendIntentData } from '../components/incident-form-step-ban-acti
 import type { IncidentFormState } from '../components/incident-form-step-report';
 import { bansApi } from '../../../api/bans';
 import { incidentApi } from '../../../api';
+import type { MoveIncidentResult } from '../../../api/incidents';
 import {
   preparePatronsForSubmit,
   buildInvolvedParties,
@@ -123,6 +124,8 @@ export interface SubmitIncidentResult {
    * any. The caller uses these to prompt for procedures before submitting
    * the incident for review. */
   createdTrespasses?: CreatedTrespass[];
+  /** Edit only: set when this save moved the incident to another location. */
+  move?: MoveIncidentResult;
 }
 
 /** Pair created ban ids with their intents (positional, matching
@@ -167,6 +170,15 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
   if (isEditMode && idStr) {
     if (!currentIncident) throw new Error('Failed to update incident: not loaded');
     const id = parseInt(idStr);
+
+    // Move first: the update below is authorized at the incident's current
+    // location, and a move can return the incident to draft, which the
+    // submit_for_review action then resubmits into the new location's chain.
+    let move: MoveIncidentResult | undefined;
+    if (formData.org_unit && formData.org_unit !== currentIncident.org_unit) {
+      move = await incidentApi.move(id, formData.org_unit, formData.sub_location);
+    }
+
     const incidentData = buildIncidentUpdateData({ formData, user, locationName, uploadedFiles });
     const { add, remove } = calculateInvolvedPartiesChanges({
       currentIncident,
@@ -199,6 +211,7 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
         incidentId: id,
         navigateTo: `/incidents/${id}`,
         successMessage: `Incident #${id} updated and submitted for review`,
+        move,
       };
     }
 
@@ -207,13 +220,17 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
         incidentId: id,
         navigateTo: `/incidents/${id}/create-ban`,
         successMessage: `Incident #${id} saved`,
+        move,
       };
     }
 
     return {
       incidentId: id,
       navigateTo: `/incidents/${id}`,
-      successMessage: `Incident #${id} updated successfully`,
+      successMessage: move?.returned_to_draft
+        ? `Incident #${id} moved and returned to draft; submit it for review at the new location`
+        : `Incident #${id} updated successfully`,
+      move,
     };
   }
 

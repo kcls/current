@@ -32,6 +32,8 @@ interface LocationSectionProps {
   subLocations: SubLocation[];
   isLoadingSubLocations: boolean;
   isEditMode: boolean;
+  /** Edit mode: the incident's saved location, to flag a pending move. */
+  originalOrgUnit?: string | null;
   /** Follow-ups never have a sub-location. */
   subLocationLocked?: boolean;
   errors: Record<string, string>;
@@ -47,6 +49,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
   subLocations,
   isLoadingSubLocations,
   isEditMode,
+  originalOrgUnit = null,
   subLocationLocked = false,
   errors,
   onInputChange,
@@ -64,12 +67,19 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
     });
   }, [availableLocationOptions, locationInputValue]);
 
+  const isMoving = isEditMode && !!originalOrgUnit && !!orgUnit && orgUnit !== originalOrgUnit;
+  const originalLabel = isMoving
+    ? (() => {
+        const loc = locations.find((l) => l.uuid === originalOrgUnit);
+        return loc ? loc.display_label || loc.label : 'its current location';
+      })()
+    : '';
+
   return (
     <Box sx={{ display: 'flex', gap: 2, mt: 1, mb: 2.5 }}>
       <Box sx={{ flex: 1 }}>
         <Autocomplete
           fullWidth
-          disabled={isEditMode}
           open={isLocationDropdownOpen}
           onOpen={() => setIsLocationDropdownOpen(true)}
           onClose={() => setIsLocationDropdownOpen(false)}
@@ -109,7 +119,14 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
               label="Location"
               required
               error={!!errors.org_unit}
-              helperText={errors.org_unit}
+              helperText={
+                errors.org_unit ||
+                (isMoving
+                  ? `Saving moves this incident from ${originalLabel}, along with its bans and trespasses. An incident in review goes back to draft.`
+                  : undefined)
+              }
+              color={isMoving ? 'warning' : undefined}
+              focused={isMoving || undefined}
               placeholder="Type to search for location..."
             />
           )}

@@ -13,7 +13,8 @@ import { StepReport } from './components/incident-form-step-report';
 import { useFileUpload } from './hooks/use-file-upload';
 import { useIncidentFormState } from './hooks/use-incident-form-state';
 import { useEditModePrefill } from './hooks/use-edit-mode-prefill';
-import { submitIncident } from './utils/incident-submit';
+import { submitIncident, type SubmitIncidentResult } from './utils/incident-submit';
+import { BanLetterPromptDialog, type BanNeedingLetter } from './components/ban-letter-prompt-dialog';
 import type { IncidentTemplate } from '../../types';
 
 const EditIncidentPage: React.FC = () => {
@@ -31,6 +32,10 @@ const EditIncidentPage: React.FC = () => {
   } = useIncidents();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [letterPrompt, setLetterPrompt] = useState<{
+    bans: BanNeedingLetter[];
+    navigateTo: string;
+  } | null>(null);
 
   const fileUpload = useFileUpload({ entityId: id, showError, showSuccess });
   // The context can still hold the previously viewed incident until the
@@ -104,13 +109,35 @@ const EditIncidentPage: React.FC = () => {
     showError,
   } as const);
 
+  // After a move, active bans/trespasses need letters naming the new
+  // location; offer that before leaving the page.
+  const finishSubmit = (result: SubmitIncidentResult) => {
+    showSuccess(result.successMessage);
+    const bans = (result.move?.moved_bans ?? [])
+      .filter((b) => !b.is_archived)
+      .map((b) => {
+        const party = loadedIncident?.involved_parties?.find(
+          (p) => String(p.patron_id) === String(b.patron),
+        );
+        return {
+          banId: b.id,
+          isTrespass: b.is_trespass,
+          patronName: party?.patron_display?.display_name || `Patron #${b.patron}`,
+        };
+      });
+    if (bans.length > 0) {
+      setLetterPrompt({ bans, navigateTo: result.navigateTo });
+    } else {
+      navigate(result.navigateTo);
+    }
+  };
+
   const handleSaveDraft = async () => {
     if (!form.validateStepReport()) return;
     setIsSubmitting(true);
     try {
       const result = await submitIncident(buildSubmitParams('save_draft'));
-      showSuccess(result.successMessage);
-      navigate(result.navigateTo);
+      finishSubmit(result);
     } catch (error: any) {
       showError(error.message || 'Failed to save incident');
     } finally {
@@ -123,8 +150,7 @@ const EditIncidentPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const result = await submitIncident(buildSubmitParams('submit_for_review'));
-      showSuccess(result.successMessage);
-      navigate(result.navigateTo);
+      finishSubmit(result);
     } catch (error: any) {
       showError(error.message || 'Failed to submit incident for review');
     } finally {
@@ -137,8 +163,7 @@ const EditIncidentPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const result = await submitIncident(buildSubmitParams('save_and_ban'));
-      showSuccess(result.successMessage);
-      navigate(result.navigateTo);
+      finishSubmit(result);
     } catch (error: any) {
       showError(error.message || 'Failed to save incident');
     } finally {
@@ -175,8 +200,8 @@ const EditIncidentPage: React.FC = () => {
               <Link component={RouterLink} to={`/incidents/${followupOf}`}>
                 Incident #{followupOf}
               </Link>
-              . Its location, templates and sub-location come from the original incident and
-              cannot be changed, and bans or trespasses cannot be added to it.
+              . Its templates and sub-location come from the original incident and cannot be
+              changed, and bans or trespasses cannot be added to it.
             </Alert>
           )}
           {relatedIds.length > 0 && (
@@ -201,6 +226,7 @@ const EditIncidentPage: React.FC = () => {
           onInputChange={form.handleInputChange}
           clearError={form.clearError}
           isEditMode
+          originalOrgUnit={loadedIncident?.org_unit ?? null}
           isFollowup={isFollowup}
           isSubmitting={isSubmitting}
           templates={form.templates}
@@ -221,6 +247,14 @@ const EditIncidentPage: React.FC = () => {
           onSaveAndBan={isFollowup ? undefined : handleSaveAndBan}
         />
       </Paper>
+
+      <BanLetterPromptDialog
+        open={letterPrompt !== null}
+        bans={letterPrompt?.bans ?? []}
+        locationName={form.locationName || 'the new location'}
+        onGenerate={(banId) => navigate(`/bans/${banId}/edit`)}
+        onSkip={() => letterPrompt && navigate(letterPrompt.navigateTo)}
+      />
     </PageContainer>
   );
 };
