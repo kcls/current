@@ -45,7 +45,12 @@ const EditBanPage: React.FC = () => {
     (location.state as { regenerateLetter?: boolean } | null)?.regenerateLetter,
   );
   const regenerateHandled = useRef(false);
-  const [regenerateOutcome, setRegenerateOutcome] = useState<'done' | 'no_letter' | null>(null);
+  const [regenerateOutcome, setRegenerateOutcome] = useState<
+    'regenerated' | 'drafted' | 'choose_template' | 'cannot_regenerate' | null
+  >(null);
+  // A saved letter keeps its template; a ban without one may pick a template
+  // here to generate its first letter.
+  const [hasSavedLetter, setHasSavedLetter] = useState(false);
 
   const form = useBanForm({
     templates,
@@ -80,6 +85,7 @@ const EditBanPage: React.FC = () => {
       setExistingBan(ban);
 
       const letter = details.letters?.[0] ?? null;
+      setHasSavedLetter(letter !== null);
       let letterContent = '';
       if (letter) {
         const letterData = await bansApi.getBanLetter(letter.id);
@@ -145,16 +151,27 @@ const EditBanPage: React.FC = () => {
     const pid = form.currentPatronId;
     if (!pid) return;
     regenerateHandled.current = true;
+    if (!hasSavedLetter) {
+      const isTrespass = form.currentFormData.is_trespass;
+      const fallback = templates.find((t) => t.is_default && t.is_trespass === isTrespass);
+      if (fallback) {
+        form.applyTemplateToCurrentPatron(fallback);
+        setRegenerateOutcome('drafted');
+      } else {
+        setRegenerateOutcome('choose_template');
+      }
+      return;
+    }
     const template = templates.find((t) => t.id === form.currentFormData.ban_letter_template);
     if (!template) {
-      setRegenerateOutcome('no_letter');
+      setRegenerateOutcome('cannot_regenerate');
       return;
     }
     const content = form.buildLetterContent(template, incident, patronDetailsMap[pid]);
     form.updatePatronData(pid, { ban_letter_content: content });
     form.setHasEditedContentPerPatron((prev) => ({ ...prev, [pid]: false }));
-    setRegenerateOutcome('done');
-  }, [regenerateRequested, loading, incident, templates, patronDetailsMap, form]);
+    setRegenerateOutcome('regenerated');
+  }, [regenerateRequested, loading, incident, templates, patronDetailsMap, hasSavedLetter, form]);
 
   const handleResetToTemplate = async () => {
     if (!form.currentPatronId || !form.currentFormData.ban_letter_template || !incident) return;
@@ -234,16 +251,29 @@ const EditBanPage: React.FC = () => {
       />
 
       <Paper sx={{ p: 4 }}>
-        {regenerateOutcome === 'done' && (
+        {regenerateOutcome === 'regenerated' && (
           <Alert severity="info" sx={{ mb: 3 }}>
             The letter below was regenerated for {incident?.org_unit_name || 'the new location'}.
             Review it, then save to file it alongside the earlier letter.
           </Alert>
         )}
-        {regenerateOutcome === 'no_letter' && (
+        {regenerateOutcome === 'drafted' && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            This {existingBan?.is_trespass ? 'trespass' : 'ban'} had no letter on file; one was
+            drafted from the default template for {incident?.org_unit_name || 'the new location'}.
+            Review it, then save.
+          </Alert>
+        )}
+        {regenerateOutcome === 'choose_template' && (
           <Alert severity="warning" sx={{ mb: 3 }}>
-            This {existingBan?.is_trespass ? 'trespass' : 'ban'} has no letter on file to
-            regenerate.
+            This {existingBan?.is_trespass ? 'trespass' : 'ban'} has no letter on file. Choose a
+            letter template below to generate one.
+          </Alert>
+        )}
+        {regenerateOutcome === 'cannot_regenerate' && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            The saved letter's template is no longer available, so it could not be regenerated.
+            Edit the letter below by hand.
           </Alert>
         )}
         <BanFormFields
@@ -260,7 +290,7 @@ const EditBanPage: React.FC = () => {
           errors={form.currentErrors}
           editorRef={form.editorRef}
           currentPatronId={form.currentPatronId}
-          onTemplateSelect={() => {}} // Template selector is disabled in edit mode
+          onTemplateSelect={form.applyTemplateToCurrentPatron}
           onResetToTemplate={handleResetToTemplate}
           onPrintPreview={handlePrintPreview}
           onContentEdited={(html) => {
@@ -272,7 +302,7 @@ const EditBanPage: React.FC = () => {
               }));
             }
           }}
-          templateDisabled
+          templateDisabled={hasSavedLetter}
           resetTooltip="Regenerate letter from template with latest patron and incident data"
         />
 

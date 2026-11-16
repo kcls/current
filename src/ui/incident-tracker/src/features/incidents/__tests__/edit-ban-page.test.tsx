@@ -32,12 +32,26 @@ vi.mock('../../../api/bans', () => ({
 // The real section renders the letter in an iframe editor; expose the
 // content as text instead.
 vi.mock('../components/ban-letter-section', () => ({
-  BanLetterSection: ({ formData }: { formData: { ban_letter_content: string } }) => (
-    <div data-testid="letter">{formData.ban_letter_content}</div>
+  BanLetterSection: ({
+    formData,
+    templateDisabled,
+  }: {
+    formData: { ban_letter_content: string };
+    templateDisabled?: boolean;
+  }) => (
+    <div data-testid="letter" data-template-disabled={String(!!templateDisabled)}>
+      {formData.ban_letter_content}
+    </div>
   ),
 }));
 
-const template = { id: 11, name: 'Standard', body: '<p>Banned from {{location_name}}</p>' };
+const template = {
+  id: 11,
+  subject: 'Standard',
+  body: '<p>Banned from {{location_name}}</p>',
+  is_trespass: false,
+  is_default: true,
+};
 
 const banDetails = (withLetter: boolean) => ({
   ban: {
@@ -71,7 +85,9 @@ describe('EditBanPage letter regeneration', () => {
   it('keeps the saved letter when opened normally', async () => {
     vi.mocked(bansApi.getBanDetails).mockResolvedValue(banDetails(true) as any);
     renderPage();
-    expect(await screen.findByTestId('letter')).toHaveTextContent('Main Street Branch');
+    const letter = await screen.findByTestId('letter');
+    expect(letter).toHaveTextContent('Main Street Branch');
+    expect(letter).toHaveAttribute('data-template-disabled', 'true');
     expect(screen.queryByText(/was regenerated/)).not.toBeInTheDocument();
   });
 
@@ -84,9 +100,27 @@ describe('EditBanPage letter regeneration', () => {
     expect(letter).not.toHaveTextContent('Main Street Branch');
   });
 
-  it('says so when there is no letter to regenerate', async () => {
+  it('lets a ban without a letter pick a template', async () => {
+    vi.mocked(bansApi.getBanDetails).mockResolvedValue(banDetails(false) as any);
+    renderPage();
+    const letter = await screen.findByTestId('letter');
+    expect(letter).toHaveAttribute('data-template-disabled', 'false');
+    expect(letter).toBeEmptyDOMElement();
+  });
+
+  it('drafts a first letter from the default template when sent from the move prompt', async () => {
     vi.mocked(bansApi.getBanDetails).mockResolvedValue(banDetails(false) as any);
     renderPage({ regenerateLetter: true });
-    expect(await screen.findByText(/no letter on file to regenerate/)).toBeInTheDocument();
+    expect(await screen.findByText(/drafted from the default template/)).toBeInTheDocument();
+    expect(screen.getByTestId('letter')).toHaveTextContent('Hilltop Branch');
+  });
+
+  it('asks for a template when there is no letter and no default', async () => {
+    vi.mocked(bansApi.getBanLetterTemplates).mockResolvedValue([
+      { ...template, is_default: false },
+    ] as any);
+    vi.mocked(bansApi.getBanDetails).mockResolvedValue(banDetails(false) as any);
+    renderPage({ regenerateLetter: true });
+    expect(await screen.findByText(/Choose a\s+letter template/)).toBeInTheDocument();
   });
 });
