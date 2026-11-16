@@ -1501,6 +1501,9 @@ pub async fn create_incident(
     if let Some(ids) = params.attachment_file_upload_ids.as_ref() {
         validate_attachment_ids(&state, user_id, ids).await?;
     }
+    if let Some(sl) = params.sub_location {
+        ensure_sub_location_visible(&state, params.org_unit, sl).await?;
+    }
 
     let related = match params.related_incident_id {
         Some(related_id) => {
@@ -2231,6 +2234,14 @@ pub async fn update_incident(
     }
 
     ensure_followup_fields_unchanged(&state.db, &existing, &params).await?;
+    // Only a changed value is checked: the form echoes the current one on
+    // every save, and it may since have been deleted.
+    if let Some(sl) = params
+        .sub_location
+        .filter(|sl| Some(*sl) != existing.sub_location)
+    {
+        ensure_sub_location_visible(&state, org_unit, sl).await?;
+    }
 
     let now: chrono::DateTime<chrono::FixedOffset> = chrono::Utc::now().into();
     let was_resolved = existing.resolved_at.is_some();

@@ -204,7 +204,76 @@ async fn move_rejects_sub_location_not_visible_at_destination() {
     assert_eq!(resp.status(), 400);
 }
 
+// --- sub-location validation on create/update (same rule as move) ---
+
 const MISSING_SUB_LOCATION: i64 = 2_000_000_000;
+
+#[tokio::test]
+async fn create_rejects_unknown_sub_location() {
+    let c = client();
+    let token = login_token(&c, &STAFF).await;
+    let resp = post(
+        &c,
+        &token,
+        "incident/create",
+        json!({
+            "org_unit": unit_by_code("MAIN").await,
+            "title": "create-bad-sub-location",
+            "description": "x",
+            "sub_location": MISSING_SUB_LOCATION,
+        }),
+    )
+    .await;
+    assert_eq!(resp.status(), 400);
+}
+
+#[tokio::test]
+async fn update_validates_changed_sub_location_only() {
+    let c = client();
+    let token = login_token(&c, &STAFF).await;
+    let (id, _) = create_incident(&c, &token, "update-sub-location").await;
+
+    let resp = post(
+        &c,
+        &token,
+        "incident/update",
+        json!({"id": id, "sub_location": MISSING_SUB_LOCATION}),
+    )
+    .await;
+    assert_eq!(resp.status(), 400);
+    assert!(get_incident(&c, &token, id).await["sub_location"].is_null());
+
+    // Inherited from an ancestor is visible, so it is accepted, and the
+    // form echoing the same value back on the next save is too.
+    let subs = post_ok(
+        &c,
+        &token,
+        "sub-location/list",
+        json!({"org_unit": unit_by_code("MAIN").await}),
+    )
+    .await;
+    let sl = subs[0]["id"]
+        .as_i64()
+        .expect("a sub-location visible at MAIN");
+    post_ok(
+        &c,
+        &token,
+        "incident/update",
+        json!({"id": id, "sub_location": sl}),
+    )
+    .await;
+    post_ok(
+        &c,
+        &token,
+        "incident/update",
+        json!({"id": id, "sub_location": sl, "title": "again"}),
+    )
+    .await;
+    assert_eq!(
+        get_incident(&c, &token, id).await["sub_location"].as_i64(),
+        Some(sl)
+    );
+}
 
 // --- draft incidents ---
 
