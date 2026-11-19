@@ -2,7 +2,9 @@ use integration_tests::*;
 use serde_json::{Value, json};
 
 // incident/move: relocating an incident to another org unit. MAIN has the
-// e2e review chain (MANAGER level 1, COORD final); HILL has none.
+// e2e review chain (MANAGER level 1, COORD final). HILL starts with none,
+// but reviews.rs saves chains there, so a test that needs a location
+// without a chain uses the root, OLS, which never gets one.
 
 /// incident-data @ root: read-only, holds no write permission anywhere.
 const DATA: TestUser = TestUser {
@@ -38,12 +40,21 @@ async fn post_ok(c: &reqwest::Client, token: &str, path: &str, body: Value) -> V
 /// Create an incident at MAIN with one unknown-patron party; returns
 /// (incident_id, patron_id).
 async fn create_incident(c: &reqwest::Client, token: &str, title: &str) -> (i64, i64) {
+    create_incident_at(c, token, title, "MAIN").await
+}
+
+async fn create_incident_at(
+    c: &reqwest::Client,
+    token: &str,
+    title: &str,
+    unit_code: &str,
+) -> (i64, i64) {
     let created = post_ok(
         c,
         token,
         "incident/create",
         json!({
-            "org_unit": unit_by_code("MAIN").await,
+            "org_unit": unit_by_code(unit_code).await,
             "title": title,
             "description": "incident-move fixture",
             "involved_parties": [{"party_type": "patron", "is_unknown_patron": true}],
@@ -305,7 +316,7 @@ async fn move_draft_relocates_and_logs() {
         data["previous_org_unit"].as_str().unwrap(),
         unit_by_code("MAIN").await
     );
-    assert_eq!(data["returned_to_draft"].as_bool(), Some(false));
+    assert_eq!(data["review_outcome"].as_str(), Some("unchanged"));
     assert!(data["moved_bans"].as_array().unwrap().is_empty());
     assert_eq!(data["incident"]["sub_location"].as_i64(), sub_location);
 
@@ -326,7 +337,7 @@ async fn move_draft_relocates_and_logs() {
 // --- review interaction ---
 
 #[tokio::test]
-async fn move_in_review_returns_to_draft() {
+async fn move_in_review_to_location_without_chain_returns_to_draft() {
     let c = client();
     let staff = login_token(&c, &STAFF).await;
     let (id, _) = create_incident(&c, &staff, "move-in-review").await;
@@ -341,12 +352,12 @@ async fn move_in_review_returns_to_draft() {
     let resp = move_incident(
         &c,
         &staff,
-        json!({"id": id, "org_unit": unit_by_code("HILL").await}),
+        json!({"id": id, "org_unit": unit_by_code("OLS").await}),
     )
     .await;
     assert_eq!(resp.status(), 200);
     let data: Value = resp.json().await.unwrap();
-    assert_eq!(data["returned_to_draft"].as_bool(), Some(true));
+    assert_eq!(data["review_outcome"].as_str(), Some("returned_to_draft"));
 
     let reviews = post_ok(&c, &staff, "incident/review/list", json!({"incident": id})).await;
     let rows = reviews.as_array().unwrap();
@@ -365,6 +376,47 @@ async fn move_in_review_returns_to_draft() {
         !pending_at(&c, &manager, &unit_by_code("MAIN").await)
             .await
             .contains(&id)
+    );
+}
+
+#[tokio::test]
+async fn move_in_review_resubmits_at_first_level() {
+    // Submitted at HILL (whatever chain reviews.rs left there), moving it
+    // to MAIN puts it in front of MAIN's level-1 reviewer.
+    let c = client();
+    let staff = login_token(&c, &STAFF).await;
+    let (id, _) = create_incident_at(&c, &staff, "move-resubmit", "HILL").await;
+    review(&c, &staff, id, "submitted").await;
+
+    let main = unit_by_code("MAIN").await;
+    let resp = move_incident(&c, &staff, json!({"id": id, "org_unit": main})).await;
+    assert_eq!(resp.status(), 200);
+    let data: Value = resp.json().await.unwrap();
+    assert_eq!(data["review_outcome"].as_str(), Some("resubmitted"));
+
+    let reviews = post_ok(&c, &staff, "incident/review/list", json!({"incident": id})).await;
+    let rows = reviews.as_array().unwrap();
+    let results: Vec<&str> = rows.iter().map(|r| r["result"].as_str().unwrap()).collect();
+    assert_eq!(results, vec!["submitted", "submitted"]);
+    let last = rows.last().unwrap();
+    assert_eq!(last["min_review_level"].as_i64(), Some(1));
+    assert!(
+        last["comments"].as_str().unwrap().starts_with("Moved from"),
+        "resubmitted row explains the move: {last}"
+    );
+
+    let manager = login_token(&c, &MANAGER).await;
+    assert!(pending_at(&c, &manager, &main).await.contains(&id));
+
+    let kinds = incident_event_types(&c, &staff, id).await;
+    assert!(kinds.iter().any(|k| k == "incident.moved"), "got {kinds:?}");
+    assert_eq!(
+        kinds
+            .iter()
+            .filter(|k| *k == "incident.review.submitted")
+            .count(),
+        2,
+        "got {kinds:?}"
     );
 }
 
@@ -391,7 +443,7 @@ async fn move_resolved_requires_final_reviewer_at_destination() {
     let resp = move_incident(&c, &admin, json!({"id": id, "org_unit": hill})).await;
     assert_eq!(resp.status(), 200);
     let data: Value = resp.json().await.unwrap();
-    assert_eq!(data["returned_to_draft"].as_bool(), Some(false));
+    assert_eq!(data["review_outcome"].as_str(), Some("unchanged"));
     let after = get_incident(&c, &admin, id).await;
     assert_eq!(after["org_unit"].as_str().unwrap(), hill);
     assert!(

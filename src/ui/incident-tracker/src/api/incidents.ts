@@ -15,9 +15,16 @@ export interface MovedBan {
   is_archived: boolean;
 }
 
+/**
+ * What a move did to the incident's place in review: left alone (not in
+ * review), resubmitted at level 1 of the new location's chain, or returned
+ * to draft (no chain there, or the site setting prefers it).
+ */
+export type MoveReviewOutcome = 'unchanged' | 'resubmitted' | 'returned_to_draft';
+
 export interface MoveIncidentResult {
   previous_org_unit: string;
-  returned_to_draft: boolean;
+  review_outcome: MoveReviewOutcome;
   moved_bans: MovedBan[];
 }
 

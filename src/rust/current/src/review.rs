@@ -687,6 +687,20 @@ pub async fn creator_level(state: &AppState, user_id: Uuid, org_unit: Uuid) -> L
     Ok(0)
 }
 
+/// True when the org unit's chain has the given level.
+pub async fn chain_has_level<C: ConnectionTrait>(
+    db: &C,
+    org_unit: Uuid,
+    level: i32,
+) -> LocalResult<bool> {
+    let count = review_chain::Entity::find()
+        .filter(review_chain::Column::OrgUnit.eq(org_unit))
+        .filter(review_chain::Column::ReviewLevel.eq(level))
+        .count(db)
+        .await?;
+    Ok(count > 0)
+}
+
 /// True when the given review level is marked final for the org unit's chain.
 pub async fn is_final_review_level(
     db: &DatabaseConnection,

@@ -19,6 +19,7 @@ use crate::entity::{
     incident_template_map, incidents, involved_parties, patron_ban, patrons, sub_locations,
 };
 use crate::review::{self, ReviewActionFlags};
+use crate::settings::{self, MoveReviewMode};
 
 // ---------------------------------------------------------------------------
 // Request / response types
@@ -2406,14 +2407,25 @@ pub struct MovedBanResponse {
     pub is_archived: bool,
 }
 
+/// What a move did to the incident's place in review.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MoveReviewOutcome {
+    /// Not in review (a draft, returned, or resolved): left as it was.
+    Unchanged,
+    /// Was in review; resubmitted at level 1 of the new location's chain.
+    Resubmitted,
+    /// Was in review; returned to the reporter, who must resubmit it at
+    /// the new location. Happens when the new location has no review
+    /// chain, or when the incident.move.review_mode setting says so.
+    ReturnedToDraft,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct MoveIncidentResponse {
     pub incident: UpdateIncidentResponse,
     pub previous_org_unit: Uuid,
-    /// The incident was in review at the old location and has been
-    /// returned to draft; it must be resubmitted into the new location's
-    /// review chain.
-    pub returned_to_draft: bool,
+    pub review_outcome: MoveReviewOutcome,
     /// Bans and trespasses created on this incident, now at the new org
     /// unit. Their existing letters are untouched and still name the old
     /// location.
@@ -2515,6 +2527,20 @@ pub async fn move_incident(
         return Err(LocalError::permission_denied("current.review", None).into());
     }
 
+    // The old chain's level number means nothing in the new chain (it may
+    // have fewer levels, or none), so an in-review incident starts the new
+    // chain over: at level 1, as though the mover had submitted it there,
+    // or back in draft when there is no level 1 or the site prefers that.
+    let review_outcome = if review_state != MoveReviewState::InReview {
+        MoveReviewOutcome::Unchanged
+    } else if settings::move_review_mode(&state.db).await? == MoveReviewMode::FirstLevel
+        && review::chain_has_level(&state.db, to_org, 1).await?
+    {
+        MoveReviewOutcome::Resubmitted
+    } else {
+        MoveReviewOutcome::ReturnedToDraft
+    };
+
     // Only bans created on this incident move. A ban that this incident
     // merely extended belongs to another incident and stays put.
     let bans = patron_ban::Entity::find()
@@ -2535,6 +2561,7 @@ pub async fn move_incident(
         %from_org,
         %to_org,
         ?review_state,
+        ?review_outcome,
         bans = bans.len(),
         "MoveIncident"
     );
@@ -2549,23 +2576,32 @@ pub async fn move_incident(
     active.updated_at = Set(Some(now));
     let updated = active.update(&txn).await?;
 
-    // The old chain's level number means nothing in the new chain (it may
-    // have fewer levels, or none), so pull the incident back to draft.
-    let returned_review_id = if review_state == MoveReviewState::InReview {
-        let comment =
-            format!("Moved from {from_label} to {to_label}; resubmit for review at {to_label}.");
+    let review_change = match review_outcome {
+        MoveReviewOutcome::Unchanged => None,
+        MoveReviewOutcome::Resubmitted => Some((
+            review::ReviewResult::Submitted,
+            1,
+            format!("Moved from {from_label} to {to_label}; resubmitted for review at {to_label}."),
+        )),
+        MoveReviewOutcome::ReturnedToDraft => Some((
+            review::ReviewResult::Returned,
+            0,
+            format!("Moved from {from_label} to {to_label}; resubmit for review at {to_label}."),
+        )),
+    };
+    let new_review = if let Some((result, level, comment)) = review_change {
         let row = incident_review::ActiveModel {
             incident: Set(params.id),
             reviewed_by: Set(user_id),
-            result: Set(review::ReviewResult::Returned.as_str().to_string()),
-            min_review_level: Set(0),
+            result: Set(result.as_str().to_string()),
+            min_review_level: Set(level),
             comments: Set(Some(comment.clone())),
             ..Default::default()
         }
         .insert(&txn)
         .await?;
         activity_log::ActiveModel {
-            event_type: Set("incident.review.returned".to_string()),
+            event_type: Set(format!("incident.review.{}", result.as_str())),
             actor_id: Set(user_id),
             org_unit: Set(Some(to_org)),
             incident_id: Set(Some(params.id)),
@@ -2574,7 +2610,7 @@ pub async fn move_incident(
         }
         .insert(&txn)
         .await?;
-        Some(row.id)
+        Some((row.id, result, level))
     } else {
         None
     };
@@ -2591,7 +2627,7 @@ pub async fn move_incident(
             "to_org_unit": to_org,
             "from_sub_location": previous_sub_location,
             "to_sub_location": params.sub_location,
-            "returned_to_draft": returned_review_id.is_some(),
+            "review_outcome": review_outcome,
         })),
         ..Default::default()
     }
@@ -2629,18 +2665,12 @@ pub async fn move_incident(
     txn.commit().await?;
 
     // Post-commit, best-effort fan-out, same as review and ban notices.
-    if let Some(review_id) = returned_review_id
-        && let Err(e) = review::send_review_notifications(
-            &state,
-            &updated,
-            0,
-            user_id,
-            review_id,
-            &review::ReviewResult::Returned,
-        )
-        .await
+    if let Some((review_id, result, level)) = new_review
+        && let Err(e) =
+            review::send_review_notifications(&state, &updated, level, user_id, review_id, &result)
+                .await
     {
-        tracing::error!(incident_id = params.id, error = %e, "move: returned notification failed");
+        tracing::error!(incident_id = params.id, error = %e, "move: review notification failed");
     }
 
     let moved_bans: Vec<MovedBanResponse> = moved
@@ -2675,7 +2705,7 @@ pub async fn move_incident(
     Ok(Json(MoveIncidentResponse {
         incident: updated.into(),
         previous_org_unit: from_org,
-        returned_to_draft: returned_review_id.is_some(),
+        review_outcome,
         moved_bans,
     }))
 }

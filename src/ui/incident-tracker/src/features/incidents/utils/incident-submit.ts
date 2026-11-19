@@ -156,6 +156,17 @@ function collectCreatedTrespasses(
   return out;
 }
 
+export function moveSuccessMessage(id: number, move: MoveIncidentResult | undefined): string {
+  switch (move?.review_outcome) {
+    case 'resubmitted':
+      return `Incident #${id} moved and resubmitted for review at the new location`;
+    case 'returned_to_draft':
+      return `Incident #${id} moved and returned to draft; submit it for review at the new location`;
+    default:
+      return `Incident #${id} updated successfully`;
+  }
+}
+
 export async function submitIncident(params: SubmitIncidentParams): Promise<SubmitIncidentResult> {
   const {
     action, isEditMode, incidentId: idStr,
@@ -173,7 +184,7 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
 
     // Move first: the update below is authorized at the incident's current
     // location, and a move can return the incident to draft, which the
-    // submit_for_review action then resubmits into the new location's chain.
+    // submit_for_review action then submits into the new location's chain.
     let move: MoveIncidentResult | undefined;
     if (formData.org_unit && formData.org_unit !== currentIncident.org_unit) {
       move = await incidentApi.move(id, formData.org_unit, formData.sub_location);
@@ -227,9 +238,7 @@ export async function submitIncident(params: SubmitIncidentParams): Promise<Subm
     return {
       incidentId: id,
       navigateTo: `/incidents/${id}`,
-      successMessage: move?.returned_to_draft
-        ? `Incident #${id} moved and returned to draft; submit it for review at the new location`
-        : `Incident #${id} updated successfully`,
+      successMessage: moveSuccessMessage(id, move),
       move,
     };
   }

@@ -5449,7 +5449,7 @@
         "required": [
           "incident",
           "previous_org_unit",
-          "returned_to_draft",
+          "review_outcome",
           "moved_bans"
         ],
         "properties": {
@@ -5467,11 +5467,19 @@
             "type": "string",
             "format": "uuid"
           },
-          "returned_to_draft": {
-            "type": "boolean",
-            "description": "The incident was in review at the old location and has been\nreturned to draft; it must be resubmitted into the new location's\nreview chain."
+          "review_outcome": {
+            "$ref": "#/components/schemas/MoveReviewOutcome"
           }
         }
+      },
+      "MoveReviewOutcome": {
+        "type": "string",
+        "description": "What a move did to the incident's place in review.",
+        "enum": [
+          "unchanged",
+          "resubmitted",
+          "returned_to_draft"
+        ]
       },
       "MovedBanResponse": {
         "type": "object",
