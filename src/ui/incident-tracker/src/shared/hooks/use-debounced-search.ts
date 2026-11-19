@@ -14,6 +14,8 @@ interface UseDebouncedSearchReturn {
   clearSearch: () => void;
 }
 
+const ID_QUERY = /^#\d+$/;
+
 export function useDebouncedSearch({
   delay = 250,
   minLength = 3,
@@ -45,10 +47,12 @@ export function useDebouncedSearch({
     onDebouncedChange?.('');
   }, [onDebouncedChange]);
 
-  // Only return debouncedSearch if empty or meets minLength
-  const effectiveSearch = debouncedSearch.length === 0 || debouncedSearch.length >= minLength
-    ? debouncedSearch
-    : '';
+  // Only return debouncedSearch if empty, meets minLength, or names an id
+  // ("#12"): an id is exact, so the minimum doesn't apply.
+  const effectiveSearch =
+    debouncedSearch.length === 0 || debouncedSearch.length >= minLength || ID_QUERY.test(debouncedSearch)
+      ? debouncedSearch
+      : '';
 
   return {
     searchInput,

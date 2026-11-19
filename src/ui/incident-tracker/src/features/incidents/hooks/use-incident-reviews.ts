@@ -178,9 +178,10 @@ export const useIncidentReviews = () => {
 
     if (debouncedSearch) {
       const search = debouncedSearch.toLowerCase();
+      const idSearch = search.replace(/^#/, '');
       filtered = filtered.filter(
         (incident) =>
-          String(incident.id).includes(search) ||
+          String(incident.id).includes(idSearch) ||
           incident.title?.toLowerCase().includes(search) ||
           incident.description?.toLowerCase().includes(search) ||
           incident.org_unit_name?.toLowerCase().includes(search) ||

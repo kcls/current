@@ -106,7 +106,7 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
       <Box display="flex" flexDirection="column" gap={2}>
         <Box display="flex" gap={2} alignItems="center">
           <TextField
-            placeholder="Search incidents (min 3 characters)..."
+            placeholder="Search incidents or #id (min 3 characters)..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             size="small"

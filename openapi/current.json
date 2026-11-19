@@ -7027,7 +7027,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Text matched against title and description. `#` and an incident id\n(`#123`) is a direct lookup instead: it returns that incident alone,\nignoring every other filter, if the caller may read it."
           },
           "sort_by": {
             "oneOf": [

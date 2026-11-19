@@ -771,6 +771,9 @@ pub struct IncidentSearchOptions {
 
 #[derive(Debug, Deserialize, Default, ToSchema)]
 pub struct SearchIncidentsRequest {
+    /// Text matched against title and description. `#` and an incident id
+    /// (`#123`) is a direct lookup instead: it returns that incident alone,
+    /// ignoring every other filter, if the caller may read it.
     #[serde(default)]
     pub query: Option<String>,
     #[serde(default)]
@@ -845,27 +848,44 @@ pub async fn search_incidents(
     State(state): State<Arc<AppState>>,
     Json(params): Json<SearchIncidentsRequest>,
 ) -> ApiResult<Json<SearchIncidentsResponse>> {
-    state
-        .auth_client
-        .permission_required_uuid("current.incident.read", params.org_unit.as_ref())
-        .await?;
-
     let limit = std::cmp::min(
         params.limit.unwrap_or(SEARCH_DEFAULT_LIMIT),
         SEARCH_MAX_LIMIT,
     );
     let offset = params.offset.unwrap_or(0);
 
-    // Org-unit filter expands to the unit + all descendants via odo-org.
-    let org_scope = match params.org_unit {
-        Some(id) => Some(state.org_client.descendant_uuids(&id).await?),
-        None => None,
+    let id_query = params
+        .query
+        .as_deref()
+        .map(str::trim)
+        .and_then(query_incident_id);
+
+    let (rows, total_count) = if let Some(id) = id_query {
+        let found = lookup_incident_by_id(&state, id).await?;
+        let total_count = found.len() as u64;
+        let rows = found
+            .into_iter()
+            .skip(offset as usize)
+            .take(limit as usize)
+            .collect::<Vec<_>>();
+        (rows, total_count)
+    } else {
+        state
+            .auth_client
+            .permission_required_uuid("current.incident.read", params.org_unit.as_ref())
+            .await?;
+
+        // Org-unit filter expands to the unit + all descendants via odo-org.
+        let org_scope = match params.org_unit {
+            Some(id) => Some(state.org_client.descendant_uuids(&id).await?),
+            None => None,
+        };
+
+        let base_filters = build_filters(&params, org_scope.as_deref())?;
+        let total_count = run_count(&state.db, &base_filters).await?;
+        let rows = run_search(&state.db, &base_filters, &params, limit, offset).await?;
+        (rows, total_count)
     };
-
-    let base_filters = build_filters(&params, org_scope.as_deref())?;
-    let total_count = run_count(&state.db, &base_filters).await?;
-
-    let rows = run_search(&state.db, &base_filters, &params, limit, offset).await?;
 
     let (creator_names, org_names) = fetch_display_names(&state, &rows).await;
     let mut link_summaries = load_link_summaries(&state, &rows).await?;
@@ -933,6 +953,36 @@ pub async fn search_incidents(
 /// `count()` query. Built once and used twice.
 struct SearchFilters {
     exprs: Vec<sea_orm::sea_query::SimpleExpr>,
+}
+
+/// The incident id a search query names, if it is one: `#` and digits, the
+/// way the UI labels incidents ("Incident #123"). Bare digits stay a text
+/// search, so numbers in titles and descriptions remain findable.
+fn query_incident_id(query: &str) -> Option<i32> {
+    let digits = query.strip_prefix('#')?;
+    if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    digits.parse().ok()
+}
+
+/// Search's direct id lookup: the named incident, regardless of every other
+/// search filter, when it exists and the caller may read it at its own
+/// location (the same check as `incident/get`). An incident the caller
+/// cannot read is reported as not found, so the lookup reveals nothing.
+async fn lookup_incident_by_id(state: &AppState, id: i32) -> LocalResult<Vec<incidents::Model>> {
+    let Some(incident) = incidents::Entity::find_by_id(id)
+        .filter(incidents::Column::DeletedAt.is_null())
+        .one(&state.db)
+        .await?
+    else {
+        return Ok(Vec::new());
+    };
+    let readable = state
+        .auth_client
+        .user_has_permission_uuid("current.incident.read", Some(&incident.org_unit))
+        .await?;
+    Ok(if readable { vec![incident] } else { Vec::new() })
 }
 
 fn build_filters(
@@ -2713,6 +2763,23 @@ pub async fn move_incident(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn query_incident_id_accepts_hash_ids() {
+        assert_eq!(query_incident_id("#123"), Some(123));
+    }
+
+    #[test]
+    fn query_incident_id_rejects_non_ids() {
+        assert_eq!(query_incident_id("123"), None);
+        assert_eq!(query_incident_id("#"), None);
+        assert_eq!(query_incident_id("12a"), None);
+        assert_eq!(query_incident_id("-5"), None);
+        assert_eq!(query_incident_id("+5"), None);
+        assert_eq!(query_incident_id("# 12"), None);
+        // Out of i32 range: no id, so a text search instead.
+        assert_eq!(query_incident_id("#99999999999"), None);
+    }
 
     fn incident(resolved: bool) -> incidents::Model {
         let now: chrono::DateTime<chrono::FixedOffset> = chrono::Utc::now().into();

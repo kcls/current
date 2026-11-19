@@ -528,6 +528,89 @@ async fn search_incidents_org_unit_filter() {
     assert!(data["total_count"].is_u64());
 }
 
+/// `#` and an incident id is a direct lookup: it returns that incident
+/// alone, whatever the other filters say. Bare digits stay a text search.
+#[tokio::test]
+async fn search_incidents_by_id_ignores_filters() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+
+    // Created at MAIN, open, occurring now; every filter below excludes it.
+    let id = create_test_incident(&c, &token, "search-by-id-test").await;
+    // Matches a text search for the id's digits.
+    let mention = create_test_incident(&c, &token, &format!("mentions {id}")).await;
+
+    let search = |body: serde_json::Value| {
+        let c = c.clone();
+        let token = token.clone();
+        async move {
+            let resp = c
+                .post(format!("{}/api/v1/current/incident/search", current_base()))
+                .json(&body)
+                .headers(auth_header(&token))
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(resp.status(), 200);
+            let data: serde_json::Value = resp.json().await.unwrap();
+            let ids: Vec<i64> = data["incidents"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|r| r["id"].as_i64().unwrap())
+                .collect();
+            (ids, data["total_count"].clone())
+        }
+    };
+
+    let (ids, total) = search(json!({
+        "query": format!("#{id}"),
+        "org_unit": unit_by_code("HILL").await,
+        "is_resolved": true,
+        "occurred_before": "2000-01-01T00:00:00Z",
+        "has_active_bans": true,
+    }))
+    .await;
+    assert_eq!(ids, vec![id]);
+    assert_eq!(total, 1);
+
+    let (ids, _) = search(json!({"query": id.to_string(), "limit": 100})).await;
+    assert!(ids.contains(&mention), "bare digits search text");
+    assert!(!ids.contains(&id), "bare digits are not an id lookup");
+}
+
+/// An id lookup for a missing or deleted incident finds nothing.
+#[tokio::test]
+async fn search_incidents_by_id_missing_or_deleted() {
+    let c = client();
+    let token = login_token(&c, &COORD).await;
+
+    let id = create_test_incident(&c, &token, "search-by-id-deleted").await;
+    let resp = c
+        .post(format!("{}/api/v1/current/incident/update", current_base()))
+        .json(&json!({"id": id, "is_deleted": true}))
+        .headers(auth_header(&token))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+
+    for query in [format!("#{id}"), format!("#{}", i32::MAX)] {
+        let resp = c
+            .post(format!("{}/api/v1/current/incident/search", current_base()))
+            .json(&json!({"query": query}))
+            .headers(auth_header(&token))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), 200);
+
+        let data: serde_json::Value = resp.json().await.unwrap();
+        assert_eq!(data["incidents"], json!([]), "query {query:?}");
+        assert_eq!(data["total_count"], 0, "query {query:?}");
+    }
+}
+
 // --- get_activity ---
 
 #[tokio::test]

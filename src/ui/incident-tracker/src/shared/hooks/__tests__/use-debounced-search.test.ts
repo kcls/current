@@ -114,6 +114,38 @@ describe('useDebouncedSearch', () => {
       expect(result.current.debouncedSearch).toBe('abc');
     });
 
+    it.each(['#7', '#42'])('should return a short id query (%s) despite minLength', async (id) => {
+      const { result } = renderHook(() =>
+        useDebouncedSearch({ minLength: 3, delay: 100 })
+      );
+
+      act(() => {
+        result.current.setSearchInput(id);
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(result.current.debouncedSearch).toBe(id);
+    });
+
+    it('should still apply minLength to bare digits', async () => {
+      const { result } = renderHook(() =>
+        useDebouncedSearch({ minLength: 3, delay: 100 })
+      );
+
+      act(() => {
+        result.current.setSearchInput('42');
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(result.current.debouncedSearch).toBe('');
+    });
+
     it('should return empty string when cleared (empty is allowed)', async () => {
       const { result } = renderHook(() =>
         useDebouncedSearch({ minLength: 3, delay: 100, initialValue: 'test' })
