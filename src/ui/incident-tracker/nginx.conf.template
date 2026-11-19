@@ -48,7 +48,7 @@ server {
     # Never cache the SPA entry point so deploys take effect immediately
     location = @PREFIX@/index.html {
         alias /usr/share/nginx/html/index.html;
-        add_header Cache-Control "no-cache";
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
 
     location @PREFIX@/assets/ {
