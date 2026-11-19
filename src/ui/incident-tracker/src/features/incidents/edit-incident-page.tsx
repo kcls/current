@@ -14,8 +14,10 @@ import { useFileUpload } from './hooks/use-file-upload';
 import { useIncidentFormState } from './hooks/use-incident-form-state';
 import { useEditModePrefill } from './hooks/use-edit-mode-prefill';
 import { submitIncident, type SubmitIncidentResult } from './utils/incident-submit';
+import { isInReview, moveReviewNotice, type ReviewRow } from './utils/move-review-notice';
 import { BanLetterPromptDialog, type BanNeedingLetter } from './components/ban-letter-prompt-dialog';
 import { patronApi } from '../../api/patrons';
+import { incidentApi } from '../../api/incidents';
 import type { IncidentTemplate } from '../../types';
 
 const EditIncidentPage: React.FC = () => {
@@ -65,8 +67,24 @@ const EditIncidentPage: React.FC = () => {
       cancelled = true;
     };
   }, [id]);
-  const isMovingWithBans =
-    hasActiveBans && loadedIncident != null && form.formData.org_unit !== loadedIncident.org_unit;
+  const isMoving = loadedIncident != null && form.formData.org_unit !== loadedIncident.org_unit;
+  const isMovingWithBans = hasActiveBans && isMoving;
+
+  // Review history, to warn that moving an in-review incident changes where
+  // it stands in review. Unknown (lookup failed) counts as no reviews.
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    incidentApi
+      .getReviews(parseInt(id))
+      .then((rows) => !cancelled && setReviews(rows))
+      .catch(() => !cancelled && setReviews([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  const saveNotice = moveReviewNotice(isMoving, isInReview(reviews, loadedIncident?.resolved_at));
 
   useEditModePrefill({
     isEditMode: true,
@@ -261,7 +279,8 @@ const EditIncidentPage: React.FC = () => {
           setExternalLinks={form.setExternalLinks}
           onNext={() => {}}
           onSaveReport={handleSaveDraft}
-          saveReportLabel={isMovingWithBans ? 'Save & Move' : undefined}
+          saveReportLabel={isMoving ? 'Save & Move' : undefined}
+          saveNotice={saveNotice}
           hasReviewChain={form.hasReviewChain}
           onSubmitForReview={handleSubmitForReview}
           onSaveAndBan={isFollowup || isMovingWithBans ? undefined : handleSaveAndBan}

@@ -10,6 +10,7 @@ import {
   Autocomplete,
   Chip,
   Divider,
+  Alert,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -124,6 +125,8 @@ interface StepReportProps {
   onSaveReport?: () => void;
   /** Label for the Save Report button (default "Save Report"). */
   saveReportLabel?: string;
+  /** Warning shown above the action buttons (e.g. what a move does to review). */
+  saveNotice?: string | null;
   hasReviewChain: boolean | null;
   onSubmitForReview?: () => void;
   onSaveAndBan?: () => void;
@@ -152,6 +155,7 @@ export const StepReport: React.FC<StepReportProps> = ({
   onNext,
   onSaveReport,
   saveReportLabel = 'Save Report',
+  saveNotice = null,
   onSaveAndBan,
 }) => {
   return (
@@ -405,8 +409,14 @@ export const StepReport: React.FC<StepReportProps> = ({
         />
       </Box>
 
+      {saveNotice && (
+        <Alert severity="warning" sx={{ mt: 6 }}>
+          {saveNotice}
+        </Alert>
+      )}
+
       {/* Action Buttons */}
-      <Box display="flex" gap={2} mt={6}>
+      <Box display="flex" gap={2} mt={saveNotice ? 2 : 6}>
         <Box sx={{ flex: 1 }} />
         {onSaveReport && (
           <Button
