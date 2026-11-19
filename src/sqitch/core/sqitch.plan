@@ -8,3 +8,4 @@
 004_shift_note_occurred_at [003_shift_notes_and_trespass_procedures] 2026-09-21T00:00:00Z Bill Erickson <bserickson@kcls.org> # shift_note.occurred_at: when it happened, distinct from when it was written down
 005_ban_view_predicates [004_shift_note_occurred_at] 2026-09-24T00:00:00Z Bill Erickson <bserickson@kcls.org> # Un-swap active_patron_ban / visible_patron_ban: only the active view filters on lifts_at
 006_incident_links [005_ban_view_predicates] 2026-11-02T00:00:00Z Bill Erickson <bserickson@kcls.org> # incident_links: FK on linked_incident_id; an incident is a follow-up of at most one source
+007_config_global_setting [006_incident_links] 2026-11-19T15:36:59Z Bill Erickson <berickxx@gmail.com> # config_global_setting: named site-wide settings; seed incident.move.review_mode

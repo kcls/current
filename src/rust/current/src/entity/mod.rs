@@ -6,6 +6,7 @@ pub mod activity_log;
 pub mod attachments;
 pub mod ban_letter_template;
 pub mod categories;
+pub mod config_global_setting;
 pub mod config_shift_note_conduct_area;
 pub mod config_shift_note_setting;
 pub mod config_shift_note_type;

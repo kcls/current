@@ -6,6 +6,7 @@ pub mod incidents;
 pub mod patrons;
 pub mod reports;
 pub mod review;
+pub mod settings;
 pub mod shift_notes;
 pub mod sub_locations;
 pub mod templates;
