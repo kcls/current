@@ -122,7 +122,7 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
               helperText={
                 errors.org_unit ||
                 (isMoving
-                  ? `Saving moves this incident from ${originalLabel}, along with its bans and trespasses. An incident in review goes back to draft.`
+                  ? `Saving moves this incident from ${originalLabel}, along with its bans and trespasses.`
                   : undefined)
               }
               color={isMoving ? 'warning' : undefined}
